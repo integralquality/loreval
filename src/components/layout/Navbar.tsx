@@ -16,7 +16,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-amber-400 rounded-lg rotate-12 group-hover:rotate-0 transition-transform flex items-center justify-center text-zinc-950 font-bold">
+            <div className="w-8 h-8 bg-purple-500 rounded-lg group-hover:rotate-6 transition-transform flex items-center justify-center text-white font-bold shadow-lg shadow-purple-500/20">
               M
             </div>
             <span className="text-xl font-bold text-white tracking-tight">
@@ -33,8 +33,8 @@ export default function Navbar() {
                   to={to}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     isActive
-                      ? 'text-white bg-zinc-800'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
+                      ? 'text-white bg-zinc-800/50 border border-white/5'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
                   }`}
                 >
                   {label}
@@ -46,7 +46,7 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             <Link
               to="/designer"
-              className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 text-sm font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
+              className="px-5 py-2.5 bg-purple-500 hover:bg-purple-400 text-white text-sm font-bold rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
             >
               Build Now
             </Link>

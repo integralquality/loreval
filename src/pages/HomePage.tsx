@@ -20,7 +20,7 @@ const grid: CellType[][] = [
   ['wall',  'wall',  'wall',  'wall',  'wall',  'wall' ],
 ];
 
-const amberPath = [
+const purplePath = [
   { r: 1, c: 1 }, { r: 1, c: 2 }, { r: 1, c: 3 }, { r: 1, c: 4 },
 ];
 
@@ -29,7 +29,7 @@ function HeroGrid() {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setStep(prev => (prev + 1) % amberPath.length);
+      setStep(prev => (prev + 1) % purplePath.length);
     }, 1200);
     return () => clearInterval(id);
   }, []);
@@ -40,10 +40,10 @@ function HeroGrid() {
   });
 
   return (
-    <div className="-rotate-2 relative">
-      <div className="absolute inset-0 blur-3xl opacity-15 bg-amber-500 rounded-full scale-75 -z-10" />
+    <div className="relative">
+      <div className="absolute inset-0 blur-3xl opacity-20 bg-purple-500/50 rounded-full scale-75 -z-10" />
       <div
-        className="relative grid gap-px rounded-lg border border-zinc-700/50 bg-zinc-800/50 p-px"
+        className="relative grid gap-px rounded-lg border border-zinc-700/50 bg-zinc-800/20 p-px"
         style={{
           gridTemplateColumns: `repeat(${GRID_COLS}, ${CELL}px)`,
           gridTemplateRows: `repeat(${GRID_ROWS}, ${CELL}px)`,
@@ -56,21 +56,21 @@ function HeroGrid() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3, delay: i * 0.025 }}
             className={`rounded-sm ${
-              cell === 'wall' ? 'bg-zinc-700/80' :
-              cell === 'floor' ? 'bg-zinc-800/40' :
+              cell === 'wall' ? 'bg-zinc-700/60' :
+              cell === 'floor' ? 'bg-zinc-800/20' :
               ''
             }`}
             style={{ width: CELL, height: CELL }}
           />
         ))}
         <motion.div
-          className="absolute w-3 h-3 rounded-sm border-2 border-amber-400/60"
+          className="absolute w-3 h-3 rounded-sm border-2 border-purple-300/60"
           style={{ left: pos(1, 4, 12).x, top: pos(1, 4, 12).y }}
         />
         <motion.div
-          className="absolute rounded-full bg-amber-400"
-          style={{ width: 14, height: 14, boxShadow: '0 0 12px rgba(251,191,36,0.4)' }}
-          animate={pos(amberPath[step].r, amberPath[step].c, 14)}
+          className="absolute rounded-full bg-purple-300"
+          style={{ width: 14, height: 14, boxShadow: '0 0 12px rgba(216,180,254,0.4)' }}
+          animate={pos(purplePath[step].r, purplePath[step].c, 14)}
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         />
       </div>
@@ -81,10 +81,10 @@ function HeroGrid() {
 // --- Features data ---
 
 const skills = [
-  { icon: <Layers className="text-amber-400" />, title: 'Abstraction Thinking', desc: 'Identify core patterns and hide unnecessary details.' },
-  { icon: <Puzzle className="text-emerald-400" />, title: 'Structural Reasoning', desc: 'Understand how components interact within a system.' },
-  { icon: <Lightbulb className="text-rose-400" />, title: 'Creative Problem Design', desc: 'Define the challenges instead of just solving them.' },
-  { icon: <Brain className="text-cyan-400" />, title: 'Algorithmic Intuition', desc: 'Develop a mental model for step-by-step logic.' },
+  { icon: <Layers className="text-purple-300" />, title: 'Abstraction Thinking', desc: 'Identify core patterns and hide unnecessary details.' },
+  { icon: <Puzzle className="text-emerald-300" />, title: 'Structural Reasoning', desc: 'Understand how components interact within a system.' },
+  { icon: <Lightbulb className="text-rose-300" />, title: 'Creative Problem Design', desc: 'Define the challenges instead of just solving them.' },
+  { icon: <Brain className="text-cyan-300" />, title: 'Algorithmic Intuition', desc: 'Develop a mental model for step-by-step logic.' },
 ];
 
 export default function HomePage() {
@@ -101,7 +101,7 @@ export default function HomePage() {
             >
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight text-white mb-6">
                 Logic is the new <br />
-                <span className="text-amber-400">programming language</span>
+                <span className="text-purple-300">programming language</span>
               </h1>
               <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed mb-10">
                 In the era of AI, coding is cheap. Logic is fundamental.
@@ -112,7 +112,7 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-4">
                 <Link
                   to="/designer"
-                  className="px-8 py-4 bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold rounded-xl transition-all hover:scale-105 flex items-center gap-2"
+                  className="px-8 py-4 bg-purple-500 hover:bg-purple-400 text-white font-bold rounded-xl transition-all hover:scale-105 flex items-center gap-2 shadow-lg shadow-purple-500/20"
                 >
                   Start Creating <ArrowRight size={20} />
                 </Link>
@@ -177,21 +177,21 @@ export default function HomePage() {
         <div className="grid lg:grid-cols-2 gap-20 items-center">
           <div className="space-y-8 order-2 lg:order-1">
             <div className="flex gap-4">
-              <div className="w-12 h-12 shrink-0 rounded-full bg-amber-400/10 flex items-center justify-center text-amber-400 font-bold">1</div>
+              <div className="w-12 h-12 shrink-0 rounded-full bg-purple-400/10 flex items-center justify-center text-purple-300 font-bold">1</div>
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Design before solving</h3>
                 <p className="text-zinc-400">Kids create the obstacles and define the win conditions, learning that solutions are built from structure.</p>
               </div>
             </div>
             <div className="flex gap-4">
-              <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-400/10 flex items-center justify-center text-emerald-400 font-bold">2</div>
+              <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-400/10 flex items-center justify-center text-emerald-300 font-bold">2</div>
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Explore logic through play</h3>
                 <p className="text-zinc-400">Rules like "even steps only" turn abstract math into a tangible game mechanic.</p>
               </div>
             </div>
             <div className="flex gap-4">
-              <div className="w-12 h-12 shrink-0 rounded-full bg-rose-400/10 flex items-center justify-center text-rose-400 font-bold">3</div>
+              <div className="w-12 h-12 shrink-0 rounded-full bg-rose-400/10 flex items-center justify-center text-rose-300 font-bold">3</div>
               <div>
                 <h3 className="text-xl font-bold text-white mb-2">Practice structured thinking</h3>
                 <p className="text-zinc-400">Building a functional game requires organizing thoughts into a logical flow.</p>
@@ -201,12 +201,12 @@ export default function HomePage() {
 
           <div className="order-1 lg:order-2">
             <h2 className="text-4xl font-bold text-white mb-8 leading-tight">
-              Teach them to <span className="text-amber-400">create</span> instead of just consume.
+              Teach them to <span className="text-purple-300">create</span> instead of just consume.
             </h2>
             <p className="text-zinc-400 text-lg mb-8">
               We focus on creative reasoning and abstract problem modeling—skills that remain powerful even as AI grows.
             </p>
-            <Link to="/designer" className="text-amber-400 font-bold flex items-center gap-2 hover:gap-4 transition-all">
+            <Link to="/designer" className="text-purple-300 font-bold flex items-center gap-2 hover:gap-4 transition-all">
               Try the Builder <ArrowRight size={20} />
             </Link>
           </div>
@@ -215,26 +215,26 @@ export default function HomePage() {
 
       {/* CTA Section */}
       <section className="max-w-6xl mx-auto px-6 pb-32">
-        <div className="p-12 md:p-20 rounded-[3rem] bg-gradient-to-br from-amber-400 to-amber-600 text-zinc-950 text-center relative overflow-hidden">
+        <div className="p-12 md:p-20 rounded-[3rem] bg-gradient-to-br from-purple-500/80 to-indigo-500/80 text-white text-center relative overflow-hidden shadow-2xl shadow-purple-500/5 border border-white/5">
           <div className="relative z-10">
             <h2 className="text-4xl md:text-5xl font-bold mb-8">Ready to design your first system?</h2>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
                 to="/designer"
-                className="px-10 py-5 bg-zinc-950 text-white font-bold rounded-2xl hover:scale-105 transition-transform"
+                className="px-10 py-5 bg-white text-purple-900 font-bold rounded-2xl hover:scale-105 transition-transform"
               >
                 Open the Designer
               </Link>
               <Link
                 to="/play"
-                className="px-10 py-5 bg-white/20 hover:bg-white/30 text-zinc-950 font-bold rounded-2xl transition-colors backdrop-blur-sm"
+                className="px-10 py-5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl transition-colors backdrop-blur-sm border border-white/20"
               >
                 See How It Works
               </Link>
             </div>
           </div>
           {/* Decorative shapes */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2" />
         </div>
       </section>

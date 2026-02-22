@@ -4,17 +4,17 @@ import { Link } from 'react-router-dom';
 
 const missionPoints = [
   {
-    icon: <Cpu className="text-amber-400" />,
+    icon: <Cpu className="text-purple-300" />,
     title: "AI is the Engine, Logic is the Driver",
     desc: "In a world where AI can generate code instantly, the value shifts from knowing 'how' to write syntax to knowing 'what' to build and 'why' it works. We focus on the architectural logic that directs the AI."
   },
   {
-    icon: <Brain className="text-emerald-400" />,
+    icon: <Brain className="text-emerald-300" />,
     title: "Computational Thinking for Everyone",
     desc: "We believe logic is a universal language. By stripping away the complexity of modern development environments, we allow children to master the core principles of algorithms and state management through play."
   },
   {
-    icon: <Lightbulb className="text-rose-400" />,
+    icon: <Lightbulb className="text-rose-300" />,
     title: "Creative Problem Design",
     desc: "The future belongs to the designers of systems, not just the consumers of them. Our mission is to transform kids from players into architects of their own digital worlds."
   }
@@ -37,12 +37,12 @@ export default function MissionPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <span className="font-mono text-xs uppercase tracking-[0.2em] text-amber-500 font-bold mb-4 block">
+          <span className="font-mono text-xs uppercase tracking-[0.2em] text-purple-400 font-bold mb-4 block">
             Our Philosophy
           </span>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight">
             Preparing for the <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-indigo-400">
               Logic-First Era
             </span>
           </h1>
@@ -66,7 +66,7 @@ export default function MissionPage() {
               transition={{ delay: i * 0.1 }}
               className="space-y-4"
             >
-              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-xl">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-xl shadow-purple-500/5">
                 {point.icon}
               </div>
               <h3 className="text-xl font-bold text-white">{point.title}</h3>
@@ -88,7 +88,7 @@ export default function MissionPage() {
         <div className="grid sm:grid-cols-2 gap-x-12 gap-y-16">
           {pillars.map((pillar, i) => (
             <div key={pillar.title} className="flex gap-6">
-              <div className="text-amber-500 shrink-0 mt-1">
+              <div className="text-purple-400 shrink-0 mt-1">
                 {pillar.icon}
               </div>
               <div>
@@ -104,16 +104,16 @@ export default function MissionPage() {
       <section className="max-w-4xl mx-auto px-6 pt-32 text-center">
         <div className="relative inline-block">
           <span className="text-6xl text-zinc-800 absolute -top-8 -left-10 font-serif">"</span>
-          <h2 className="text-2xl md:text-3xl font-medium text-zinc-300 italic relative z-10">
+          <h2 className="text-2xl md:text-3xl font-medium text-zinc-300 relative z-10">
             The real advantage in the future will not be the ability to write code, but the 
-            <span className="text-white not-italic font-bold"> intuition to design systems.</span>
+            <span className="text-white font-bold"> intuition to design systems.</span>
           </h2>
         </div>
         
         <div className="mt-16">
           <Link
             to="/designer"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-zinc-100 hover:bg-white text-zinc-950 font-bold rounded-2xl transition-all hover:scale-105"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-purple-500 hover:bg-purple-400 text-white font-bold rounded-2xl transition-all hover:scale-105 shadow-lg shadow-purple-500/20"
           >
             Start Designing Today
           </Link>

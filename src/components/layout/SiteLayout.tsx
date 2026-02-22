@@ -16,11 +16,11 @@ export default function SiteLayout() {
               <span className="text-sm font-semibold text-zinc-400">Make Your Game</span>
             </div>
             <div className="flex gap-8 text-sm text-zinc-500">
-              <Link to="/mission" className="hover:text-amber-400">Mission</Link>
-              <Link to="/play" className="hover:text-amber-400">Explore</Link>
-              <Link to="/designer" className="hover:text-amber-400">Build</Link>
-              <Link to="/account" className="hover:text-amber-400">Account</Link>
-              <a href="#" className="hover:text-amber-400">Privacy</a>
+              <Link to="/mission" className="hover:text-purple-300">Mission</Link>
+              <Link to="/play" className="hover:text-purple-300">Explore</Link>
+              <Link to="/designer" className="hover:text-purple-300">Build</Link>
+              <Link to="/account" className="hover:text-purple-300">Account</Link>
+              <a href="#" className="hover:text-purple-300">Privacy</a>
             </div>
             <p className="text-xs text-zinc-600">© 2026 Logic Playground. All rights reserved.</p>
           </div>
