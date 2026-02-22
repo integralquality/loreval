@@ -1,42 +1,55 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Puzzle, Play, UserCircle } from 'lucide-react';
+import { motion } from 'motion/react';
 
-const navItems = [
-  { to: '/', label: 'Home', icon: Home },
-  { to: '/designer', label: 'Game Designer', icon: Puzzle },
-  { to: '/play', label: 'Play', icon: Play },
-  { to: '/account', label: 'Account', icon: UserCircle },
+const navLinks = [
+  { to: '/mission', label: 'Mission' },
+  { to: '/designer', label: 'Designer' },
+  { to: '/play', label: 'Play' },
+  { to: '/account', label: 'Account' },
 ];
 
 export default function Navbar() {
   const location = useLocation();
 
   return (
-    <nav className="bg-slate-900 border-b border-slate-800">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            Make Your Game
+    <nav className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="flex items-center justify-between h-20">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 bg-amber-400 rounded-lg rotate-12 group-hover:rotate-0 transition-transform flex items-center justify-center text-zinc-950 font-bold">
+              M
+            </div>
+            <span className="text-xl font-bold text-white tracking-tight">
+              Make Your Game
+            </span>
           </Link>
 
-          <div className="flex items-center gap-1">
-            {navItems.map(({ to, label, icon: Icon }) => {
+          <div className="hidden md:flex items-center gap-1">
+            {navLinks.map(({ to, label }) => {
               const isActive = location.pathname === to;
               return (
                 <Link
                   key={to}
                   to={to}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-indigo-600/20 text-indigo-300'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                      ? 'text-white bg-zinc-800'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
                   }`}
                 >
-                  <Icon size={16} />
                   {label}
                 </Link>
               );
             })}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              to="/designer"
+              className="px-5 py-2.5 bg-amber-400 hover:bg-amber-300 text-zinc-950 text-sm font-bold rounded-xl transition-all hover:scale-105 active:scale-95"
+            >
+              Build Now
+            </Link>
           </div>
         </div>
       </div>

@@ -366,7 +366,7 @@ export default function GameDesigner() {
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold text-white">
                 Make Your Game
               </h1>
               <p className="text-slate-400 text-sm mt-1">Grid Logic Playground</p>

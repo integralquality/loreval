@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import SiteLayout from './components/layout/SiteLayout';
 import HomePage from './pages/HomePage';
+import MissionPage from './pages/MissionPage';
 import GameDesignerPage from './pages/GameDesignerPage';
 import PlayPage from './pages/PlayPage';
 import AccountPage from './pages/AccountPage';
@@ -11,6 +12,7 @@ export default function App() {
       <Routes>
         <Route element={<SiteLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="mission" element={<MissionPage />} />
           <Route path="play" element={<PlayPage />} />
           <Route path="account" element={<AccountPage />} />
         </Route>
