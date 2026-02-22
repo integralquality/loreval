@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(cd \"E:/Projects/AI/make-game\" && npx tsc -b 2>&1)",
+      "Bash(cd \"E:/Projects/AI/make-game\" && npx vite build 2>&1)"
+    ]
+  }
+}
