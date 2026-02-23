@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Layers, Activity, Lightbulb, Brain, ArrowRight } from 'lucide-react';
+import { Layers, GitBranch, Lightbulb, Binary, ArrowRight } from 'lucide-react';
 
 // --- Decorative Hero Grid ---
 const GRID_COLS = 6;
@@ -51,68 +51,64 @@ function HeroGrid() {
           />
         ))}
 
-        {/* Goal markers */}
         <motion.div className="absolute w-3 h-3 rounded-sm border-2 border-purple-300/60" style={{ left: pos(1, 4, 12).x, top: pos(1, 4, 12).y }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} />
         <motion.div className="absolute w-3 h-3 rounded-sm border-2 border-emerald-300/60" style={{ left: pos(3, 4, 12).x, top: pos(3, 4, 12).y }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0 }} />
         <motion.div className="absolute w-3 h-3 rounded-sm border-2 border-amber-300/60" style={{ left: pos(4, 3, 12).x, top: pos(4, 3, 12).y }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }} />
 
-        {/* Moving entity */}
         <motion.div
           className="absolute rounded-full bg-purple-300"
           style={{ width: 14, height: 14, boxShadow: '0 0 12px rgba(216,180,254,0.4)' }}
           animate={pos(entityPath[step].r, entityPath[step].c, 14)}
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         />
-
-        {/* Static entities */}
         <motion.div
           className="absolute rounded-full bg-emerald-300"
           style={{ width: 14, height: 14, boxShadow: '0 0 8px rgba(110,231,183,0.3)', ...pos(3, 1, 14) }}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8, duration: 0.4 }}
+          initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, duration: 0.4 }}
         />
         <motion.div
           className="absolute rounded-full bg-amber-300"
           style={{ width: 14, height: 14, boxShadow: '0 0 8px rgba(252,211,77,0.3)', ...pos(4, 3, 14) }}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.0, duration: 0.4 }}
+          initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.0, duration: 0.4 }}
         />
       </div>
     </div>
   );
 }
 
-// --- Skills data ---
-const skills = [
+// --- Data ---
+
+const advantages = [
   {
     icon: Layers,
-    title: 'Abstract thinking',
-    desc: 'Breaking a complex puzzle into smaller, manageable pieces — walls here, a path there, a rule that ties it together.',
+    title: 'Abstraction thinking',
+    desc: 'Decomposing a complex puzzle into parts — walls here, a path there, a rule that connects them. The same skill behind every engineering discipline.',
     color: 'text-purple-300',
+    span: 'sm:col-span-2',
   },
   {
-    icon: Activity,
-    title: 'Pattern recognition',
-    desc: 'Spotting sequences, parity, and relationships. "If this character takes an even number of steps, it works — odd, it doesn\'t."',
+    icon: GitBranch,
+    title: 'Structural reasoning',
+    desc: 'Understanding how grids, paths, and spatial relationships create meaningful constraints.',
     color: 'text-emerald-300',
+    span: 'sm:col-span-1',
   },
   {
     icon: Lightbulb,
     title: 'Creative problem design',
-    desc: 'Inventing challenges, not just solving them. Designing a good puzzle is harder — and more educational — than solving one.',
+    desc: 'Inventing challenges, not just solving them. A fundamentally deeper form of creativity.',
     color: 'text-amber-300',
+    span: 'sm:col-span-1',
   },
   {
-    icon: Brain,
-    title: 'Logical reasoning',
-    desc: 'Thinking through cause and effect. "If the character is blue, it can pass the blue door — so I need a paint tile first."',
+    icon: Binary,
+    title: 'Algorithmic intuition',
+    desc: 'Developing a feel for parity, sequencing, and logical patterns — not by memorizing formulas, but by designing puzzles that depend on them.',
     color: 'text-rose-300',
+    span: 'sm:col-span-2',
   },
 ];
 
-// --- Steps data ---
 const steps = [
   {
     num: '01',
@@ -122,7 +118,7 @@ const steps = [
   {
     num: '02',
     title: 'Set the rules',
-    desc: 'Add constraints to characters — reach the goal in even steps, alternate between light and dark tiles, change color to pass through a locked door. Each rule teaches a logical pattern.',
+    desc: 'Add constraints to characters — reach the goal in even steps, alternate tile colors, match a color to pass a locked door. Each rule teaches a logical pattern.',
   },
   {
     num: '03',
@@ -209,12 +205,79 @@ export default function HomePage() {
                 don&rsquo;t require a single line of code.
               </p>
               <p>
-                This platform turns screen time into building time. Kids don&rsquo;t solve
-                pre-made puzzles — they <em className="text-white not-italic font-medium">design their own</em>,
-                which is a fundamentally different (and deeper) kind of thinking.
+                Instead of teaching children to memorize commands, we teach them to
+                design rules, imagine systems, and build their own puzzles.
+                Screen time becomes <em className="text-white not-italic font-medium">building time</em>.
               </p>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* The shift — centered statement */}
+      <section className="max-w-5xl mx-auto px-6 py-28">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center"
+        >
+          <p className="font-mono text-xs uppercase tracking-widest text-zinc-600 mb-10">The shift</p>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight tracking-tight mb-8">
+            Execution cost is trending to zero.
+            <br />
+            <span className="text-purple-300">Creativity and abstract reasoning</span>
+            <br />
+            are the new currency.
+          </h2>
+          <p className="text-zinc-400 text-lg leading-relaxed max-w-2xl mx-auto">
+            AI is automating the craft of coding — syntax, tooling, implementation. What
+            doesn&rsquo;t get automated is the thinking that precedes it: the ability to
+            reason abstractly, model problems, and design systems. We focus on computational
+            thinking, creative reasoning, and abstract problem modeling — skills that remain
+            powerful even as automation grows.
+          </p>
+        </motion.div>
+      </section>
+
+      {/* The real advantage — asymmetric grid */}
+      <section className="border-y border-zinc-800/50 bg-zinc-900/30">
+        <div className="max-w-6xl mx-auto px-6 py-24">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-16"
+          >
+            <div>
+              <p className="font-mono text-xs uppercase tracking-widest text-zinc-600 mb-6">The real advantage</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+                Skills that outlast any tool.
+              </h2>
+            </div>
+            <p className="text-zinc-500 max-w-sm text-sm leading-relaxed sm:text-right">
+              The same cognitive patterns behind software architecture, scientific
+              reasoning, and systems design — practiced through play.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-3 gap-4">
+            {advantages.map((a, i) => (
+              <motion.div
+                key={a.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className={`p-8 rounded-2xl bg-zinc-950/60 border border-zinc-800/80 ${a.span}`}
+              >
+                <a.icon className={`w-7 h-7 ${a.color} mb-5`} />
+                <h4 className="text-lg font-semibold text-white mb-2">{a.title}</h4>
+                <p className="text-sm text-zinc-400 leading-relaxed">{a.desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -250,41 +313,44 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* What kids develop */}
+      {/* What kids do here — right-aligned for asymmetry */}
       <section className="border-y border-zinc-800/50 bg-zinc-900/30">
         <div className="max-w-6xl mx-auto px-6 py-24">
           <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="max-w-2xl ml-auto"
           >
-            <p className="font-mono text-xs uppercase tracking-widest text-zinc-600 mb-6">What kids develop</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-              Thinking skills that outlast any tool.
+            <p className="font-mono text-xs uppercase tracking-widest text-zinc-600 mb-6">What kids do here</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-10 leading-tight">
+              Design first. Solve second.
             </h2>
-            <p className="text-zinc-500 max-w-2xl mb-16 text-lg">
-              These aren&rsquo;t buzzwords — they&rsquo;re the same cognitive patterns behind
-              software architecture, scientific reasoning, and systems design. Kids practice
-              them here without needing to know that.
-            </p>
+            <div className="space-y-6">
+              {[
+                { text: 'Design games before solving them', detail: 'Designing a good puzzle is harder — and teaches more — than solving one.' },
+                { text: 'Explore logic through play', detail: 'No lectures, no worksheets. Just grids, rules, and experimentation.' },
+                { text: 'Practice creativity and structured thinking', detail: 'Every tile placed is a creative decision backed by logical reasoning.' },
+                { text: 'Understand algorithms intuitively', detail: 'Parity, sequencing, constraints — kids discover these patterns naturally, not mechanically.' },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.08 }}
+                  className="flex gap-4"
+                >
+                  <div className="w-1.5 rounded-full bg-purple-500/40 shrink-0 mt-1" style={{ minHeight: '100%' }} />
+                  <div>
+                    <p className="text-white font-medium mb-1">{item.text}</p>
+                    <p className="text-sm text-zinc-500 leading-relaxed">{item.detail}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
-
-          <div className="grid sm:grid-cols-2 gap-6">
-            {skills.map((skill, i) => (
-              <motion.div
-                key={skill.title}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="p-8 rounded-2xl bg-zinc-950/60 border border-zinc-800/80"
-              >
-                <skill.icon className={`w-8 h-8 ${skill.color} mb-5`} />
-                <h4 className="text-lg font-semibold text-white mb-2">{skill.title}</h4>
-                <p className="text-sm text-zinc-400 leading-relaxed">{skill.desc}</p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -303,9 +369,8 @@ export default function HomePage() {
           </h2>
           <div className="space-y-5 text-zinc-400 text-lg leading-relaxed">
             <p>
-              AI is getting better at writing code — handling syntax, tooling, and
-              implementation. The skills that remain distinctly human are the ones
-              upstream: deciding <em className="text-white not-italic font-medium">what</em> to
+              The skills that remain distinctly human are the ones
+              upstream of execution: deciding <em className="text-white not-italic font-medium">what</em> to
               build, <em className="text-white not-italic font-medium">how</em> to structure
               it, and <em className="text-white not-italic font-medium">why</em> the
               constraints matter.
@@ -313,7 +378,8 @@ export default function HomePage() {
             <p>
               We don&rsquo;t teach kids to code. We teach them to think computationally —
               the skill that makes coding (and a lot of other things) possible in the
-              first place.
+              first place. Our platform helps children develop these skills early through
+              playful grid-based creation and exploration.
             </p>
           </div>
           <Link
@@ -334,6 +400,9 @@ export default function HomePage() {
           transition={{ duration: 0.5 }}
           className="text-center py-20 px-8 rounded-2xl border border-zinc-800/50 bg-zinc-900/30"
         >
+          <p className="text-zinc-500 text-sm mb-4">
+            Teach creativity and logic — not just tools.
+          </p>
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">
             Ready to build your first puzzle?
           </h2>
