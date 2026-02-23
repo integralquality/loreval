@@ -10,7 +10,7 @@ export const INITIAL_LEVEL: Level = {
     {
       id: 'dog-1',
       type: 'dog',
-      position: { x: 1, y: 1 },
+      position: { x: 2, y: 1 },
       rules: [
         { id: 'r1', type: 'reach-goal', targetId: 'goal-dog' },
         { id: 'r2', type: 'parity-even' }
@@ -19,7 +19,7 @@ export const INITIAL_LEVEL: Level = {
     {
       id: 'cat-1',
       type: 'cat',
-      position: { x: 1, y: 3 },
+      position: { x: 1, y: 5 },
       rules: [
         { id: 'r3', type: 'reach-goal', targetId: 'goal-cat' },
         { id: 'r4', type: 'parity-odd' }
@@ -28,7 +28,7 @@ export const INITIAL_LEVEL: Level = {
     {
       id: 'rabbit-1',
       type: 'rabbit',
-      position: { x: 1, y: 5 },
+      position: { x: 1, y: 9 },
       rules: [
         { id: 'r5', type: 'reach-goal', targetId: 'goal-rabbit' },
         { id: 'r6', type: 'alternate-colors' }
@@ -37,9 +37,9 @@ export const INITIAL_LEVEL: Level = {
     {
       id: 'bot-1',
       type: 'robot',
-      position: { x: 1, y: 7 },
+      position: { x: 2, y: 3 },
       rules: [
-        { id: 'r7', type: 'reach-goal' }
+        { id: 'r7', type: 'reach-goal', targetId: 'goal-bot' }
       ]
     }
   ]

@@ -67,33 +67,55 @@ export default function GameDesigner() {
         }))
       );
 
-      // Create a checkerboard pattern for demo
-      for(let y=0; y<level.height; y++) {
-        for(let x=0; x<level.width; x++) {
-          if (x > 0 && x < level.width - 1) {
-             newTiles[y][x].type = (x + y) % 2 === 0 ? 'floor-white' : 'floor-black';
-          }
+      // Level layout map — each char = a tile type
+      // . = empty, G = grass, R = road, W = wall, ~ = water
+      // I = ice, S = switch(blue), D = door(blue), P = paint(blue), > = one-way right
+      // 1 = dog goal, 2 = cat goal, 3 = rabbit goal, 4 = bot goal
+      //
+      // Solutions:
+      // Dog (2,1)→(8,1): go right, detour via row 0 around wall at (5,1), 8 steps (even ✓)
+      // Cat (1,5)→(8,5): go right through one-way, 7 steps (odd ✓)
+      // Rabbit (1,9)→(8,8): go up to row 8, then right along alternating G/R tiles
+      // Robot (2,3)→(8,3): step on switch, slide across ice, pass door, reach goal
+      const layout = [
+        //0    1    2    3    4    5    6    7    8    9
+        '.    G    G    G    G    R    R    R    R    .'.split(/\s+/),  // 0 — grass park + road
+        '.    G    .    R    R    W    R    R    1    .'.split(/\s+/),  // 1 — dog goal (orange)
+        '.    G    G    W    W    R    W    W    R    .'.split(/\s+/),  // 2 — wall corridor
+        '.    R    .    S    I    I    I    D    4    .'.split(/\s+/),  // 3 — switch → ice → door → bot goal
+        '.    W    W    W    R    R    R    W    R    .'.split(/\s+/),  // 4 — wall barrier
+        '.    .    R    R    R    R    >    R    2    .'.split(/\s+/),  // 5 — cat goal (purple), one-way
+        '.    R    R    W    P    W    R    W    ~    .'.split(/\s+/),  // 6 — paint (blue), water
+        '.    R    R    R    R    R    R    R    ~    .'.split(/\s+/),  // 7 — open area
+        '.    G    R    G    R    G    R    G    3    .'.split(/\s+/),  // 8 — alternating for rabbit goal
+        '.    .    R    R    R    R    R    R    R    .'.split(/\s+/),  // 9 — rabbit start area
+      ];
+
+      const charToTile: Record<string, () => Partial<Tile>> = {
+        '.': () => ({ type: 'empty' }),
+        'G': () => ({ type: 'floor-black' }),
+        'R': () => ({ type: 'floor-white' }),
+        'W': () => ({ type: 'wall' }),
+        '~': () => ({ type: 'water' }),
+        'I': () => ({ type: 'ice' }),
+        'S': () => ({ type: 'switch', color: 'blue' }),
+        'D': () => ({ type: 'door', color: 'blue' }),
+        'P': () => ({ type: 'paint', color: 'blue' }),
+        '>': () => ({ type: 'one-way', meta: { direction: 'right' as Direction } }),
+        '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-dog' } }),
+        '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'goal-cat' } }),
+        '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'goal-rabbit' } }),
+        '4': () => ({ type: 'goal', color: 'red', meta: { id: 'goal-bot' } }),
+      };
+
+      for (let y = 0; y < level.height; y++) {
+        for (let x = 0; x < level.width; x++) {
+          const ch = layout[y]?.[x] || '.';
+          const maker = charToTile[ch] || charToTile['.'];
+          const tile = maker();
+          newTiles[y][x] = { x, y, type: tile.type as TileType, ...tile.color && { color: tile.color }, ...tile.meta && { meta: tile.meta } };
         }
       }
-
-      // Set goals
-      newTiles[1][6] = { x: 6, y: 1, type: 'goal', color: 'orange', meta: { id: 'goal-dog' } };
-      newTiles[3][6] = { x: 6, y: 3, type: 'goal', color: 'purple', meta: { id: 'goal-cat' } };
-      newTiles[5][6] = { x: 6, y: 5, type: 'goal', color: 'pink', meta: { id: 'goal-rabbit' } };
-
-      // Ice corridor demo (row 6)
-      newTiles[6][1] = { x: 1, y: 6, type: 'ice' };
-      newTiles[6][2] = { x: 2, y: 6, type: 'ice' };
-      newTiles[6][3] = { x: 3, y: 6, type: 'ice' };
-      newTiles[6][4] = { x: 4, y: 6, type: 'ice' };
-      newTiles[6][5] = { x: 5, y: 6, type: 'ice' };
-
-      // Switch + door + one-way demo (row 7)
-      newTiles[7][2] = { x: 2, y: 7, type: 'switch', color: 'blue' };
-      newTiles[7][3] = { x: 3, y: 7, type: 'paint', color: 'blue' };
-      newTiles[7][4] = { x: 4, y: 7, type: 'one-way', meta: { direction: 'right' } };
-      newTiles[7][5] = { x: 5, y: 7, type: 'door', color: 'blue' };
-      newTiles[7][7] = { x: 7, y: 7, type: 'goal', color: 'blue' };
 
       // Set initial entities with colors
       const initialEntities = INITIAL_LEVEL.entities.map(e => {
