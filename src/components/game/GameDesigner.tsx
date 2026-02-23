@@ -363,26 +363,26 @@ export default function GameDesigner() {
             <div className="grid grid-cols-4 gap-2">
               {toolCategory === 'tiles' ? (
                 <>
-                  <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 bg-slate-700 rounded-sm" />} label="Wall" />
-                  <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 bg-slate-100 rounded-sm" />} label="White" />
-                  <ToolButton active={selectedTool === 'floor-black'} onClick={() => setSelectedTool('floor-black')} icon={<div className="w-6 h-6 bg-slate-900 border border-slate-700 rounded-sm" />} label="Black" />
-                  <ToolButton active={selectedTool === 'goal'} onClick={() => setSelectedTool('goal')} icon={<Flag className="text-emerald-500" />} label="Goal" />
-                  <ToolButton active={selectedTool === 'water'} onClick={() => setSelectedTool('water')} icon={<div className="w-6 h-6 bg-blue-500/50 rounded-sm" />} label="Water" />
-                  <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-slate-400" />} label="Door" />
-                  <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-slate-400" />} label="Paint" />
-                  <ToolButton active={selectedTool === 'ice'} onClick={() => setSelectedTool('ice')} icon={<Snowflake className="text-cyan-400" />} label="Ice" />
-                  <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-slate-400" />} label="Switch" />
-                  <ToolButton active={selectedTool === 'one-way'} onClick={() => setSelectedTool('one-way')} icon={<ArrowUp className="text-amber-400" />} label="1-Way" />
+                  <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 bg-slate-700 rounded-sm" />} label="Wall" tooltip="Solid block that nothing can pass through" />
+                  <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 bg-slate-100 rounded-sm" />} label="White" tooltip="White floor tile — used with alternate-colors rule" />
+                  <ToolButton active={selectedTool === 'floor-black'} onClick={() => setSelectedTool('floor-black')} icon={<div className="w-6 h-6 bg-slate-900 border border-slate-700 rounded-sm" />} label="Black" tooltip="Black floor tile — used with alternate-colors rule" />
+                  <ToolButton active={selectedTool === 'goal'} onClick={() => setSelectedTool('goal')} icon={<Flag className="text-emerald-500" />} label="Goal" tooltip="Destination tile — characters must reach their matching goal" />
+                  <ToolButton active={selectedTool === 'water'} onClick={() => setSelectedTool('water')} icon={<div className="w-6 h-6 bg-blue-500/50 rounded-sm" />} label="Water" tooltip="Impassable water tile" />
+                  <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-slate-400" />} label="Door" tooltip="Blocks passage unless character color matches or a switch opens it" />
+                  <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-slate-400" />} label="Paint" tooltip="Changes a character's color when stepped on" />
+                  <ToolButton active={selectedTool === 'ice'} onClick={() => setSelectedTool('ice')} icon={<Snowflake className="text-cyan-400" />} label="Ice" tooltip="Characters slide across ice until hitting something solid" />
+                  <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-slate-400" />} label="Switch" tooltip="Toggles all doors of the same color open or closed" />
+                  <ToolButton active={selectedTool === 'one-way'} onClick={() => setSelectedTool('one-way')} icon={<ArrowUp className="text-amber-400" />} label="1-Way" tooltip="Can only be entered from the arrow's direction" />
                 </>
               ) : (
                 <>
-                  <ToolButton active={selectedTool === 'dog'} onClick={() => setSelectedTool('dog')} icon={<Dog className="text-orange-500" />} label="Dog" />
-                  <ToolButton active={selectedTool === 'cat'} onClick={() => setSelectedTool('cat')} icon={<Cat className="text-purple-500" />} label="Cat" />
-                  <ToolButton active={selectedTool === 'rabbit'} onClick={() => setSelectedTool('rabbit')} icon={<Rabbit className="text-pink-500" />} label="Rabbit" />
-                  <ToolButton active={selectedTool === 'robot'} onClick={() => setSelectedTool('robot')} icon={<Bot className="text-blue-500" />} label="Bot" />
+                  <ToolButton active={selectedTool === 'dog'} onClick={() => setSelectedTool('dog')} icon={<Dog className="text-orange-500" />} label="Dog" tooltip="Place a dog character" />
+                  <ToolButton active={selectedTool === 'cat'} onClick={() => setSelectedTool('cat')} icon={<Cat className="text-purple-500" />} label="Cat" tooltip="Place a cat character" />
+                  <ToolButton active={selectedTool === 'rabbit'} onClick={() => setSelectedTool('rabbit')} icon={<Rabbit className="text-pink-500" />} label="Rabbit" tooltip="Place a rabbit character" />
+                  <ToolButton active={selectedTool === 'robot'} onClick={() => setSelectedTool('robot')} icon={<Bot className="text-blue-500" />} label="Bot" tooltip="Place a robot — future programming target" />
                 </>
               )}
-              <ToolButton active={selectedTool === 'erase'} onClick={() => setSelectedTool('erase')} icon={<Trash2 className="text-red-400" />} label="Erase" />
+              <ToolButton active={selectedTool === 'erase'} onClick={() => setSelectedTool('erase')} icon={<Trash2 className="text-red-400" />} label="Erase" tooltip="Remove a tile or character from the grid" />
             </div>
 
             <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
