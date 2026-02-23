@@ -1,4 +1,4 @@
-import { Flag, DoorOpen, PaintBucket, Snowflake, ToggleLeft, ArrowUp, Waves } from 'lucide-react';
+import { LogOut, DoorOpen, PaintBucket, Snowflake, ToggleLeft, ArrowUp, Waves } from 'lucide-react';
 import type { TileType, TileMeta } from '../../types';
 
 const COLOR_MAP: Record<string, string> = {
@@ -75,7 +75,7 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
     case 'goal':
       return (
         <div className={`w-full h-full bg-zinc-800/20 rounded-sm flex items-center justify-center ${className}`}>
-          <Flag
+          <LogOut
             size={18}
             style={{
               color: c || '#6ee7b7',
