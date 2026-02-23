@@ -18,6 +18,7 @@ import {
   Snowflake,
   ToggleLeft,
   ArrowUp,
+  Waves,
   Home
 } from 'lucide-react';
 import type { Level, Tile, TileType, EntityType, Entity, RuleType, Direction, GameState } from '../../types';
@@ -372,11 +373,11 @@ export default function GameDesigner() {
             <div className="grid grid-cols-4 gap-2">
               {toolCategory === 'tiles' ? (
                 <>
-                  <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 bg-zinc-700 rounded-sm" />} label="Wall" tooltip="Solid block that nothing can pass through" />
-                  <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 bg-zinc-100 rounded-sm" />} label="White" tooltip="White floor tile — used with alternate-colors rule" />
-                  <ToolButton active={selectedTool === 'floor-black'} onClick={() => setSelectedTool('floor-black')} icon={<div className="w-6 h-6 bg-zinc-900 border border-zinc-700 rounded-sm" />} label="Black" tooltip="Black floor tile — used with alternate-colors rule" />
+                  <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundColor: 'rgba(87,74,68,0.8)', backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px)', backgroundSize: '6px 4px' }} />} label="Brick" tooltip="Solid brick wall — nothing can pass through" />
+                  <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundColor: 'rgba(120,113,108,0.4)' }} />} label="Road" tooltip="Walkable road — used with alternate-terrain rule" />
+                  <ToolButton active={selectedTool === 'floor-black'} onClick={() => setSelectedTool('floor-black')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundColor: 'rgba(34,80,50,0.5)' }} />} label="Grass" tooltip="Walkable grass — used with alternate-terrain rule" />
                   <ToolButton active={selectedTool === 'goal'} onClick={() => setSelectedTool('goal')} icon={<Flag className="text-emerald-500" />} label="Goal" tooltip="Destination tile — characters must reach their matching goal" />
-                  <ToolButton active={selectedTool === 'water'} onClick={() => setSelectedTool('water')} icon={<div className="w-6 h-6 bg-blue-500/50 rounded-sm" />} label="Water" tooltip="Impassable water tile" />
+                  <ToolButton active={selectedTool === 'water'} onClick={() => setSelectedTool('water')} icon={<Waves className="text-blue-400" />} label="Water" tooltip="Impassable water tile" />
                   <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-zinc-400" />} label="Door" tooltip="Blocks passage unless character color matches or a switch opens it" />
                   <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-zinc-400" />} label="Paint" tooltip="Changes a character's color when stepped on" />
                   <ToolButton active={selectedTool === 'ice'} onClick={() => setSelectedTool('ice')} icon={<Snowflake className="text-cyan-400" />} label="Ice" tooltip="Characters slide across ice until hitting something solid" />
@@ -471,7 +472,7 @@ export default function GameDesigner() {
                               onChange={(e) => updateEntityRule(entity.id, 'alternate-colors', e.target.checked ? 'add' : 'remove')}
                               className="rounded border-zinc-600 bg-zinc-700 text-purple-500 focus:ring-purple-500"
                             />
-                            Alternate Colors
+                            Alternate Terrain
                           </label>
                         </div>
                       </div>

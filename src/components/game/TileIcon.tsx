@@ -1,4 +1,4 @@
-import { Flag, DoorOpen, PaintBucket, Snowflake, ToggleLeft, ArrowUp } from 'lucide-react';
+import { Flag, DoorOpen, PaintBucket, Snowflake, ToggleLeft, ArrowUp, Waves } from 'lucide-react';
 import type { TileType, TileMeta } from '../../types';
 
 const COLOR_MAP: Record<string, string> = {
@@ -25,14 +25,61 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
 
   switch (type) {
     case 'wall':
-      return <div className={`w-full h-full bg-zinc-700/60 rounded-sm ${className}`} />;
+      return (
+        <div
+          className={`w-full h-full rounded-sm ${className}`}
+          style={{
+            backgroundColor: 'rgba(87,74,68,0.7)',
+            backgroundImage:
+              'linear-gradient(to right, rgba(0,0,0,0.15) 1px, transparent 1px),' +
+              'linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px)',
+            backgroundSize: '12px 8px',
+            backgroundPosition: '0 0',
+          }}
+        />
+      );
     case 'floor':
     case 'floor-white':
-      return <div className={`w-full h-full bg-zinc-600/15 rounded-sm ${className}`} />;
+      return (
+        <div
+          className={`w-full h-full rounded-sm ${className}`}
+          style={{
+            backgroundColor: 'rgba(120,113,108,0.3)',
+            backgroundImage:
+              'linear-gradient(to bottom, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px)',
+            backgroundSize: '100% 12px',
+          }}
+        />
+      );
     case 'floor-black':
-      return <div className={`w-full h-full bg-zinc-800/50 rounded-sm ${className}`} />;
+      return (
+        <div
+          className={`w-full h-full rounded-sm ${className}`}
+          style={{
+            backgroundColor: 'rgba(34,80,50,0.35)',
+            backgroundImage:
+              'radial-gradient(circle at 25% 25%, rgba(74,222,128,0.08) 0px, transparent 2px),' +
+              'radial-gradient(circle at 75% 60%, rgba(74,222,128,0.06) 0px, transparent 2px)',
+            backgroundSize: '16px 16px',
+          }}
+        />
+      );
     case 'water':
-      return <div className={`w-full h-full bg-blue-500/10 rounded-sm ${className}`} />;
+      return (
+        <div
+          className={`w-full h-full rounded-sm flex items-center justify-center ${className}`}
+          style={{ backgroundColor: 'rgba(30,64,110,0.45)' }}
+        >
+          <Waves
+            size={18}
+            style={{
+              color: '#60a5fa',
+              filter: 'drop-shadow(0 0 4px rgba(96,165,250,0.5))',
+              opacity: 0.6,
+            }}
+          />
+        </div>
+      );
 
     case 'goal':
       return (

@@ -160,7 +160,7 @@ export function executeMove(
           updatedEntity = { ...originalEntity };
           newMoves[entity.id] = 0;
           newHistory[entity.id] = [originalEntity.position];
-          message = `Oops! ${entity.type} must alternate colors! Resetting...`;
+          message = `Oops! ${entity.type} must alternate terrain (road/grass)! Resetting...`;
         }
       }
     }
