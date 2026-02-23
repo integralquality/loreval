@@ -133,19 +133,20 @@ export default function HomePage() {
     <div className="overflow-x-hidden selection:bg-purple-500/30">
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-28 pb-24">
+      <section className="max-w-6xl mx-auto px-6 pt-16 pb-20">
         <div className="flex flex-col lg:flex-row lg:items-center gap-12 lg:gap-16">
           <div className="flex-[3] min-w-0">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight text-white">
-                Make your own games.
+              <h1 className="text-4xl md:text-5xl lg:text-5xl font-bold leading-[1.1] tracking-tight text-white">
+                AI automates execution.
                 <br />
-                <span className="text-purple-300">Learn to think.</span>
+                <span className="text-purple-300">Abstract thinking and creativity</span>
+                <br />
+                become the universal skills.
               </h1>
-              <p className="mt-8 text-lg text-zinc-400 max-w-xl leading-relaxed">
-                Kids design their own grid-based puzzle games from scratch — placing tiles,
-                setting rules, building constraints. Every design choice is a small lesson
-                in logic, creativity, and problem-solving.
+              <p className="mt-6 text-lg text-zinc-400 max-w-xl leading-relaxed">
+                We're building tools that teach kids to reason, design, and
+                solve — not by memorizing commands, but by creating things. The goal is to shift from consumers to creators and independent thinkers, and work with AI as a creative partner.
               </p>
               <div className="mt-10 flex flex-wrap items-center gap-4">
                 <Link

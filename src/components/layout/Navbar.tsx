@@ -15,7 +15,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50">
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 group">
             <div className="w-8 h-8 bg-purple-500 rounded-lg group-hover:rotate-6 transition-transform flex items-center justify-center text-white font-bold shadow-lg shadow-purple-500/20">
               M
             </div>
