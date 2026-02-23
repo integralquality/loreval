@@ -39,10 +39,9 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
         <div
           className={`w-full h-full rounded-sm ${className}`}
           style={{
-            backgroundColor: 'rgba(120,113,108,0.3)',
-            backgroundImage:
-              'linear-gradient(to bottom, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px)',
-            backgroundSize: '100% 12px',
+            backgroundColor: 'rgba(220,200,130,0.25)',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='24' height='24' fill='%23d0c080' fill-opacity='0.1'/%3E%3Ccircle cx='3' cy='7' r='0.7' fill='%23c0b070' fill-opacity='0.2'/%3E%3Ccircle cx='14' cy='3' r='0.5' fill='%23b8a868' fill-opacity='0.18'/%3E%3Ccircle cx='8' cy='18' r='0.6' fill='%23c8b878' fill-opacity='0.2'/%3E%3Ccircle cx='20' cy='11' r='0.8' fill='%23b8a868' fill-opacity='0.15'/%3E%3Ccircle cx='11' cy='10' r='0.4' fill='%23c0b070' fill-opacity='0.18'/%3E%3Ccircle cx='18' cy='21' r='0.6' fill='%23c8b878' fill-opacity='0.15'/%3E%3Ccircle cx='5' cy='14' r='0.5' fill='%23b8a868' fill-opacity='0.2'/%3E%3Ccircle cx='22' cy='5' r='0.4' fill='%23c0b070' fill-opacity='0.18'/%3E%3C/svg%3E")`,
+            backgroundSize: '24px 24px',
           }}
         />
       );
