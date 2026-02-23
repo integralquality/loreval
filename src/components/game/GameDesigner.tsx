@@ -28,6 +28,15 @@ import { TileIcon } from './TileIcon';
 import { EntityIcon } from './EntityIcon';
 import { ToolButton } from './ToolButton';
 
+const ENTITY_GLOW: Record<string, { bg: string; glow: string }> = {
+  orange: { bg: '#fb923c', glow: 'rgba(251,146,60,0.4)' },
+  purple: { bg: '#c084fc', glow: 'rgba(192,132,252,0.4)' },
+  pink:   { bg: '#f472b6', glow: 'rgba(244,114,182,0.4)' },
+  blue:   { bg: '#60a5fa', glow: 'rgba(96,165,250,0.4)' },
+  green:  { bg: '#6ee7b7', glow: 'rgba(110,231,183,0.4)' },
+  red:    { bg: '#f87171', glow: 'rgba(248,113,113,0.4)' },
+};
+
 export default function GameDesigner() {
   const [level, setLevel] = useState<Level>(INITIAL_LEVEL);
   const [mode, setMode] = useState<'edit' | 'play'>('edit');
@@ -284,20 +293,20 @@ export default function GameDesigner() {
   }, [handleMove, mode, gameState.entities]);
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
+    <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
       {/* Sidebar */}
-      <div className="w-80 bg-slate-900 border-r border-slate-800 flex flex-col">
-        <div className="p-6 border-b border-slate-800">
+      <div className="w-80 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+        <div className="p-6 border-b border-zinc-800">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
                 Make Your Game
               </h1>
-              <p className="text-slate-400 text-sm mt-1">Grid Logic Playground</p>
+              <p className="text-zinc-400 text-sm mt-1">Grid Logic Playground</p>
             </div>
             <Link
               to="/"
-              className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+              className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
               title="Back to Home"
             >
               <Home size={18} />
@@ -307,11 +316,11 @@ export default function GameDesigner() {
 
         {/* Mode Toggle */}
         <div className="p-4 space-y-2">
-          <div className="flex bg-slate-800 p-1 rounded-lg">
+          <div className="flex bg-zinc-800 p-1 rounded-lg">
             <button
               onClick={() => setMode('edit')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all ${
-                mode === 'edit' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'
+                mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <Grid3X3 size={18} /> Editor
@@ -319,7 +328,7 @@ export default function GameDesigner() {
             <button
               onClick={() => setMode('play')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all ${
-                mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'
+                mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
               <Play size={18} /> Play
@@ -328,13 +337,13 @@ export default function GameDesigner() {
 
           {mode === 'edit' && (
             <div className="flex gap-2">
-              <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-lg text-xs">
+              <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
                 <Save size={14} /> Save
               </button>
-              <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-lg text-xs">
+              <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
                 <Settings size={14} /> Load
               </button>
-              <button onClick={handleClear} className="flex-1 flex items-center justify-center gap-2 py-2 bg-slate-800 text-slate-400 hover:text-red-400 rounded-lg text-xs">
+              <button onClick={handleClear} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-red-400 rounded-lg text-xs">
                 <Trash2 size={14} /> Clear
               </button>
             </div>
@@ -345,16 +354,16 @@ export default function GameDesigner() {
         {mode === 'edit' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             {/* Categories */}
-            <div className="flex gap-2 border-b border-slate-800 pb-2">
+            <div className="flex gap-2 border-b border-zinc-800 pb-2">
               <button
                 onClick={() => setToolCategory('tiles')}
-                className={`px-3 py-1 text-sm rounded-full ${toolCategory === 'tiles' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}
+                className={`px-3 py-1 text-sm rounded-full ${toolCategory === 'tiles' ? 'bg-zinc-700 text-white' : 'text-zinc-500'}`}
               >
                 Tiles
               </button>
               <button
                 onClick={() => setToolCategory('entities')}
-                className={`px-3 py-1 text-sm rounded-full ${toolCategory === 'entities' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}
+                className={`px-3 py-1 text-sm rounded-full ${toolCategory === 'entities' ? 'bg-zinc-700 text-white' : 'text-zinc-500'}`}
               >
                 Characters
               </button>
@@ -363,15 +372,15 @@ export default function GameDesigner() {
             <div className="grid grid-cols-4 gap-2">
               {toolCategory === 'tiles' ? (
                 <>
-                  <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 bg-slate-700 rounded-sm" />} label="Wall" tooltip="Solid block that nothing can pass through" />
-                  <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 bg-slate-100 rounded-sm" />} label="White" tooltip="White floor tile — used with alternate-colors rule" />
-                  <ToolButton active={selectedTool === 'floor-black'} onClick={() => setSelectedTool('floor-black')} icon={<div className="w-6 h-6 bg-slate-900 border border-slate-700 rounded-sm" />} label="Black" tooltip="Black floor tile — used with alternate-colors rule" />
+                  <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 bg-zinc-700 rounded-sm" />} label="Wall" tooltip="Solid block that nothing can pass through" />
+                  <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 bg-zinc-100 rounded-sm" />} label="White" tooltip="White floor tile — used with alternate-colors rule" />
+                  <ToolButton active={selectedTool === 'floor-black'} onClick={() => setSelectedTool('floor-black')} icon={<div className="w-6 h-6 bg-zinc-900 border border-zinc-700 rounded-sm" />} label="Black" tooltip="Black floor tile — used with alternate-colors rule" />
                   <ToolButton active={selectedTool === 'goal'} onClick={() => setSelectedTool('goal')} icon={<Flag className="text-emerald-500" />} label="Goal" tooltip="Destination tile — characters must reach their matching goal" />
                   <ToolButton active={selectedTool === 'water'} onClick={() => setSelectedTool('water')} icon={<div className="w-6 h-6 bg-blue-500/50 rounded-sm" />} label="Water" tooltip="Impassable water tile" />
-                  <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-slate-400" />} label="Door" tooltip="Blocks passage unless character color matches or a switch opens it" />
-                  <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-slate-400" />} label="Paint" tooltip="Changes a character's color when stepped on" />
+                  <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-zinc-400" />} label="Door" tooltip="Blocks passage unless character color matches or a switch opens it" />
+                  <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-zinc-400" />} label="Paint" tooltip="Changes a character's color when stepped on" />
                   <ToolButton active={selectedTool === 'ice'} onClick={() => setSelectedTool('ice')} icon={<Snowflake className="text-cyan-400" />} label="Ice" tooltip="Characters slide across ice until hitting something solid" />
-                  <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-slate-400" />} label="Switch" tooltip="Toggles all doors of the same color open or closed" />
+                  <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-zinc-400" />} label="Switch" tooltip="Toggles all doors of the same color open or closed" />
                   <ToolButton active={selectedTool === 'one-way'} onClick={() => setSelectedTool('one-way')} icon={<ArrowUp className="text-amber-400" />} label="1-Way" tooltip="Can only be entered from the arrow's direction" />
                 </>
               ) : (
@@ -385,14 +394,14 @@ export default function GameDesigner() {
               <ToolButton active={selectedTool === 'erase'} onClick={() => setSelectedTool('erase')} icon={<Trash2 className="text-red-400" />} label="Erase" tooltip="Remove a tile or character from the grid" />
             </div>
 
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-              <h3 className="text-xs font-bold text-slate-500 uppercase mb-2">Instructions</h3>
-              <p className="text-sm text-slate-400">
+            <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Instructions</h3>
+              <p className="text-sm text-zinc-400">
                 Click grid to place items. Select items to edit properties (Color, Rules).
                 <br/><br/>
-                <span className="text-indigo-400">Doors</span> block unless color matches.
+                <span className="text-purple-400">Doors</span> block unless color matches.
                 <br/>
-                <span className="text-indigo-400">Paint</span> changes character color.
+                <span className="text-purple-400">Paint</span> changes character color.
                 <br/>
                 <span className="text-cyan-400">Ice</span> makes characters slide until blocked.
                 <br/>
@@ -404,10 +413,10 @@ export default function GameDesigner() {
 
             {/* Entity Properties Panel */}
             {selectedEntityId && (
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-indigo-500/30 animate-in fade-in slide-in-from-right-4">
+              <div className="bg-zinc-800/50 p-4 rounded-xl border border-purple-500/30 animate-in fade-in slide-in-from-right-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-indigo-300">Character</h3>
-                  <button onClick={() => setSelectedEntityId(null)} className="text-slate-500 hover:text-slate-300">
+                  <h3 className="text-sm font-bold text-purple-300">Character</h3>
+                  <button onClick={() => setSelectedEntityId(null)} className="text-zinc-500 hover:text-zinc-300">
                     <Ban size={14} />
                   </button>
                 </div>
@@ -420,7 +429,7 @@ export default function GameDesigner() {
                     <div className="space-y-4">
                       {/* Color Picker */}
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">Color</label>
+                        <label className="text-xs text-zinc-400 block mb-1">Color</label>
                         <div className="flex gap-2">
                           {['orange', 'purple', 'pink', 'blue', 'green', 'red'].map(c => (
                             <button
@@ -435,32 +444,32 @@ export default function GameDesigner() {
 
                       {/* Rules */}
                       <div>
-                        <label className="text-xs text-slate-400 block mb-1">Rules</label>
+                        <label className="text-xs text-zinc-400 block mb-1">Rules</label>
                         <div className="space-y-2">
-                          <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={entity.rules.some(r => r.type === 'parity-even')}
                               onChange={(e) => updateEntityRule(entity.id, 'parity-even', e.target.checked ? 'add' : 'remove')}
-                              className="rounded border-slate-600 bg-slate-700 text-indigo-500 focus:ring-indigo-500"
+                              className="rounded border-zinc-600 bg-zinc-700 text-purple-500 focus:ring-purple-500"
                             />
                             Even Steps Only
                           </label>
-                          <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={entity.rules.some(r => r.type === 'parity-odd')}
                               onChange={(e) => updateEntityRule(entity.id, 'parity-odd', e.target.checked ? 'add' : 'remove')}
-                              className="rounded border-slate-600 bg-slate-700 text-indigo-500 focus:ring-indigo-500"
+                              className="rounded border-zinc-600 bg-zinc-700 text-purple-500 focus:ring-purple-500"
                             />
                             Odd Steps Only
                           </label>
-                          <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                          <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
                             <input
                               type="checkbox"
                               checked={entity.rules.some(r => r.type === 'alternate-colors')}
                               onChange={(e) => updateEntityRule(entity.id, 'alternate-colors', e.target.checked ? 'add' : 'remove')}
-                              className="rounded border-slate-600 bg-slate-700 text-indigo-500 focus:ring-indigo-500"
+                              className="rounded border-zinc-600 bg-zinc-700 text-purple-500 focus:ring-purple-500"
                             />
                             Alternate Colors
                           </label>
@@ -474,10 +483,10 @@ export default function GameDesigner() {
 
             {/* Tile Properties Panel */}
             {selectedTilePos && (
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-emerald-500/30 animate-in fade-in slide-in-from-right-4">
+              <div className="bg-zinc-800/50 p-4 rounded-xl border border-emerald-500/30 animate-in fade-in slide-in-from-right-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-bold text-emerald-300">Tile Properties</h3>
-                  <button onClick={() => setSelectedTilePos(null)} className="text-slate-500 hover:text-slate-300">
+                  <button onClick={() => setSelectedTilePos(null)} className="text-zinc-500 hover:text-zinc-300">
                     <Ban size={14} />
                   </button>
                 </div>
@@ -488,14 +497,14 @@ export default function GameDesigner() {
 
                   return (
                     <div className="space-y-4">
-                      <div className="text-xs text-slate-400">
-                        Type: <span className="text-slate-200 capitalize">{tile.type}</span>
+                      <div className="text-xs text-zinc-400">
+                        Type: <span className="text-zinc-200 capitalize">{tile.type}</span>
                       </div>
 
                       {/* Color Picker - for types that use color */}
                       {['goal', 'door', 'paint', 'switch'].includes(tile.type) && (
                         <div>
-                          <label className="text-xs text-slate-400 block mb-1">Color</label>
+                          <label className="text-xs text-zinc-400 block mb-1">Color</label>
                           <div className="flex gap-2">
                             {['orange', 'purple', 'pink', 'blue', 'green', 'red'].map(c => (
                               <button
@@ -512,7 +521,7 @@ export default function GameDesigner() {
                       {/* Direction Picker - for one-way tiles */}
                       {tile.type === 'one-way' && (
                         <div>
-                          <label className="text-xs text-slate-400 block mb-1">Direction</label>
+                          <label className="text-xs text-zinc-400 block mb-1">Direction</label>
                           <div className="flex gap-2">
                             {(['up', 'down', 'left', 'right'] as const).map(dir => (
                               <button
@@ -521,7 +530,7 @@ export default function GameDesigner() {
                                 className={`w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all ${
                                   tile.meta?.direction === dir
                                     ? 'border-amber-400 bg-amber-400/20 text-amber-300'
-                                    : 'border-slate-700 bg-slate-800 text-slate-500 hover:text-slate-300'
+                                    : 'border-zinc-700 bg-zinc-800 text-zinc-500 hover:text-zinc-300'
                                 }`}
                               >
                                 <ArrowUp
@@ -546,22 +555,22 @@ export default function GameDesigner() {
         {/* Play Stats */}
         {mode === 'play' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-              <h3 className="text-sm font-medium text-slate-300 mb-3">Characters</h3>
+            <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700">
+              <h3 className="text-sm font-medium text-zinc-300 mb-3">Characters</h3>
               <div className="space-y-2">
                 {gameState.entities.map((entity) => (
                   <button
                     key={entity.id}
                     onClick={() => setGameState(prev => ({...prev, selectedEntityId: entity.id}))}
                     className={`w-full flex items-center justify-between p-2 rounded-lg transition-colors ${
-                      gameState.selectedEntityId === entity.id ? 'bg-indigo-600/20 border border-indigo-500/50' : 'bg-slate-900 hover:bg-slate-800'
+                      gameState.selectedEntityId === entity.id ? 'bg-purple-600/20 border border-purple-500/50' : 'bg-zinc-900 hover:bg-zinc-800'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <EntityIcon type={entity.type} className="w-5 h-5" />
                       <span className="text-sm capitalize">{entity.type}</span>
                     </div>
-                    <div className="text-xs font-mono text-slate-500">
+                    <div className="text-xs font-mono text-zinc-500">
                       {gameState.moves[entity.id]} moves
                     </div>
                   </button>
@@ -570,14 +579,14 @@ export default function GameDesigner() {
             </div>
 
             {gameState.message && (
-               <div className="bg-indigo-900/30 border border-indigo-500/30 p-4 rounded-xl">
-                 <p className="text-indigo-200 text-sm">{gameState.message}</p>
+               <div className="bg-purple-900/30 border border-purple-500/30 p-4 rounded-xl">
+                 <p className="text-purple-200 text-sm">{gameState.message}</p>
                </div>
             )}
 
-            <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
-              <h3 className="text-xs font-bold text-slate-500 uppercase mb-2">Controls</h3>
-              <div className="space-y-1 text-sm text-slate-400">
+            <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Controls</h3>
+              <div className="space-y-1 text-sm text-zinc-400">
                 <p>Arrow Keys: Move</p>
                 <p>1, 2, 3: Select Character</p>
               </div>
@@ -587,31 +596,33 @@ export default function GameDesigner() {
       </div>
 
       {/* Main Canvas */}
-      <div className="flex-1 bg-slate-950 relative overflow-hidden flex items-center justify-center">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900/50 to-slate-950 -z-10" />
+      <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 to-zinc-950 -z-10" />
 
         {/* Grid Container */}
-        <div
-          className="relative bg-slate-900 rounded-lg shadow-2xl border border-slate-800 p-4"
-          style={{
-            width: level.width * TILE_SIZE + 32,
-            height: level.height * TILE_SIZE + 32
-          }}
-        >
+        <div className="relative">
+          <div className="absolute inset-0 blur-3xl opacity-20 bg-purple-500/50 rounded-full scale-90 -z-10" />
           <div
-            className="grid gap-0 relative"
+            className="relative bg-zinc-800/20 rounded-lg border border-zinc-700/50 p-px"
             style={{
-              gridTemplateColumns: `repeat(${level.width}, ${TILE_SIZE}px)`,
-              gridTemplateRows: `repeat(${level.height}, ${TILE_SIZE}px)`
+              width: level.width * TILE_SIZE + level.width + 1,
+              height: level.height * TILE_SIZE + level.height + 1
             }}
           >
+            <div
+              className="grid gap-px relative"
+              style={{
+                gridTemplateColumns: `repeat(${level.width}, ${TILE_SIZE}px)`,
+                gridTemplateRows: `repeat(${level.height}, ${TILE_SIZE}px)`
+              }}
+            >
             {/* Render Tiles */}
             {level.tiles.map((row, y) => (
               row.map((tile, x) => (
                 <div
                   key={`${x}-${y}`}
                   onClick={() => handleTileClick(x, y)}
-                  className={`w-full h-full border border-slate-800/30 cursor-pointer transition-colors hover:brightness-110 relative`}
+                  className={`w-full h-full cursor-pointer transition-colors hover:brightness-110 relative rounded-sm`}
                 >
                   <TileIcon
                     type={tile.type}
@@ -625,43 +636,44 @@ export default function GameDesigner() {
                     }
                   />
 
-                  <span className="absolute top-0.5 left-0.5 text-[8px] text-slate-700 select-none pointer-events-none opacity-0 hover:opacity-100">
+                  <span className="absolute top-0.5 left-0.5 text-[8px] text-zinc-700 select-none pointer-events-none opacity-0 hover:opacity-100">
                     {x},{y}
                   </span>
                 </div>
               ))
             ))}
 
-            {/* Render Entities */}
+            {/* Render Entities — glowing dots */}
             <AnimatePresence>
-              {(mode === 'play' ? gameState.entities : level.entities).map((entity) => (
-                <motion.div
-                  key={entity.id}
-                  layoutId={entity.id}
-                  initial={false}
-                  animate={{
-                    x: entity.position.x * TILE_SIZE,
-                    y: entity.position.y * TILE_SIZE
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  className="absolute top-0 left-0 pointer-events-none flex items-center justify-center"
-                  style={{ width: TILE_SIZE, height: TILE_SIZE }}
-                >
-                  <div className={`relative ${mode === 'play' && gameState.selectedEntityId === entity.id ? 'scale-110 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]' : ''}`}>
-                    <EntityIcon type={entity.type} color={entity.color} className="w-8 h-8" />
-                    {entity.rules.some(r => r.type === 'parity-even') && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border border-slate-900" title="Even Steps" />
-                    )}
-                    {entity.rules.some(r => r.type === 'parity-odd') && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border border-slate-900" title="Odd Steps" />
-                    )}
-                    {entity.rules.some(r => r.type === 'alternate-colors') && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-pink-500 rounded-full border border-slate-900" title="Alternate Colors" />
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+              {(mode === 'play' ? gameState.entities : level.entities).map((entity) => {
+                const glowColor = ENTITY_GLOW[entity.color || 'blue'] || ENTITY_GLOW.blue;
+                const isSelected = mode === 'play' && gameState.selectedEntityId === entity.id;
+                return (
+                  <motion.div
+                    key={entity.id}
+                    layoutId={entity.id}
+                    initial={false}
+                    animate={{
+                      x: entity.position.x * (TILE_SIZE + 1),
+                      y: entity.position.y * (TILE_SIZE + 1)
+                    }}
+                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                    className="absolute top-0 left-0 pointer-events-none flex items-center justify-center"
+                    style={{ width: TILE_SIZE, height: TILE_SIZE }}
+                  >
+                    <div
+                      className={`relative transition-transform ${isSelected ? 'scale-110' : ''}`}
+                      style={{
+                        filter: `drop-shadow(0 0 ${isSelected ? '10px' : '6px'} ${glowColor.glow})`,
+                      }}
+                    >
+                      <EntityIcon type={entity.type} color={entity.color} className="w-7 h-7" />
+                    </div>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
+          </div>
           </div>
         </div>
       </div>
