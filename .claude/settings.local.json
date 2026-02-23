@@ -5,7 +5,9 @@
       "Bash(cd \"E:/Projects/AI/make-game\" && npx tsc -b 2>&1)",
       "Bash(cd \"E:/Projects/AI/make-game\" && npx vite build 2>&1)",
       "Bash(cd /e/Projects/AI/make-game && npx tsc -b 2>&1)",
-      "Bash(true:*)"
+      "Bash(true:*)",
+      "Bash(cd /e/Projects/AI/make-game && npx tsc --noEmit 2>&1)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

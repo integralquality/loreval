@@ -15,11 +15,15 @@ import {
   Ban,
   DoorOpen,
   PaintBucket,
+  Snowflake,
+  ToggleLeft,
+  ArrowUp,
   Home
 } from 'lucide-react';
-import type { Level, Tile, TileType, EntityType, Entity, Position, RuleType } from '../../types';
+import type { Level, Tile, TileType, EntityType, Entity, RuleType, Direction, GameState } from '../../types';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
+import { executeMove } from '../../gameLogic';
 import { TileIcon } from './TileIcon';
 import { EntityIcon } from './EntityIcon';
 import { ToolButton } from './ToolButton';
@@ -34,20 +38,14 @@ export default function GameDesigner() {
   const [selectedTilePos, setSelectedTilePos] = useState<{x: number, y: number} | null>(null);
 
   // Play state
-  const [gameState, setGameState] = useState<{
-    entities: Entity[];
-    moves: Record<string, number>;
-    history: Record<string, Position[]>;
-    status: 'playing' | 'won' | 'lost';
-    message: string;
-    selectedEntityId: string | null;
-  }>({
+  const [gameState, setGameState] = useState<GameState>({
     entities: [],
     moves: {},
     history: {},
     status: 'playing',
     message: '',
-    selectedEntityId: null
+    selectedEntityId: null,
+    toggledColors: []
   });
 
   // Initialize grid if empty
@@ -73,8 +71,17 @@ export default function GameDesigner() {
       newTiles[3][6] = { x: 6, y: 3, type: 'goal', color: 'purple', meta: { id: 'goal-cat' } };
       newTiles[5][6] = { x: 6, y: 5, type: 'goal', color: 'pink', meta: { id: 'goal-rabbit' } };
 
-      // Demo for Door/Paint
+      // Ice corridor demo (row 6)
+      newTiles[6][1] = { x: 1, y: 6, type: 'ice' };
+      newTiles[6][2] = { x: 2, y: 6, type: 'ice' };
+      newTiles[6][3] = { x: 3, y: 6, type: 'ice' };
+      newTiles[6][4] = { x: 4, y: 6, type: 'ice' };
+      newTiles[6][5] = { x: 5, y: 6, type: 'ice' };
+
+      // Switch + door + one-way demo (row 7)
+      newTiles[7][2] = { x: 2, y: 7, type: 'switch', color: 'blue' };
       newTiles[7][3] = { x: 3, y: 7, type: 'paint', color: 'blue' };
+      newTiles[7][4] = { x: 4, y: 7, type: 'one-way', meta: { direction: 'right' } };
       newTiles[7][5] = { x: 5, y: 7, type: 'door', color: 'blue' };
       newTiles[7][7] = { x: 7, y: 7, type: 'goal', color: 'blue' };
 
@@ -100,7 +107,8 @@ export default function GameDesigner() {
         history: level.entities.reduce((acc, e) => ({...acc, [e.id]: [e.position]}), {}),
         status: 'playing',
         message: 'Select a character to move!',
-        selectedEntityId: level.entities[0]?.id || null
+        selectedEntityId: level.entities[0]?.id || null,
+        toggledColors: []
       });
       setSelectedEntityId(null);
       setSelectedTilePos(null);
@@ -151,7 +159,7 @@ export default function GameDesigner() {
     }
 
     const clickedTile = level.tiles[y][x];
-    if (['goal', 'door', 'paint'].includes(clickedTile.type) && selectedTool !== 'erase') {
+    if (['goal', 'door', 'paint', 'switch', 'one-way'].includes(clickedTile.type) && selectedTool !== 'erase') {
        if (selectedTool === clickedTile.type) {
          setSelectedTilePos({x, y});
          setSelectedEntityId(null);
@@ -183,15 +191,20 @@ export default function GameDesigner() {
     if (toolCategory === 'tiles') {
       const newTiles = [...level.tiles];
       const newType = selectedTool as TileType;
-      let defaultColor = undefined;
+      let defaultColor: string | undefined = undefined;
       if (newType === 'goal') defaultColor = 'orange';
       if (newType === 'door') defaultColor = 'orange';
       if (newType === 'paint') defaultColor = 'orange';
+      if (newType === 'switch') defaultColor = 'orange';
 
-      newTiles[y][x] = { ...newTiles[y][x], type: newType, color: defaultColor };
+      if (newType === 'one-way') {
+        newTiles[y][x] = { ...newTiles[y][x], type: newType, color: undefined, meta: { direction: 'right' } };
+      } else {
+        newTiles[y][x] = { ...newTiles[y][x], type: newType, color: defaultColor };
+      }
       setLevel(prev => ({ ...prev, tiles: newTiles }));
 
-      if (['goal', 'door', 'paint'].includes(newType)) {
+      if (['goal', 'door', 'paint', 'switch', 'one-way'].includes(newType)) {
         setSelectedTilePos({x, y});
       }
     } else {
@@ -237,107 +250,18 @@ export default function GameDesigner() {
     setLevel(prev => ({ ...prev, tiles: newTiles }));
   };
 
+  const updateTileDirection = (x: number, y: number, direction: Direction) => {
+    const newTiles = [...level.tiles];
+    newTiles[y][x] = { ...newTiles[y][x], meta: { ...newTiles[y][x].meta, direction } };
+    setLevel(prev => ({ ...prev, tiles: newTiles }));
+  };
+
   const handleMove = useCallback((dx: number, dy: number) => {
-    if (mode !== 'play' || gameState.status !== 'playing' || !gameState.selectedEntityId) return;
-
-    const entityIndex = gameState.entities.findIndex(e => e.id === gameState.selectedEntityId);
-    if (entityIndex === -1) return;
-
-    const entity = gameState.entities[entityIndex];
-    const newPos = { x: entity.position.x + dx, y: entity.position.y + dy };
-
-    if (newPos.x < 0 || newPos.x >= level.width || newPos.y < 0 || newPos.y >= level.height) return;
-
-    const targetTile = level.tiles[newPos.y][newPos.x];
-    if (targetTile.type === 'wall' || targetTile.type === 'empty') return;
-
-    if (targetTile.type === 'door') {
-      if (!targetTile.color || targetTile.color !== entity.color) {
-        setGameState(prev => ({ ...prev, message: `Locked! You need to be ${targetTile.color || 'colored'} to pass.` }));
-        return;
-      }
+    if (mode !== 'play') return;
+    const result = executeMove(level, gameState, dx, dy);
+    if (result) {
+      setGameState(result);
     }
-
-    const newEntities = [...gameState.entities];
-    let updatedEntity = { ...entity, position: newPos };
-
-    if (targetTile.type === 'paint' && targetTile.color) {
-      updatedEntity.color = targetTile.color;
-    }
-
-    newEntities[entityIndex] = updatedEntity;
-
-    const newMoves = { ...gameState.moves, [entity.id]: gameState.moves[entity.id] + 1 };
-    const newHistory = { ...gameState.history, [entity.id]: [...gameState.history[entity.id], newPos] };
-
-    let status: 'playing' | 'won' | 'lost' = 'playing';
-    let message = '';
-
-    const originalEntity = level.entities.find(e => e.id === entity.id);
-    if (originalEntity) {
-      for (const rule of originalEntity.rules) {
-        if (rule.type === 'alternate-colors') {
-          const prevPos = entity.position;
-          const prevTile = level.tiles[prevPos.y][prevPos.x];
-          const currTile = level.tiles[newPos.y][newPos.x];
-
-          if ((prevTile.type === 'floor-white' && currTile.type === 'floor-white') ||
-              (prevTile.type === 'floor-black' && currTile.type === 'floor-black')) {
-            updatedEntity = { ...originalEntity };
-            newEntities[entityIndex] = updatedEntity;
-            newMoves[entity.id] = 0;
-            newHistory[entity.id] = [originalEntity.position];
-            message = `Oops! ${entity.type} must alternate colors! Resetting...`;
-          }
-        }
-      }
-    }
-
-    if (targetTile.type === 'goal') {
-       const goalRule = originalEntity?.rules.find(r => r.type === 'reach-goal');
-
-       if (goalRule) {
-         if (updatedEntity.color && targetTile.color && updatedEntity.color !== targetTile.color) {
-            message = `Wrong house! This is the ${targetTile.color} house.`;
-         } else {
-            const parityEvenRule = originalEntity?.rules.find(r => r.type === 'parity-even');
-            const parityOddRule = originalEntity?.rules.find(r => r.type === 'parity-odd');
-
-            const steps = newMoves[entity.id];
-            let success = true;
-
-            if (parityEvenRule && steps % 2 !== 0) {
-              success = false;
-              message = `Reached goal, but steps (${steps}) must be EVEN!`;
-              updatedEntity = { ...originalEntity! };
-              newEntities[entityIndex] = updatedEntity;
-              newMoves[entity.id] = 0;
-              newHistory[entity.id] = [originalEntity!.position];
-            } else if (parityOddRule && steps % 2 === 0) {
-              success = false;
-              message = `Reached goal, but steps (${steps}) must be ODD!`;
-              updatedEntity = { ...originalEntity! };
-              newEntities[entityIndex] = updatedEntity;
-              newMoves[entity.id] = 0;
-              newHistory[entity.id] = [originalEntity!.position];
-            }
-
-            if (success) {
-              message = `Great job! ${entity.type} reached home safely!`;
-            }
-         }
-       }
-    }
-
-    setGameState({
-      entities: newEntities,
-      moves: newMoves,
-      history: newHistory,
-      status,
-      message,
-      selectedEntityId: gameState.selectedEntityId
-    });
-
   }, [mode, gameState, level]);
 
   // Keyboard controls
@@ -446,6 +370,9 @@ export default function GameDesigner() {
                   <ToolButton active={selectedTool === 'water'} onClick={() => setSelectedTool('water')} icon={<div className="w-6 h-6 bg-blue-500/50 rounded-sm" />} label="Water" />
                   <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-slate-400" />} label="Door" />
                   <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-slate-400" />} label="Paint" />
+                  <ToolButton active={selectedTool === 'ice'} onClick={() => setSelectedTool('ice')} icon={<Snowflake className="text-cyan-400" />} label="Ice" />
+                  <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-slate-400" />} label="Switch" />
+                  <ToolButton active={selectedTool === 'one-way'} onClick={() => setSelectedTool('one-way')} icon={<ArrowUp className="text-amber-400" />} label="1-Way" />
                 </>
               ) : (
                 <>
@@ -463,9 +390,15 @@ export default function GameDesigner() {
               <p className="text-sm text-slate-400">
                 Click grid to place items. Select items to edit properties (Color, Rules).
                 <br/><br/>
-                <span className="text-indigo-400">Doors</span> block movement unless color matches.
+                <span className="text-indigo-400">Doors</span> block unless color matches.
                 <br/>
                 <span className="text-indigo-400">Paint</span> changes character color.
+                <br/>
+                <span className="text-cyan-400">Ice</span> makes characters slide until blocked.
+                <br/>
+                <span className="text-amber-400">Switches</span> toggle doors of matching color.
+                <br/>
+                <span className="text-amber-400">One-way</span> tiles only allow entry from one direction.
               </p>
             </div>
 
@@ -559,20 +492,49 @@ export default function GameDesigner() {
                         Type: <span className="text-slate-200 capitalize">{tile.type}</span>
                       </div>
 
-                      {/* Color Picker */}
-                      <div>
-                        <label className="text-xs text-slate-400 block mb-1">Color</label>
-                        <div className="flex gap-2">
-                          {['orange', 'purple', 'pink', 'blue', 'green', 'red'].map(c => (
-                            <button
-                              key={c}
-                              onClick={() => updateTileColor(selectedTilePos.x, selectedTilePos.y, c)}
-                              className={`w-6 h-6 rounded-full border-2 ${tile.color === c ? 'border-white scale-110' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                              style={{ backgroundColor: c }}
-                            />
-                          ))}
+                      {/* Color Picker - for types that use color */}
+                      {['goal', 'door', 'paint', 'switch'].includes(tile.type) && (
+                        <div>
+                          <label className="text-xs text-slate-400 block mb-1">Color</label>
+                          <div className="flex gap-2">
+                            {['orange', 'purple', 'pink', 'blue', 'green', 'red'].map(c => (
+                              <button
+                                key={c}
+                                onClick={() => updateTileColor(selectedTilePos.x, selectedTilePos.y, c)}
+                                className={`w-6 h-6 rounded-full border-2 ${tile.color === c ? 'border-white scale-110' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {/* Direction Picker - for one-way tiles */}
+                      {tile.type === 'one-way' && (
+                        <div>
+                          <label className="text-xs text-slate-400 block mb-1">Direction</label>
+                          <div className="flex gap-2">
+                            {(['up', 'down', 'left', 'right'] as const).map(dir => (
+                              <button
+                                key={dir}
+                                onClick={() => updateTileDirection(selectedTilePos.x, selectedTilePos.y, dir)}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all ${
+                                  tile.meta?.direction === dir
+                                    ? 'border-amber-400 bg-amber-400/20 text-amber-300'
+                                    : 'border-slate-700 bg-slate-800 text-slate-500 hover:text-slate-300'
+                                }`}
+                              >
+                                <ArrowUp
+                                  size={14}
+                                  style={{
+                                    transform: `rotate(${{ up: 0, right: 90, down: 180, left: 270 }[dir]}deg)`
+                                  }}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -651,7 +613,17 @@ export default function GameDesigner() {
                   onClick={() => handleTileClick(x, y)}
                   className={`w-full h-full border border-slate-800/30 cursor-pointer transition-colors hover:brightness-110 relative`}
                 >
-                  <TileIcon type={tile.type} color={tile.color} />
+                  <TileIcon
+                    type={tile.type}
+                    color={tile.color}
+                    meta={tile.meta}
+                    isOpen={
+                      mode === 'play' &&
+                      tile.type === 'door' &&
+                      tile.color != null &&
+                      gameState.toggledColors.includes(tile.color)
+                    }
+                  />
 
                   <span className="absolute top-0.5 left-0.5 text-[8px] text-slate-700 select-none pointer-events-none opacity-0 hover:opacity-100">
                     {x},{y}

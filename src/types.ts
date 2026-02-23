@@ -1,9 +1,9 @@
-import type { LucideIcon } from 'lucide-react';
-
 export type Position = {
   x: number;
   y: number;
 };
+
+export type Direction = 'up' | 'down' | 'left' | 'right';
 
 export type TileType =
   | 'empty'
@@ -15,7 +15,10 @@ export type TileType =
   | 'goal'
   | 'start'
   | 'door'
-  | 'paint';
+  | 'paint'
+  | 'ice'
+  | 'switch'
+  | 'one-way';
 
 export type EntityType =
   | 'player'
@@ -46,12 +49,17 @@ export interface Entity {
   rules: Rule[];
 }
 
+export interface TileMeta {
+  id?: string;
+  direction?: Direction;
+}
+
 export interface Tile {
   x: number;
   y: number;
   type: TileType;
   color?: string;
-  meta?: any; // For extra data like pipe capacity
+  meta?: TileMeta;
 }
 
 export interface Level {
@@ -61,6 +69,16 @@ export interface Level {
   height: number;
   tiles: Tile[][];
   entities: Entity[];
+}
+
+export interface GameState {
+  entities: Entity[];
+  moves: Record<string, number>;
+  history: Record<string, Position[]>;
+  status: 'playing' | 'won' | 'lost';
+  message: string;
+  selectedEntityId: string | null;
+  toggledColors: string[];
 }
 
 export const TILE_SIZE = 48;

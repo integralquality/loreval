@@ -37,7 +37,7 @@ export const INITIAL_LEVEL: Level = {
     {
       id: 'bot-1',
       type: 'robot',
-      position: { x: 0, y: 7 },
+      position: { x: 1, y: 7 },
       rules: [
         { id: 'r7', type: 'reach-goal' }
       ]
