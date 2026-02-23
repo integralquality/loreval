@@ -25,7 +25,7 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
 
   switch (type) {
     case 'wall': {
-      const brickSvg = `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23492009'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%23c2692d' rx='1'/%3E%3Crect x='0' y='0' width='26' height='2' fill='%23d4883a' rx='1' opacity='0.5'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%23c2692d' rx='1'/%3E%3Crect x='0' y='14' width='12' height='2' fill='%23d4883a' rx='1' opacity='0.5'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%23c2692d' rx='1'/%3E%3Crect x='14' y='14' width='14' height='2' fill='%23d4883a' rx='1' opacity='0.5'/%3E%3C/svg%3E")`;
+      const brickSvg = `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23351008'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='0' width='26' height='2' fill='%23c45a30' rx='1' opacity='0.4'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='14' width='12' height='2' fill='%23c45a30' rx='1' opacity='0.4'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='14' y='14' width='14' height='2' fill='%23c45a30' rx='1' opacity='0.4'/%3E%3C/svg%3E")`;
       return (
         <div
           className={`w-full h-full rounded-sm ${className}`}
@@ -46,19 +46,15 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
           }}
         />
       );
-    case 'floor-black':
+    case 'floor-black': {
+      const grassSvg = `url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='24' height='24' fill='%23183a28'/%3E%3Cpath d='M3 24 Q3 16 5 12' stroke='%232d6b45' stroke-width='1.5' fill='none'/%3E%3Cpath d='M7 24 Q6 14 9 8' stroke='%23348a52' stroke-width='1.2' fill='none'/%3E%3Cpath d='M11 24 Q12 17 10 11' stroke='%232d6b45' stroke-width='1.5' fill='none'/%3E%3Cpath d='M15 24 Q14 15 17 10' stroke='%23266d40' stroke-width='1.2' fill='none'/%3E%3Cpath d='M19 24 Q20 18 18 13' stroke='%23348a52' stroke-width='1.5' fill='none'/%3E%3Cpath d='M22 24 Q21 16 23 11' stroke='%232d6b45' stroke-width='1.2' fill='none'/%3E%3C/svg%3E")`;
       return (
         <div
           className={`w-full h-full rounded-sm ${className}`}
-          style={{
-            backgroundColor: 'rgba(34,80,50,0.35)',
-            backgroundImage:
-              'radial-gradient(circle at 25% 25%, rgba(74,222,128,0.08) 0px, transparent 2px),' +
-              'radial-gradient(circle at 75% 60%, rgba(74,222,128,0.06) 0px, transparent 2px)',
-            backgroundSize: '16px 16px',
-          }}
+          style={{ backgroundImage: grassSvg, backgroundSize: '24px 24px' }}
         />
       );
+    }
     case 'water':
       return (
         <div
