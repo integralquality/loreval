@@ -3,8 +3,8 @@ import type { Level } from './types';
 export const INITIAL_LEVEL: Level = {
   id: 'demo-parity',
   name: 'Parity Paths Demo',
-  width: 8,
-  height: 8,
+  width: 10,
+  height: 10,
   tiles: [], // Will be filled in initialization
   entities: [
     {

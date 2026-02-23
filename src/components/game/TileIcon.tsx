@@ -24,20 +24,15 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
   const c = colorVal(color);
 
   switch (type) {
-    case 'wall':
+    case 'wall': {
+      const brickSvg = `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23492009'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%23c2692d' rx='1'/%3E%3Crect x='0' y='0' width='26' height='2' fill='%23d4883a' rx='1' opacity='0.5'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%23c2692d' rx='1'/%3E%3Crect x='0' y='14' width='12' height='2' fill='%23d4883a' rx='1' opacity='0.5'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%23c2692d' rx='1'/%3E%3Crect x='14' y='14' width='14' height='2' fill='%23d4883a' rx='1' opacity='0.5'/%3E%3C/svg%3E")`;
       return (
         <div
           className={`w-full h-full rounded-sm ${className}`}
-          style={{
-            backgroundColor: 'rgba(87,74,68,0.7)',
-            backgroundImage:
-              'linear-gradient(to right, rgba(0,0,0,0.15) 1px, transparent 1px),' +
-              'linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px)',
-            backgroundSize: '12px 8px',
-            backgroundPosition: '0 0',
-          }}
+          style={{ backgroundImage: brickSvg, backgroundSize: '28px 28px' }}
         />
       );
+    }
     case 'floor':
     case 'floor-white':
       return (
@@ -184,6 +179,6 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
     }
 
     default:
-      return <div className={`w-full h-full bg-zinc-800/20 rounded-sm ${className}`} />;
+      return <div className={`w-full h-full bg-zinc-600/25 rounded-sm ${className}`} />;
   }
 };
