@@ -132,4 +132,82 @@ const level2 = buildLevel({
   },
 });
 
-export const CAMPAIGN_LEVELS: CampaignLevel[] = [level1, level2];
+// ─── Level 3: Full Challenge ─────────────────────────────
+// 4 entities, each with unique rules and mechanics.
+// Dog (2,1) → orange exit (8,1): parity-even, detour around wall at (5,1)
+// Robot (2,3) → red exit (8,3): switch toggles blue door, slide across ice
+// Cat (1,5) → purple exit (8,5): parity-odd, pass through one-way
+// Rabbit (1,9) → pink exit (8,8): alternate road/grass terrain
+const level3 = buildLevel({
+  id: 'level-3',
+  name: 'Full Challenge',
+  description: 'Four characters, four exits, four different rules. Use every mechanic.',
+  number: 3,
+  width: 10,
+  height: 10,
+  layout: [
+    '.  G  G  G  G  R  R  R  R  .',
+    '.  G  R  R  R  W  R  R  1  .',
+    '.  G  G  W  W  R  W  W  R  .',
+    '.  R  R  S  I  I  I  D  4  .',
+    '.  W  W  W  R  R  R  W  R  .',
+    '.  R  R  R  R  R  >  R  2  .',
+    '.  R  R  W  P  W  R  W  ~  .',
+    '.  R  R  R  R  R  R  R  ~  .',
+    '.  G  R  G  R  G  R  G  3  .',
+    '.  R  R  R  R  R  R  R  R  .',
+  ],
+  entities: [
+    {
+      id: 'dog-1',
+      type: 'dog',
+      position: { x: 2, y: 1 },
+      color: 'orange',
+      rules: [
+        { id: 'r1', type: 'reach-goal', targetId: 'goal-dog' },
+        { id: 'r2', type: 'parity-even' },
+      ],
+    },
+    {
+      id: 'bot-1',
+      type: 'robot',
+      position: { x: 2, y: 3 },
+      color: 'red',
+      rules: [
+        { id: 'r3', type: 'reach-goal', targetId: 'goal-bot' },
+      ],
+    },
+    {
+      id: 'cat-1',
+      type: 'cat',
+      position: { x: 1, y: 5 },
+      color: 'purple',
+      rules: [
+        { id: 'r4', type: 'reach-goal', targetId: 'goal-cat' },
+        { id: 'r5', type: 'parity-odd' },
+      ],
+    },
+    {
+      id: 'rabbit-1',
+      type: 'rabbit',
+      position: { x: 1, y: 9 },
+      color: 'pink',
+      rules: [
+        { id: 'r6', type: 'reach-goal', targetId: 'goal-rabbit' },
+        { id: 'r7', type: 'alternate-colors' },
+      ],
+    },
+  ],
+  charMap: {
+    'S': () => ({ type: 'switch', color: 'blue' }),
+    'D': () => ({ type: 'door', color: 'blue' }),
+    'P': () => ({ type: 'paint', color: 'blue' }),
+    '>': () => ({ type: 'one-way', meta: { direction: 'right' as Direction } }),
+    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-dog' } }),
+    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'goal-cat' } }),
+    '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'goal-rabbit' } }),
+    '4': () => ({ type: 'goal', color: 'red', meta: { id: 'goal-bot' } }),
+  },
+});
+
+export const CAMPAIGN_LEVELS: CampaignLevel[] = [level1, level2, level3];
