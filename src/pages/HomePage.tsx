@@ -4,14 +4,13 @@ import { motion } from 'motion/react';
 import {
   Brain,
   ArrowRight,
-  Sparkles,
   Cpu,
-  Zap,
-  Code2,
-  Terminal,
   Share2,
   Trophy,
-  Bot
+  Bot,
+  Paintbrush,
+  Gamepad2,
+  Wand2
 } from 'lucide-react';
 import { TileIcon } from '../components/game/TileIcon';
 import { EntityIcon } from '../components/game/EntityIcon';
@@ -105,10 +104,7 @@ export default function HomePage() {
                 <span className="text-purple-300 font-medium">reason side by side.</span>
               </h1>
               <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed mb-10">
-                A playground where humans and machines design, solve, and compare logic puzzles. Build rule systems, challenge AI models, and see how different minds approach the same problem.
-              </p>
-              <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed mb-10">
-                A benchmark for machine reasoning and one for human creativity.
+                Design logic puzzles, play through challenges, and share your creations. Build levels yourself or let AI generate them — then see who can solve them.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/designer" className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-xl shadow-purple-500/20">
@@ -131,48 +127,48 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-20 items-center mb-32">
             <div>
-              <h2 className="text-sm font-mono uppercase tracking-[0.4em] text-purple-400 mb-6">The Idea</h2>
-              <h3 className="text-3xl md:text-5xl font-bold text-white mb-8 tracking-tight">Beyond pattern matching.</h3>
+              <h2 className="text-sm font-mono uppercase tracking-[0.4em] text-purple-400 mb-6">How It Works</h2>
+              <h3 className="text-3xl md:text-5xl font-bold text-white mb-8 tracking-tight">Design. Play. Share.</h3>
               <p className="text-lg text-zinc-400 leading-relaxed mb-8">
-                AI is getting good at code and retrieval, but <strong>spatial reasoning and planning</strong> remain hard. Our platform is a neutral ground where human intuition meets machine scalability — push models out of their comfort zone with puzzles that require genuine logic, not memorized patterns.
+                Create grid-based logic puzzles with a visual editor — walls, ice, switches, color-locked doors, and characters with unique rules. Play through hand-crafted campaigns or design your own and <strong>share them with the world.</strong>
               </p>
               <div className="space-y-6">
                 <div className="flex gap-4 p-4 rounded-2xl bg-zinc-950 border border-zinc-900">
-                  <Cpu className="text-purple-400 shrink-0" />
+                  <Paintbrush className="text-purple-400 shrink-0" />
                   <div>
-                    <h4 className="text-white font-bold text-sm">AI Benchmarking</h4>
-                    <p className="text-zinc-500 text-xs mt-1">Export puzzles as JSON and challenge LLMs to solve or generate them. Compare how different models reason through the same constraints.</p>
+                    <h4 className="text-white font-bold text-sm">Visual Level Designer</h4>
+                    <p className="text-zinc-500 text-xs mt-1">Paint tiles, place characters, set rules and constraints. Test your puzzle instantly in the same editor.</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-4 rounded-2xl bg-zinc-950 border border-zinc-900">
-                  <Brain className="text-blue-400 shrink-0" />
+                  <Gamepad2 className="text-blue-400 shrink-0" />
                   <div>
-                    <h4 className="text-white font-bold text-sm">Human Intuition</h4>
-                    <p className="text-zinc-500 text-xs mt-1">Develop the mental models required to design systems that are robust, creative, and strategically deep.</p>
+                    <h4 className="text-white font-bold text-sm">Campaign & Community</h4>
+                    <p className="text-zinc-500 text-xs mt-1">Play through curated levels that teach mechanics step by step, or jump into puzzles created by other players.</p>
                   </div>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
-                <Terminal className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
-                <h4 className="text-white font-bold">Export Systems</h4>
-                <p className="text-zinc-600 text-xs leading-relaxed">Save puzzles as JSON. Feed them to any AI model or share with others.</p>
+                <Paintbrush className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
+                <h4 className="text-white font-bold">Level Editor</h4>
+                <p className="text-zinc-600 text-xs leading-relaxed">Tile painter, entity placement, rule configuration — all visual.</p>
               </div>
               <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
                 <Share2 className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
-                <h4 className="text-white font-bold">Collaborate</h4>
-                <p className="text-zinc-600 text-xs leading-relaxed">Share levels via link. Let others play, remix, and build on your designs.</p>
+                <h4 className="text-white font-bold">Share Levels</h4>
+                <p className="text-zinc-600 text-xs leading-relaxed">Share your puzzles via link. Let others play, remix, and build on them.</p>
               </div>
               <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
-                <Bot className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
-                <h4 className="text-white font-bold">AI Co-Creation</h4>
-                <p className="text-zinc-600 text-xs leading-relaxed">Let AI generate levels, or design one and watch it attempt to solve it.</p>
+                <Wand2 className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
+                <h4 className="text-white font-bold">AI Generation</h4>
+                <p className="text-zinc-600 text-xs leading-relaxed">Ask AI to generate a level, or design one and let it try to solve it.</p>
               </div>
               <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
                 <Trophy className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
                 <h4 className="text-white font-bold">Leaderboards</h4>
-                <p className="text-zinc-600 text-xs leading-relaxed">Track solve times and step counts. Compare humans vs AI on the same puzzles.</p>
+                <p className="text-zinc-600 text-xs leading-relaxed">Track solve times and step counts across players and AI models.</p>
               </div>
             </div>
           </div>
@@ -189,16 +185,19 @@ export default function HomePage() {
         </div>
         <div className="grid md:grid-cols-3 gap-12">
           <div className="text-center space-y-4">
-            <h4 className="text-white font-bold text-xl">For Humans</h4>
-            <p className="text-zinc-500 text-sm">A cognitive playground to sharpen abstraction and systemic thinking—the skills that remain valuable as technology changes.</p>
+            <Brain className="mx-auto text-purple-400" size={28} />
+            <h4 className="text-white font-bold text-xl">Players</h4>
+            <p className="text-zinc-500 text-sm">Solve puzzles that teach spatial reasoning and algorithmic thinking — from simple mazes to multi-character sorting challenges.</p>
           </div>
           <div className="text-center space-y-4">
-            <h4 className="text-white font-bold text-xl">For Machines</h4>
-            <p className="text-zinc-500 text-sm">A specialized benchmark for spatial reasoning, planning, and constraint satisfaction. No training data, just pure logic.</p>
+            <Paintbrush className="mx-auto text-blue-400" size={28} />
+            <h4 className="text-white font-bold text-xl">Designers</h4>
+            <p className="text-zinc-500 text-sm">Build levels with the visual editor, combine mechanics in creative ways, and share your best creations with the community.</p>
           </div>
           <div className="text-center space-y-4">
-            <h4 className="text-white font-bold text-xl">For the Future</h4>
-            <p className="text-zinc-500 text-sm">A bridge between the two. Collaborative design where humans set the intent and AI scales the possibilities.</p>
+            <Bot className="mx-auto text-green-400" size={28} />
+            <h4 className="text-white font-bold text-xl">AI Enthusiasts</h4>
+            <p className="text-zinc-500 text-sm">Use AI to generate levels or challenge it to solve yours. Explore how human and machine approaches to the same puzzle differ.</p>
           </div>
         </div>
       </section>
