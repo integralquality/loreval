@@ -210,4 +210,93 @@ const level3 = buildLevel({
   },
 });
 
-export const CAMPAIGN_LEVELS: CampaignLevel[] = [level1, level2, level3];
+// ─── Level 4: The Swap ───────────────────────────────────
+// 2 characters in a corridor with exits swapped.
+// Dog at (5,1) needs orange exit at (1,1). Cat at (2,1) needs purple exit at (6,1).
+// They block each other — one must step into the alcove (column 3) to let the other pass.
+// Teaches: using temporary space to swap two items (like a temp variable).
+const level4 = buildLevel({
+  id: 'level-4',
+  name: 'The Swap',
+  description: 'Two characters need to swap places. Use the alcove to let one pass.',
+  number: 4,
+  width: 8,
+  height: 3,
+  layout: [
+    '.  W  W  R  W  W  W  .',
+    '.  1  R  R  R  R  2  .',
+    '.  W  W  R  W  W  W  .',
+  ],
+  entities: [
+    {
+      id: 'cat-1',
+      type: 'cat',
+      position: { x: 2, y: 1 },
+      color: 'purple',
+      rules: [{ id: 'r1', type: 'reach-goal' }],
+    },
+    {
+      id: 'dog-1',
+      type: 'dog',
+      position: { x: 5, y: 1 },
+      color: 'orange',
+      rules: [{ id: 'r2', type: 'reach-goal' }],
+    },
+  ],
+  charMap: {
+    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-dog' } }),
+    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'goal-cat' } }),
+  },
+});
+
+// ─── Level 5: Sort It Out ────────────────────────────────
+// 3 characters in reverse order. Exits require correct arrangement.
+// Rabbit(2,1) needs to reach pink exit at (8,2).
+// Dog(5,1) needs to reach orange exit at (1,1).
+// Cat(7,1) needs to reach purple exit at (4,2).
+// Alcoves above and below the corridor let characters pass each other.
+// Teaches: multi-step sorting — bubble sort with temporary storage.
+const level5 = buildLevel({
+  id: 'level-5',
+  name: 'Sort It Out',
+  description: 'Three characters in the wrong order. Shuffle them to their exits.',
+  number: 5,
+  width: 10,
+  height: 4,
+  layout: [
+    '.  W  R  R  R  R  R  R  W  .',
+    '.  1  R  R  R  R  R  R  R  .',
+    '.  W  R  R  2  R  R  R  3  .',
+    '.  .  .  .  .  .  .  .  W  .',
+  ],
+  entities: [
+    {
+      id: 'rabbit-1',
+      type: 'rabbit',
+      position: { x: 2, y: 1 },
+      color: 'pink',
+      rules: [{ id: 'r1', type: 'reach-goal' }],
+    },
+    {
+      id: 'dog-1',
+      type: 'dog',
+      position: { x: 5, y: 1 },
+      color: 'orange',
+      rules: [{ id: 'r2', type: 'reach-goal' }],
+    },
+    {
+      id: 'cat-1',
+      type: 'cat',
+      position: { x: 7, y: 1 },
+      color: 'purple',
+      rules: [{ id: 'r3', type: 'reach-goal' }],
+    },
+  ],
+  charMap: {
+    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-dog' } }),
+    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'goal-cat' } }),
+    '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'goal-rabbit' } }),
+  },
+});
+
+export const CAMPAIGN_LEVELS: CampaignLevel[] = [level1, level2, level3, level4, level5];
