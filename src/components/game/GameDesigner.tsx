@@ -19,6 +19,7 @@ import {
   ToggleLeft,
   ArrowUp,
   Waves,
+  Lock,
   Home
 } from 'lucide-react';
 import type { Level, Tile, TileType, EntityType, Entity, RuleType, Direction, GameState } from '../../types';
@@ -57,7 +58,8 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
     message: '',
     selectedEntityId: null,
     toggledColors: [],
-    finishedEntityIds: []
+    finishedEntityIds: [],
+    openedLocks: []
   });
 
   // Delay hiding finished entities so the move animation plays first
@@ -207,7 +209,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
     }
 
     const clickedTile = level.tiles[y][x];
-    if (['goal', 'door', 'paint', 'switch', 'one-way'].includes(clickedTile.type) && selectedTool !== 'erase') {
+    if (['goal', 'door', 'paint', 'switch', 'one-way', 'lock'].includes(clickedTile.type) && selectedTool !== 'erase') {
        if (selectedTool === clickedTile.type) {
          setSelectedTilePos({x, y});
          setSelectedEntityId(null);
@@ -244,6 +246,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
       if (newType === 'door') defaultColor = 'orange';
       if (newType === 'paint') defaultColor = 'orange';
       if (newType === 'switch') defaultColor = 'orange';
+      if (newType === 'lock') defaultColor = 'orange';
 
       if (newType === 'one-way') {
         newTiles[y][x] = { ...newTiles[y][x], type: newType, color: undefined, meta: { direction: 'right' } };
@@ -252,7 +255,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
       }
       setLevel(prev => ({ ...prev, tiles: newTiles }));
 
-      if (['goal', 'door', 'paint', 'switch', 'one-way'].includes(newType)) {
+      if (['goal', 'door', 'paint', 'switch', 'one-way', 'lock'].includes(newType)) {
         setSelectedTilePos({x, y});
       }
     } else {
@@ -430,6 +433,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                   <ToolButton active={selectedTool === 'ice'} onClick={() => setSelectedTool('ice')} icon={<Snowflake className="text-cyan-400" />} label="Ice" tooltip="Characters slide across ice until hitting something solid" />
                   <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-zinc-400" />} label="Switch" tooltip="Toggles all doors of the same color open or closed" />
                   <ToolButton active={selectedTool === 'one-way'} onClick={() => setSelectedTool('one-way')} icon={<ArrowUp className="text-amber-400" />} label="1-Way" tooltip="Can only be entered from the arrow's direction" />
+                  <ToolButton active={selectedTool === 'lock'} onClick={() => setSelectedTool('lock')} icon={<Lock className="text-zinc-400" />} label="Lock" tooltip="Only a matching-color character can open it — stays open once unlocked" />
                 </>
               ) : (
                 <>
@@ -550,7 +554,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                       </div>
 
                       {/* Color Picker - for types that use color */}
-                      {['goal', 'door', 'paint', 'switch'].includes(tile.type) && (
+                      {['goal', 'door', 'paint', 'switch', 'lock'].includes(tile.type) && (
                         <div>
                           <label className="text-xs text-zinc-400 block mb-1">Color</label>
                           <div className="flex gap-2">
@@ -702,10 +706,10 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                     color={tile.color}
                     meta={tile.meta}
                     isOpen={
-                      mode === 'play' &&
-                      tile.type === 'door' &&
-                      tile.color != null &&
-                      gameState.toggledColors.includes(tile.color)
+                      mode === 'play' && (
+                        (tile.type === 'door' && tile.color != null && gameState.toggledColors.includes(tile.color)) ||
+                        (tile.type === 'lock' && (gameState.openedLocks || []).includes(`${x},${y}`))
+                      )
                     }
                   />
 

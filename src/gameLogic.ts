@@ -20,9 +20,17 @@ function canEnterOneWay(tile: Tile, dx: number, dy: number): boolean {
   }
 }
 
-function isTileBlocking(tile: Tile, entity: Entity, toggledColors: string[], dx: number, dy: number): boolean {
+function isLockPassable(tile: Tile, entity: Entity, openedLocks: string[]): boolean {
+  if (tile.type !== 'lock') return true;
+  const key = `${tile.x},${tile.y}`;
+  if (openedLocks.includes(key)) return true;
+  return entity.color === tile.color;
+}
+
+function isTileBlocking(tile: Tile, entity: Entity, toggledColors: string[], dx: number, dy: number, openedLocks: string[] = []): boolean {
   if (tile.type === 'wall' || tile.type === 'empty' || tile.type === 'water') return true;
   if (tile.type === 'door' && !isDoorPassable(tile, entity, toggledColors)) return true;
+  if (tile.type === 'lock' && !isLockPassable(tile, entity, openedLocks)) return true;
   if (tile.type === 'one-way' && !canEnterOneWay(tile, dx, dy)) return true;
   return false;
 }
@@ -30,10 +38,12 @@ function isTileBlocking(tile: Tile, entity: Entity, toggledColors: string[], dx:
 function applyTileEffects(
   tile: Tile,
   entity: Entity,
-  toggledColors: string[]
-): { entity: Entity; toggledColors: string[] } {
+  toggledColors: string[],
+  openedLocks: string[]
+): { entity: Entity; toggledColors: string[]; openedLocks: string[] } {
   let newEntity = entity;
   let newToggled = toggledColors;
+  let newOpenedLocks = openedLocks;
 
   if (tile.type === 'paint' && tile.color) {
     newEntity = { ...entity, color: tile.color };
@@ -47,20 +57,29 @@ function applyTileEffects(
     }
   }
 
-  return { entity: newEntity, toggledColors: newToggled };
+  if (tile.type === 'lock' && tile.color && entity.color === tile.color) {
+    const key = `${tile.x},${tile.y}`;
+    if (!newOpenedLocks.includes(key)) {
+      newOpenedLocks = [...newOpenedLocks, key];
+    }
+  }
+
+  return { entity: newEntity, toggledColors: newToggled, openedLocks: newOpenedLocks };
 }
 
 function slideOnIce(
   level: Level,
   entity: Entity,
   toggledColors: string[],
+  openedLocks: string[],
   dx: number,
   dy: number,
   startPos: Position
-): { finalPos: Position; finalEntity: Entity; toggledColors: string[]; tilesCrossed: number } {
+): { finalPos: Position; finalEntity: Entity; toggledColors: string[]; openedLocks: string[]; tilesCrossed: number } {
   let currentPos = startPos;
   let currentEntity = entity;
   let currentToggled = toggledColors;
+  let currentLocks = openedLocks;
   let tilesCrossed = 0;
 
   while (true) {
@@ -69,15 +88,16 @@ function slideOnIce(
     if (nextPos.x < 0 || nextPos.x >= level.width || nextPos.y < 0 || nextPos.y >= level.height) break;
 
     const nextTile = level.tiles[nextPos.y][nextPos.x];
-    if (isTileBlocking(nextTile, currentEntity, currentToggled, dx, dy)) break;
+    if (isTileBlocking(nextTile, currentEntity, currentToggled, dx, dy, currentLocks)) break;
 
     currentPos = nextPos;
     tilesCrossed++;
 
     // Apply effects at each tile passed through
-    const effects = applyTileEffects(nextTile, currentEntity, currentToggled);
+    const effects = applyTileEffects(nextTile, currentEntity, currentToggled, currentLocks);
     currentEntity = { ...effects.entity, position: currentPos };
     currentToggled = effects.toggledColors;
+    currentLocks = effects.openedLocks;
 
     // Stop sliding when landing on a non-ice tile
     if (nextTile.type !== 'ice') break;
@@ -87,6 +107,7 @@ function slideOnIce(
     finalPos: currentPos,
     finalEntity: { ...currentEntity, position: currentPos },
     toggledColors: currentToggled,
+    openedLocks: currentLocks,
     tilesCrossed
   };
 }
@@ -112,11 +133,18 @@ export function executeMove(
   const targetTile = level.tiles[newPos.y][newPos.x];
 
   // Blocking check
-  if (isTileBlocking(targetTile, entity, state.toggledColors, dx, dy)) {
+  const openedLocksState = state.openedLocks || [];
+  if (isTileBlocking(targetTile, entity, state.toggledColors, dx, dy, openedLocksState)) {
     if (targetTile.type === 'door' && !isDoorPassable(targetTile, entity, state.toggledColors)) {
       return {
         ...state,
         message: `Locked! You need to be ${targetTile.color || 'colored'} to pass.`
+      };
+    }
+    if (targetTile.type === 'lock' && !isLockPassable(targetTile, entity, openedLocksState)) {
+      return {
+        ...state,
+        message: `Locked! Only a ${targetTile.color || 'colored'} character can open this.`
       };
     }
     if (targetTile.type === 'one-way') {
@@ -129,16 +157,18 @@ export function executeMove(
   }
 
   // Apply tile effects at the landing tile
-  let effects = applyTileEffects(targetTile, entity, state.toggledColors);
+  let effects = applyTileEffects(targetTile, entity, state.toggledColors, openedLocksState);
   let updatedEntity = { ...effects.entity, position: newPos };
   let toggledColors = effects.toggledColors;
+  let openedLocks = effects.openedLocks;
   let totalMoves = 1;
 
   // Ice sliding
   if (targetTile.type === 'ice') {
-    const slideResult = slideOnIce(level, updatedEntity, toggledColors, dx, dy, newPos);
+    const slideResult = slideOnIce(level, updatedEntity, toggledColors, openedLocks, dx, dy, newPos);
     updatedEntity = slideResult.finalEntity;
     toggledColors = slideResult.toggledColors;
+    openedLocks = slideResult.openedLocks;
     totalMoves += slideResult.tilesCrossed;
   }
 
@@ -216,6 +246,7 @@ export function executeMove(
             selectedEntityId: nextSelected,
             toggledColors,
             finishedEntityIds: newFinished,
+            openedLocks,
           };
         }
       }
@@ -233,5 +264,6 @@ export function executeMove(
     selectedEntityId: state.selectedEntityId,
     toggledColors,
     finishedEntityIds: state.finishedEntityIds,
+    openedLocks,
   };
 }

@@ -1,4 +1,4 @@
-import { LogOut, DoorOpen, PaintBucket, Snowflake, ToggleLeft, ArrowUp, Waves } from 'lucide-react';
+import { LogOut, DoorOpen, PaintBucket, Snowflake, ToggleLeft, ArrowUp, Waves, Lock, LockOpen } from 'lucide-react';
 import type { TileType, TileMeta } from '../../types';
 
 const COLOR_MAP: Record<string, string> = {
@@ -172,6 +172,30 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
         </div>
       );
     }
+
+    case 'lock':
+      if (isOpen) {
+        return (
+          <div className={`w-full h-full bg-zinc-800/20 rounded-sm flex items-center justify-center ${className}`}>
+            <LockOpen
+              size={18}
+              style={{ color: c || '#a1a1aa', opacity: 0.25 }}
+            />
+          </div>
+        );
+      }
+      return (
+        <div className={`w-full h-full bg-zinc-700/60 rounded-sm flex items-center justify-center ${className}`}>
+          <Lock
+            size={18}
+            style={{
+              color: c || '#a1a1aa',
+              filter: c ? `drop-shadow(0 0 4px ${c}50)` : undefined,
+              opacity: 0.8,
+            }}
+          />
+        </div>
+      );
 
     default:
       return <div className={`w-full h-full bg-zinc-600/25 rounded-sm ${className}`} />;

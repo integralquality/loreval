@@ -18,7 +18,8 @@ export type TileType =
   | 'paint'
   | 'ice'
   | 'switch'
-  | 'one-way';
+  | 'one-way'
+  | 'lock';
 
 export type EntityType =
   | 'player'
@@ -80,6 +81,7 @@ export interface GameState {
   selectedEntityId: string | null;
   toggledColors: string[];
   finishedEntityIds: string[];
+  openedLocks: string[];
 }
 
 export const TILE_SIZE = 56;
