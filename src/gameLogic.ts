@@ -72,6 +72,7 @@ function slideOnIce(
   entity: Entity,
   toggledColors: string[],
   openedLocks: string[],
+  occupiedPositions: Set<string>,
   dx: number,
   dy: number,
   startPos: Position
@@ -89,6 +90,7 @@ function slideOnIce(
 
     const nextTile = level.tiles[nextPos.y][nextPos.x];
     if (isTileBlocking(nextTile, currentEntity, currentToggled, dx, dy, currentLocks)) break;
+    if (occupiedPositions.has(`${nextPos.x},${nextPos.y}`)) break;
 
     currentPos = nextPos;
     tilesCrossed++;
@@ -130,6 +132,13 @@ export function executeMove(
   // Bounds check
   if (newPos.x < 0 || newPos.x >= level.width || newPos.y < 0 || newPos.y >= level.height) return null;
 
+  // Check if another active entity is on the target tile
+  const finishedIds = state.finishedEntityIds || [];
+  const occupiedByOther = state.entities.some(
+    e => e.id !== entity.id && !finishedIds.includes(e.id) && e.position.x === newPos.x && e.position.y === newPos.y
+  );
+  if (occupiedByOther) return null;
+
   const targetTile = level.tiles[newPos.y][newPos.x];
 
   // Blocking check
@@ -165,7 +174,12 @@ export function executeMove(
 
   // Ice sliding
   if (targetTile.type === 'ice') {
-    const slideResult = slideOnIce(level, updatedEntity, toggledColors, openedLocks, dx, dy, newPos);
+    const occupied = new Set(
+      state.entities
+        .filter(e => e.id !== entity.id && !finishedIds.includes(e.id))
+        .map(e => `${e.position.x},${e.position.y}`)
+    );
+    const slideResult = slideOnIce(level, updatedEntity, toggledColors, openedLocks, occupied, dx, dy, newPos);
     updatedEntity = slideResult.finalEntity;
     toggledColors = slideResult.toggledColors;
     openedLocks = slideResult.openedLocks;
