@@ -94,15 +94,15 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
       const layout = [
         //0    1    2    3    4    5    6    7    8    9
         '.    G    G    G    G    R    R    R    R    .'.split(/\s+/),  // 0 — grass park + road
-        '.    G    .    R    R    W    R    R    1    .'.split(/\s+/),  // 1 — dog goal (orange)
+        '.    G    R    R    R    W    R    R    1    .'.split(/\s+/),  // 1 — dog(2,1) goal (orange)
         '.    G    G    W    W    R    W    W    R    .'.split(/\s+/),  // 2 — wall corridor
-        '.    R    .    S    I    I    I    D    4    .'.split(/\s+/),  // 3 — switch → ice → door → bot goal
+        '.    R    R    S    I    I    I    D    4    .'.split(/\s+/),  // 3 — robot(2,3) switch → ice → door → bot goal
         '.    W    W    W    R    R    R    W    R    .'.split(/\s+/),  // 4 — wall barrier
-        '.    .    R    R    R    R    >    R    2    .'.split(/\s+/),  // 5 — cat goal (purple), one-way
+        '.    R    R    R    R    R    >    R    2    .'.split(/\s+/),  // 5 — cat(1,5) goal (purple), one-way
         '.    R    R    W    P    W    R    W    ~    .'.split(/\s+/),  // 6 — paint (blue), water
         '.    R    R    R    R    R    R    R    ~    .'.split(/\s+/),  // 7 — open area
         '.    G    R    G    R    G    R    G    3    .'.split(/\s+/),  // 8 — alternating for rabbit goal
-        '.    .    R    R    R    R    R    R    R    .'.split(/\s+/),  // 9 — rabbit start area
+        '.    R    R    R    R    R    R    R    R    .'.split(/\s+/),  // 9 — rabbit(1,9) start area
       ];
 
       const charToTile: Record<string, () => Partial<Tile>> = {
@@ -264,7 +264,12 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
         color: selectedTool === 'dog' ? 'orange' : selectedTool === 'cat' ? 'purple' : selectedTool === 'rabbit' ? 'pink' : 'blue',
         rules: [{ id: `r-${Date.now()}`, type: 'reach-goal' }]
       };
-      setLevel(prev => ({ ...prev, entities: [...filteredEntities, newEntity] }));
+      // Auto-set empty tiles to road so entities start on walkable ground
+      const newTiles = [...level.tiles];
+      if (newTiles[y][x].type === 'empty') {
+        newTiles[y][x] = { ...newTiles[y][x], type: 'floor-white' };
+      }
+      setLevel(prev => ({ ...prev, tiles: newTiles, entities: [...filteredEntities, newEntity] }));
       setSelectedEntityId(newEntity.id);
       setSelectedTilePos(null);
     }
