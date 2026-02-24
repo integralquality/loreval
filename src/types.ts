@@ -79,6 +79,7 @@ export interface GameState {
   message: string;
   selectedEntityId: string | null;
   toggledColors: string[];
+  finishedEntityIds: string[];
 }
 
 export const TILE_SIZE = 56;

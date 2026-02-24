@@ -98,6 +98,7 @@ export function executeMove(
   dy: number
 ): GameState | null {
   if (state.status !== 'playing' || !state.selectedEntityId) return null;
+  if (state.finishedEntityIds.includes(state.selectedEntityId)) return null;
 
   const entityIndex = state.entities.findIndex(e => e.id === state.selectedEntityId);
   if (entityIndex === -1) return null;
@@ -197,6 +198,25 @@ export function executeMove(
 
         if (success) {
           message = `Great job! ${entity.type} reached home safely!`;
+          const newFinished = [...state.finishedEntityIds, entity.id];
+          const remaining = state.entities.filter(e => !newFinished.includes(e.id) && e.id !== entity.id);
+          const nextSelected = remaining.length > 0 ? remaining[0].id : null;
+          const allDone = newFinished.length === level.entities.filter(e =>
+            level.entities.find(le => le.id === e.id)?.rules.some(r => r.type === 'reach-goal')
+          ).length;
+
+          newEntities[entityIndex] = updatedEntity;
+
+          return {
+            entities: newEntities,
+            moves: newMoves,
+            history: newHistory,
+            status: allDone ? 'won' : state.status,
+            message: allDone ? 'You did it! All characters reached their exits!' : message,
+            selectedEntityId: nextSelected,
+            toggledColors,
+            finishedEntityIds: newFinished,
+          };
         }
       }
     }
@@ -211,6 +231,7 @@ export function executeMove(
     status: state.status,
     message,
     selectedEntityId: state.selectedEntityId,
-    toggledColors
+    toggledColors,
+    finishedEntityIds: state.finishedEntityIds,
   };
 }

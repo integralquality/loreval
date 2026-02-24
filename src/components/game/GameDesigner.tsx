@@ -46,6 +46,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
 
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [selectedTilePos, setSelectedTilePos] = useState<{x: number, y: number} | null>(null);
+  const [hiddenEntityIds, setHiddenEntityIds] = useState<string[]>([]);
 
   // Play state
   const [gameState, setGameState] = useState<GameState>({
@@ -55,8 +56,20 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
     status: 'playing',
     message: '',
     selectedEntityId: null,
-    toggledColors: []
+    toggledColors: [],
+    finishedEntityIds: []
   });
+
+  // Delay hiding finished entities so the move animation plays first
+  useEffect(() => {
+    const newlyFinished = gameState.finishedEntityIds.filter(id => !hiddenEntityIds.includes(id));
+    if (newlyFinished.length > 0) {
+      const timer = setTimeout(() => {
+        setHiddenEntityIds(prev => [...prev, ...newlyFinished]);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.finishedEntityIds]);
 
   // Initialize grid if empty (skip when pre-built level provided)
   useEffect(() => {
@@ -141,8 +154,10 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
         status: 'playing',
         message: 'Select a character to move!',
         selectedEntityId: level.entities[0]?.id || null,
-        toggledColors: []
+        toggledColors: [],
+        finishedEntityIds: []
       });
+      setHiddenEntityIds([]);
       setSelectedEntityId(null);
       setSelectedTilePos(null);
     }
@@ -589,24 +604,30 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                 {gameState.entities.map((entity) => {
                   const original = level.entities.find(e => e.id === entity.id);
                   const rules = original?.rules || [];
+                  const isFinished = gameState.finishedEntityIds.includes(entity.id);
                   return (
                     <button
                       key={entity.id}
-                      onClick={() => setGameState(prev => ({...prev, selectedEntityId: entity.id}))}
+                      onClick={() => !isFinished && setGameState(prev => ({...prev, selectedEntityId: entity.id}))}
+                      disabled={isFinished}
                       className={`w-full text-left p-2 rounded-lg transition-colors ${
-                        gameState.selectedEntityId === entity.id ? 'bg-purple-600/20 border border-purple-500/50' : 'bg-zinc-900 hover:bg-zinc-800'
+                        isFinished
+                          ? 'bg-zinc-900/50 opacity-40 cursor-default'
+                          : gameState.selectedEntityId === entity.id
+                            ? 'bg-purple-600/20 border border-purple-500/50'
+                            : 'bg-zinc-900 hover:bg-zinc-800'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <EntityIcon type={entity.type} className="w-5 h-5" />
-                          <span className="text-sm capitalize">{entity.type}</span>
+                          <span className={`text-sm capitalize ${isFinished ? 'line-through text-zinc-600' : ''}`}>{entity.type}</span>
                         </div>
                         <div className="text-xs font-mono text-zinc-500">
-                          {gameState.moves[entity.id]} steps
+                          {isFinished ? 'Done' : `${gameState.moves[entity.id]} steps`}
                         </div>
                       </div>
-                      {rules.length > 0 && (
+                      {rules.length > 0 && !isFinished && (
                         <div className="mt-1 ml-8 space-y-0.5">
                           {rules.map(r => (
                             <p key={r.id} className="text-[11px] text-zinc-500">
@@ -690,9 +711,11 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
               ))
             ))}
 
-            {/* Render Entities — glowing dots */}
+            {/* Render Entities */}
             <AnimatePresence>
-              {(mode === 'play' ? gameState.entities : level.entities).map((entity) => {
+              {(mode === 'play' ? gameState.entities : level.entities)
+                .filter(entity => mode !== 'play' || !hiddenEntityIds.includes(entity.id))
+                .map((entity) => {
                 const glowColor = ENTITY_GLOW[entity.color || 'blue'] || ENTITY_GLOW.blue;
                 const isSelected = mode === 'play' && gameState.selectedEntityId === entity.id;
                 return (
@@ -702,7 +725,15 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                     initial={false}
                     animate={{
                       x: entity.position.x * (TILE_SIZE + 1),
-                      y: entity.position.y * (TILE_SIZE + 1)
+                      y: entity.position.y * (TILE_SIZE + 1),
+                      opacity: 1,
+                      scale: 1,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.3,
+                      filter: 'blur(8px)',
+                      transition: { duration: 0.5, ease: 'easeOut' }
                     }}
                     transition={{ type: "spring", stiffness: 200, damping: 20 }}
                     className="absolute top-0 left-0 pointer-events-none flex items-center justify-center"
