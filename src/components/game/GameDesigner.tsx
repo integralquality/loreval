@@ -147,21 +147,26 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
   }, []);
 
   // Reset game state when entering play mode
+  const resetPlayState = useCallback(() => {
+    setGameState({
+      entities: JSON.parse(JSON.stringify(level.entities)),
+      moves: level.entities.reduce((acc, e) => ({...acc, [e.id]: 0}), {}),
+      history: level.entities.reduce((acc, e) => ({...acc, [e.id]: [e.position]}), {}),
+      status: 'playing',
+      message: 'Select a character to move!',
+      selectedEntityId: level.entities[0]?.id || null,
+      toggledColors: [],
+      finishedEntityIds: [],
+      openedLocks: []
+    });
+    setHiddenEntityIds([]);
+    setSelectedEntityId(null);
+    setSelectedTilePos(null);
+  }, [level]);
+
   useEffect(() => {
     if (mode === 'play') {
-      setGameState({
-        entities: JSON.parse(JSON.stringify(level.entities)),
-        moves: level.entities.reduce((acc, e) => ({...acc, [e.id]: 0}), {}),
-        history: level.entities.reduce((acc, e) => ({...acc, [e.id]: [e.position]}), {}),
-        status: 'playing',
-        message: 'Select a character to move!',
-        selectedEntityId: level.entities[0]?.id || null,
-        toggledColors: [],
-        finishedEntityIds: []
-      });
-      setHiddenEntityIds([]);
-      setSelectedEntityId(null);
-      setSelectedTilePos(null);
+      resetPlayState();
     }
   }, [mode, level]);
 
@@ -660,6 +665,13 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                  <p className="text-purple-200 text-sm">{gameState.message}</p>
                </div>
             )}
+
+            <button
+              onClick={resetPlayState}
+              className="w-full flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-sm transition-colors"
+            >
+              <Trash2 size={14} /> Reset
+            </button>
 
             <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
               <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Controls</h3>
