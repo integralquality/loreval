@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage';
 import MissionPage from './pages/MissionPage';
 import GameDesignerPage from './pages/GameDesignerPage';
 import PlayPage from './pages/PlayPage';
+import PlayLevelPage from './pages/PlayLevelPage';
 import AccountPage from './pages/AccountPage';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="play" element={<PlayPage />} />
           <Route path="account" element={<AccountPage />} />
         </Route>
+        <Route path="play/:levelId" element={<PlayLevelPage />} />
         <Route path="designer" element={<GameDesignerPage />} />
       </Routes>
     </BrowserRouter>

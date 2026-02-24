@@ -38,9 +38,9 @@ const ENTITY_GLOW: Record<string, { bg: string; glow: string }> = {
   red:    { bg: '#f87171', glow: 'rgba(248,113,113,0.4)' },
 };
 
-export default function GameDesigner() {
-  const [level, setLevel] = useState<Level>(INITIAL_LEVEL);
-  const [mode, setMode] = useState<'edit' | 'play'>('edit');
+export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?: Level; playOnly?: boolean } = {}) {
+  const [level, setLevel] = useState<Level>(initialLevel || INITIAL_LEVEL);
+  const [mode, setMode] = useState<'edit' | 'play'>(playOnly ? 'play' : 'edit');
   const [selectedTool, setSelectedTool] = useState<TileType | EntityType | 'erase'>('wall');
   const [toolCategory, setToolCategory] = useState<'tiles' | 'entities'>('tiles');
 
@@ -58,8 +58,9 @@ export default function GameDesigner() {
     toggledColors: []
   });
 
-  // Initialize grid if empty
+  // Initialize grid if empty (skip when pre-built level provided)
   useEffect(() => {
+    if (initialLevel) return;
     if (level.tiles.length === 0) {
       const newTiles: Tile[][] = Array(level.height).fill(null).map((_, y) =>
         Array(level.width).fill(null).map((_, x) => ({
@@ -323,14 +324,16 @@ export default function GameDesigner() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                Make Your Game
+                {playOnly ? level.name : 'Make Your Game'}
               </h1>
-              <p className="text-zinc-400 text-sm mt-1">Grid Logic Playground</p>
+              <p className="text-zinc-400 text-sm mt-1">
+                {playOnly ? 'Use arrow keys to move' : 'Grid Logic Playground'}
+              </p>
             </div>
             <Link
-              to="/"
+              to={playOnly ? '/play' : '/'}
               className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
-              title="Back to Home"
+              title={playOnly ? 'Back to Levels' : 'Back to Home'}
             >
               <Home size={18} />
             </Link>
@@ -338,40 +341,42 @@ export default function GameDesigner() {
         </div>
 
         {/* Mode Toggle */}
-        <div className="p-4 space-y-2">
-          <div className="flex bg-zinc-800 p-1 rounded-lg">
-            <button
-              onClick={() => setMode('edit')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all ${
-                mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <Grid3X3 size={18} /> Editor
-            </button>
-            <button
-              onClick={() => setMode('play')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all ${
-                mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              <Play size={18} /> Play
-            </button>
-          </div>
-
-          {mode === 'edit' && (
-            <div className="flex gap-2">
-              <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
-                <Save size={14} /> Save
+        {!playOnly && (
+          <div className="p-4 space-y-2">
+            <div className="flex bg-zinc-800 p-1 rounded-lg">
+              <button
+                onClick={() => setMode('edit')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all ${
+                  mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Grid3X3 size={18} /> Editor
               </button>
-              <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
-                <Settings size={14} /> Load
-              </button>
-              <button onClick={handleClear} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-red-400 rounded-lg text-xs">
-                <Trash2 size={14} /> Clear
+              <button
+                onClick={() => setMode('play')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all ${
+                  mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Play size={18} /> Play
               </button>
             </div>
-          )}
-        </div>
+
+            {mode === 'edit' && (
+              <div className="flex gap-2">
+                <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
+                  <Save size={14} /> Save
+                </button>
+                <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
+                  <Settings size={14} /> Load
+                </button>
+                <button onClick={handleClear} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-red-400 rounded-lg text-xs">
+                  <Trash2 size={14} /> Clear
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Editor Tools */}
         {mode === 'edit' && (
@@ -581,23 +586,42 @@ export default function GameDesigner() {
             <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700">
               <h3 className="text-sm font-medium text-zinc-300 mb-3">Characters</h3>
               <div className="space-y-2">
-                {gameState.entities.map((entity) => (
-                  <button
-                    key={entity.id}
-                    onClick={() => setGameState(prev => ({...prev, selectedEntityId: entity.id}))}
-                    className={`w-full flex items-center justify-between p-2 rounded-lg transition-colors ${
-                      gameState.selectedEntityId === entity.id ? 'bg-purple-600/20 border border-purple-500/50' : 'bg-zinc-900 hover:bg-zinc-800'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <EntityIcon type={entity.type} className="w-5 h-5" />
-                      <span className="text-sm capitalize">{entity.type}</span>
-                    </div>
-                    <div className="text-xs font-mono text-zinc-500">
-                      {gameState.moves[entity.id]} moves
-                    </div>
-                  </button>
-                ))}
+                {gameState.entities.map((entity) => {
+                  const original = level.entities.find(e => e.id === entity.id);
+                  const rules = original?.rules || [];
+                  return (
+                    <button
+                      key={entity.id}
+                      onClick={() => setGameState(prev => ({...prev, selectedEntityId: entity.id}))}
+                      className={`w-full text-left p-2 rounded-lg transition-colors ${
+                        gameState.selectedEntityId === entity.id ? 'bg-purple-600/20 border border-purple-500/50' : 'bg-zinc-900 hover:bg-zinc-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <EntityIcon type={entity.type} className="w-5 h-5" />
+                          <span className="text-sm capitalize">{entity.type}</span>
+                        </div>
+                        <div className="text-xs font-mono text-zinc-500">
+                          {gameState.moves[entity.id]} steps
+                        </div>
+                      </div>
+                      {rules.length > 0 && (
+                        <div className="mt-1 ml-8 space-y-0.5">
+                          {rules.map(r => (
+                            <p key={r.id} className="text-[11px] text-zinc-500">
+                              {r.type === 'reach-goal' && 'Reach the exit'}
+                              {r.type === 'parity-even' && 'Steps must be even'}
+                              {r.type === 'parity-odd' && 'Steps must be odd'}
+                              {r.type === 'alternate-colors' && 'Alternate road/grass'}
+                              {r.type === 'max-steps' && `Max ${r.value} steps`}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
