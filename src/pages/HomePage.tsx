@@ -101,11 +101,14 @@ export default function HomePage() {
                 <span className="font-mono text-[10px] uppercase tracking-widest text-purple-300">The Human-AI Logic Laboratory</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.05] tracking-tight mb-8">
-                The unified playground<br />
-                <span className="text-purple-300 font-medium"> for every intelligence.</span>
+                Where humans and AI<br />
+                <span className="text-purple-300 font-medium">reason side by side.</span>
               </h1>
               <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed mb-10">
-                Logic is the universal language of intelligence. We've built a playground where humans and machines design, solve, and benchmark complex systems of rules.
+                A playground where humans and machines design, solve, and compare logic puzzles. Build rule systems, challenge AI models, and see how different minds approach the same problem.
+              </p>
+              <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed mb-10">
+                A benchmark for machine reasoning and one for human creativity.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/designer" className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-xl shadow-purple-500/20">
@@ -128,17 +131,17 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-20 items-center mb-32">
             <div>
-              <h2 className="text-sm font-mono uppercase tracking-[0.4em] text-purple-400 mb-6">The Paradigm</h2>
-              <h3 className="text-3xl md:text-5xl font-bold text-white mb-8 tracking-tight">Pushing the intuition boundaries</h3>
+              <h2 className="text-sm font-mono uppercase tracking-[0.4em] text-purple-400 mb-6">The Idea</h2>
+              <h3 className="text-3xl md:text-5xl font-bold text-white mb-8 tracking-tight">Beyond pattern matching.</h3>
               <p className="text-lg text-zinc-400 leading-relaxed mb-8">
-                As AI begins to solve the "easy" problems of coding and information retrieval, the focus shifts to <strong>pure reasoning.</strong> Our platform serves as a neutral ground where human intuition meets machine scalability. Pushing machines out of their data distribution comfort zone and into the realm of abstract logic is the key to unlocking the next wave of AI capabilities—and understanding our own minds in the process.
+                AI is getting good at code and retrieval, but <strong>spatial reasoning and planning</strong> remain hard. Our platform is a neutral ground where human intuition meets machine scalability — push models out of their comfort zone with puzzles that require genuine logic, not memorized patterns.
               </p>
               <div className="space-y-6">
                 <div className="flex gap-4 p-4 rounded-2xl bg-zinc-950 border border-zinc-900">
                   <Cpu className="text-purple-400 shrink-0" />
                   <div>
                     <h4 className="text-white font-bold text-sm">AI Benchmarking</h4>
-                    <p className="text-zinc-500 text-xs mt-1">Export logic systems to JSON and challenge LLMs to solve or generate them. Compare the reasoning of Claude, GPT, and Gemini in real-time.</p>
+                    <p className="text-zinc-500 text-xs mt-1">Export puzzles as JSON and challenge LLMs to solve or generate them. Compare how different models reason through the same constraints.</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-4 rounded-2xl bg-zinc-950 border border-zinc-900">
@@ -151,21 +154,25 @@ export default function HomePage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="aspect-square bg-zinc-900 border border-zinc-800 rounded-3xl p-8 flex flex-col justify-between hover:border-purple-500/30 transition-colors group">
-                <Terminal className="text-zinc-700 group-hover:text-purple-400 transition-colors" />
-                <span className="text-white font-bold text-lg">Export Systems</span>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
+                <Terminal className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
+                <h4 className="text-white font-bold">Export Systems</h4>
+                <p className="text-zinc-600 text-xs leading-relaxed">Save puzzles as JSON. Feed them to any AI model or share with others.</p>
               </div>
-              <div className="aspect-square bg-zinc-900 border border-zinc-800 rounded-3xl p-8 flex flex-col justify-between hover:border-purple-500/30 transition-colors group">
-                <Share2 className="text-zinc-700 group-hover:text-purple-400 transition-colors" />
-                <span className="text-white font-bold text-lg">Collaborate</span>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
+                <Share2 className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
+                <h4 className="text-white font-bold">Collaborate</h4>
+                <p className="text-zinc-600 text-xs leading-relaxed">Share levels via link. Let others play, remix, and build on your designs.</p>
               </div>
-              <div className="aspect-square bg-zinc-900 border border-zinc-800 rounded-3xl p-8 flex flex-col justify-between hover:border-purple-500/30 transition-colors group">
-                <Bot className="text-zinc-700 group-hover:text-purple-400 transition-colors" />
-                <span className="text-white font-bold text-lg">AI Co-Creation</span>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
+                <Bot className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
+                <h4 className="text-white font-bold">AI Co-Creation</h4>
+                <p className="text-zinc-600 text-xs leading-relaxed">Let AI generate levels, or design one and watch it attempt to solve it.</p>
               </div>
-              <div className="aspect-square bg-zinc-900 border border-zinc-800 rounded-3xl p-8 flex flex-col justify-between hover:border-purple-500/30 transition-colors group">
-                <Trophy className="text-zinc-700 group-hover:text-purple-400 transition-colors" />
-                <span className="text-white font-bold text-lg">Leaderboards</span>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
+                <Trophy className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
+                <h4 className="text-white font-bold">Leaderboards</h4>
+                <p className="text-zinc-600 text-xs leading-relaxed">Track solve times and step counts. Compare humans vs AI on the same puzzles.</p>
               </div>
             </div>
           </div>
@@ -175,9 +182,9 @@ export default function HomePage() {
       {/* 3. THE MISSION: Universal Reasoning */}
       <section className="max-w-6xl mx-auto px-6 py-32">
         <div className="text-center mb-24">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Built for All Minds.</h2>
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Built for all kinds of minds.</h2>
           <p className="text-zinc-500 max-w-2xl mx-auto text-lg leading-relaxed">
-            Whether you are a child building your first rule or a researcher testing a new AI model, the goal is the same: <strong>Clarity of thought.</strong>
+            Whether you're a kid building your first logic puzzle or a researcher stress-testing an AI model, the core is the same: <strong>think clearly, solve systematically.</strong>
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-12">
@@ -200,10 +207,10 @@ export default function HomePage() {
       <section className="max-w-4xl mx-auto px-6 py-40 text-center">
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
           <h2 className="text-4xl md:text-6xl font-bold text-white mb-12 tracking-tight">
-            One platform. <br /> Every intelligence.
+            Same puzzle. <br /> Different minds.
           </h2>
           <p className="text-zinc-400 text-xl leading-relaxed font-light">
-            We aren't just making games. We are mapping the landscape of reasoning. Join a community of humans and machines working to understand the fundamental rules of the digital world.
+            Design a logic system, solve it yourself, then hand it to an AI. See where human creativity and machine reasoning overlap — and where they don't.
           </p>
           <div className="mt-16">
             <Link to="/designer" className="inline-flex items-center gap-2 text-purple-400 font-bold text-lg hover:gap-4 transition-all group">
