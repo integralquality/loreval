@@ -4,7 +4,6 @@ import { motion } from 'motion/react';
 import {
   Brain,
   ArrowRight,
-  Cpu,
   Share2,
   Trophy,
   Bot,
@@ -52,7 +51,7 @@ function HeroGrid() {
           const isWall = x === 0 || x === GRID_SIZE - 1 || y === 0 || y === GRID_SIZE - 1;
           return (
             <div key={i} className="relative w-full h-full">
-              <TileIcon type={isWall ? 'wall' : (x + y) % 2 === 0 ? 'floor-white' : 'floor-black'} className="opacity-40" />
+              <TileIcon type={isWall ? 'wall' : 'floor-white'} className="opacity-40" />
             </div>
           );
         })}
@@ -100,8 +99,8 @@ export default function HomePage() {
                 <span className="font-mono text-[10px] uppercase tracking-widest text-purple-300">The Human-AI Logic Laboratory</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.05] tracking-tight mb-8">
-                Where humans and AI<br />
-                <span className="text-purple-300 font-medium">reason side by side.</span>
+                Logic games<br />
+                <span className="text-purple-300 font-medium">for humans and machines</span>
               </h1>
               <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed mb-10">
                 Design logic puzzles, play through challenges, and share your creations. Build levels yourself or let AI generate them — then see who can solve them.
@@ -130,7 +129,7 @@ export default function HomePage() {
               <h2 className="text-sm font-mono uppercase tracking-[0.4em] text-purple-400 mb-6">How It Works</h2>
               <h3 className="text-3xl md:text-5xl font-bold text-white mb-8 tracking-tight">Design. Play. Share.</h3>
               <p className="text-lg text-zinc-400 leading-relaxed mb-8">
-                Create grid-based logic puzzles with a visual editor — walls, ice, switches, color-locked doors, and characters with unique rules. Play through hand-crafted campaigns or design your own and <strong>share them with the world.</strong>
+                Create grid-based logic puzzles with a visual editor — walls, switches, color-locked doors, one-way gates, and characters with unique rules. Play through hand-crafted campaigns or design your own and <strong>share them with the world.</strong>
               </p>
               <div className="space-y-6">
                 <div className="flex gap-4 p-4 rounded-2xl bg-zinc-950 border border-zinc-900">

@@ -1,8 +1,8 @@
 import type { Level } from './types';
 
 export const INITIAL_LEVEL: Level = {
-  id: 'demo-parity',
-  name: 'Parity Paths Demo',
+  id: 'demo',
+  name: 'Demo Level',
   width: 10,
   height: 10,
   tiles: [], // Will be filled in initialization
@@ -12,8 +12,7 @@ export const INITIAL_LEVEL: Level = {
       type: 'dog',
       position: { x: 2, y: 1 },
       rules: [
-        { id: 'r1', type: 'reach-goal', targetId: 'goal-dog' },
-        { id: 'r2', type: 'parity-even' }
+        { id: 'r1', type: 'reach-goal', targetId: 'goal-dog' }
       ]
     },
     {
@@ -21,8 +20,7 @@ export const INITIAL_LEVEL: Level = {
       type: 'cat',
       position: { x: 1, y: 5 },
       rules: [
-        { id: 'r3', type: 'reach-goal', targetId: 'goal-cat' },
-        { id: 'r4', type: 'parity-odd' }
+        { id: 'r3', type: 'reach-goal', targetId: 'goal-cat' }
       ]
     },
     {
@@ -30,8 +28,7 @@ export const INITIAL_LEVEL: Level = {
       type: 'rabbit',
       position: { x: 1, y: 9 },
       rules: [
-        { id: 'r5', type: 'reach-goal', targetId: 'goal-rabbit' },
-        { id: 'r6', type: 'alternate-colors' }
+        { id: 'r5', type: 'reach-goal', targetId: 'goal-rabbit' }
       ]
     },
     {

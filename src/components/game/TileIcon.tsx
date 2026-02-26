@@ -1,4 +1,4 @@
-import { LogOut, DoorOpen, PaintBucket, Snowflake, ToggleLeft, ArrowUp, Waves, Lock, LockOpen } from 'lucide-react';
+import { LogOut, DoorOpen, PaintBucket, ToggleLeft, ArrowUp, Lock, LockOpen } from 'lucide-react';
 import type { TileType, TileMeta } from '../../types';
 
 const COLOR_MAP: Record<string, string> = {
@@ -45,32 +45,6 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
           }}
         />
       );
-    case 'floor-black': {
-      const grassSvg = `url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='24' height='24' fill='%23183a28'/%3E%3Cpath d='M3 24 Q3 16 5 12' stroke='%232d6b45' stroke-width='1.5' fill='none'/%3E%3Cpath d='M7 24 Q6 14 9 8' stroke='%23348a52' stroke-width='1.2' fill='none'/%3E%3Cpath d='M11 24 Q12 17 10 11' stroke='%232d6b45' stroke-width='1.5' fill='none'/%3E%3Cpath d='M15 24 Q14 15 17 10' stroke='%23266d40' stroke-width='1.2' fill='none'/%3E%3Cpath d='M19 24 Q20 18 18 13' stroke='%23348a52' stroke-width='1.5' fill='none'/%3E%3Cpath d='M22 24 Q21 16 23 11' stroke='%232d6b45' stroke-width='1.2' fill='none'/%3E%3C/svg%3E")`;
-      return (
-        <div
-          className={`w-full h-full rounded-sm ${className}`}
-          style={{ backgroundImage: grassSvg, backgroundSize: '24px 24px' }}
-        />
-      );
-    }
-    case 'water':
-      return (
-        <div
-          className={`w-full h-full rounded-sm flex items-center justify-center ${className}`}
-          style={{ backgroundColor: 'rgba(30,64,110,0.45)' }}
-        >
-          <Waves
-            size={18}
-            style={{
-              color: '#60a5fa',
-              filter: 'drop-shadow(0 0 4px rgba(96,165,250,0.5))',
-              opacity: 0.6,
-            }}
-          />
-        </div>
-      );
-
     case 'goal':
       return (
         <div className={`w-full h-full bg-zinc-800/20 rounded-sm flex items-center justify-center ${className}`}>
@@ -121,20 +95,6 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
               color: c || '#a1a1aa',
               filter: c ? `drop-shadow(0 0 4px ${c}50)` : undefined,
               opacity: 0.7,
-            }}
-          />
-        </div>
-      );
-
-    case 'ice':
-      return (
-        <div className={`w-full h-full bg-cyan-400/8 rounded-sm flex items-center justify-center ${className}`}>
-          <Snowflake
-            size={16}
-            style={{
-              color: '#67e8f9',
-              filter: 'drop-shadow(0 0 4px rgba(103,232,249,0.4))',
-              opacity: 0.6,
             }}
           />
         </div>

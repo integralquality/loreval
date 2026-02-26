@@ -21,11 +21,8 @@ interface LevelDef {
 
 const BASE_CHARS: Record<string, () => Partial<Tile>> = {
   '.': () => ({ type: 'empty' }),
-  'G': () => ({ type: 'floor-black' }),
   'R': () => ({ type: 'floor-white' }),
   'W': () => ({ type: 'wall' }),
-  '~': () => ({ type: 'water' }),
-  'I': () => ({ type: 'ice' }),
 };
 
 function buildLevel(def: LevelDef): CampaignLevel {
@@ -62,7 +59,7 @@ function buildLevel(def: LevelDef): CampaignLevel {
 
 // ─── Level 1: First Steps ──────────────────────────────────
 // Simple maze. Dog must navigate to the exit.
-// Dog at (1,1) → goal at (6,5). No parity rule.
+// Dog at (1,1) → goal at (6,5). No special rules.
 const level1 = buildLevel({
   id: 'level-1',
   name: 'First Steps',
@@ -93,68 +90,59 @@ const level1 = buildLevel({
   },
 });
 
-// ─── Level 2: Alternate Path ───────────────────────────────
-// Rabbit must alternate road/grass every step.
-// Rabbit at (1,0) on grass. Goal at (6,6).
-// The obvious path right along row 0 then down column 6 fails
-// because column 6 has two roads in a row.
-// Solution: go down column 1 (alternating G/R), then right along row 6.
+// ─── Level 2: Switch & Door ─────────────────────────────────
+// Dog must hit a switch to open a door blocking the path to the exit.
 const level2 = buildLevel({
   id: 'level-2',
-  name: 'Alternate Path',
-  description: 'The rabbit must alternate between road and grass every step.',
+  name: 'Switch & Door',
+  description: 'Find the switch to open the door blocking your path.',
   number: 2,
   width: 8,
   height: 7,
   layout: [
-    '.  G  R  G  R  G  R  .',
-    '.  R  R  W  G  W  R  .',
-    '.  G  W  R  R  G  R  .',
-    '.  R  G  W  G  R  R  .',
-    '.  G  R  G  R  G  R  .',
-    '.  R  W  R  G  R  G  .',
-    '.  G  R  G  R  G  F  .',
+    '.  R  R  R  R  W  R  .',
+    '.  R  W  W  R  W  R  .',
+    '.  R  W  S  R  W  R  .',
+    '.  R  W  W  W  D  R  .',
+    '.  R  R  R  R  W  R  .',
+    '.  W  W  W  R  R  R  .',
+    '.  R  R  R  R  R  F  .',
   ],
   entities: [
     {
-      id: 'rabbit-1',
-      type: 'rabbit',
+      id: 'dog-1',
+      type: 'dog',
       position: { x: 1, y: 0 },
-      color: 'pink',
-      rules: [
-        { id: 'r1', type: 'reach-goal', targetId: 'goal-2' },
-        { id: 'r2', type: 'alternate-colors' },
-      ],
+      color: 'orange',
+      rules: [{ id: 'r1', type: 'reach-goal', targetId: 'goal-2' }],
     },
   ],
   charMap: {
-    'F': () => ({ type: 'goal', color: 'pink', meta: { id: 'goal-2' } }),
+    'F': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-2' } }),
+    'S': () => ({ type: 'switch', color: 'blue' }),
+    'D': () => ({ type: 'door', color: 'blue' }),
   },
 });
 
 // ─── Level 3: Full Challenge ─────────────────────────────
-// 4 entities, each with unique rules and mechanics.
-// Dog (2,1) → orange exit (8,1): parity-even, detour around wall at (5,1)
-// Robot (2,3) → red exit (8,3): switch toggles blue door, slide across ice
-// Cat (1,5) → purple exit (8,5): parity-odd, pass through one-way
-// Rabbit (1,9) → pink exit (8,8): alternate road/grass terrain
+// Multi-entity level with doors, switches, locks, one-way, paint.
 const level3 = buildLevel({
   id: 'level-3',
   name: 'Full Challenge',
-  description: 'Four characters, four exits, four different rules. Use every mechanic.',
+  description: 'Four characters, four exits, four different paths.',
   number: 3,
   width: 10,
   height: 10,
   layout: [
-    '.  G  G  G  G  R  R  R  R  .',
-    '.  G  R  R  R  W  R  R  1  .',
-    '.  G  G  W  W  R  W  W  R  .',
-    '.  R  R  S  I  I  I  D  4  .',
+    '.  R  R  R  R  R  R  R  R  .',
+    '.  R  R  R  R  W  R  R  1  .',
+    '.  R  R  W  W  R  W  W  R  .',
+    '.  R  R  S  R  R  R  D  4  .',
     '.  W  W  W  R  R  R  W  R  .',
     '.  R  R  R  R  R  >  R  2  .',
-    '.  R  R  W  P  W  R  W  ~  .',
-    '.  R  R  R  R  R  R  R  ~  .',
-    '.  G  R  G  R  G  R  G  3  .',
+    '.  R  R  W  P  W  R  W  R  .',
+    '.  R  R  R  R  R  R  R  R  .',
+    '.  R  R  R  R  R  R  R  3  .',
     '.  R  R  R  R  R  R  R  R  .',
   ],
   entities: [
@@ -165,7 +153,6 @@ const level3 = buildLevel({
       color: 'orange',
       rules: [
         { id: 'r1', type: 'reach-goal', targetId: 'goal-dog' },
-        { id: 'r2', type: 'parity-even' },
       ],
     },
     {
@@ -184,7 +171,6 @@ const level3 = buildLevel({
       color: 'purple',
       rules: [
         { id: 'r4', type: 'reach-goal', targetId: 'goal-cat' },
-        { id: 'r5', type: 'parity-odd' },
       ],
     },
     {
@@ -194,7 +180,6 @@ const level3 = buildLevel({
       color: 'pink',
       rules: [
         { id: 'r6', type: 'reach-goal', targetId: 'goal-rabbit' },
-        { id: 'r7', type: 'alternate-colors' },
       ],
     },
   ],
@@ -212,9 +197,7 @@ const level3 = buildLevel({
 
 // ─── Level 4: The Swap ───────────────────────────────────
 // 2 characters in a corridor with exits swapped.
-// Dog at (5,1) needs orange exit at (1,1). Cat at (2,1) needs purple exit at (6,1).
-// They block each other — one must step into the alcove (column 3) to let the other pass.
-// Teaches: using temporary space to swap two items (like a temp variable).
+// They block each other — one must step into the alcove to let the other pass.
 const level4 = buildLevel({
   id: 'level-4',
   name: 'The Swap',
@@ -250,12 +233,7 @@ const level4 = buildLevel({
 });
 
 // ─── Level 5: Sort It Out ────────────────────────────────
-// 3 characters in reverse order. Exits require correct arrangement.
-// Rabbit(2,1) needs to reach pink exit at (8,2).
-// Dog(5,1) needs to reach orange exit at (1,1).
-// Cat(7,1) needs to reach purple exit at (4,2).
-// Alcoves above and below the corridor let characters pass each other.
-// Teaches: multi-step sorting — bubble sort with temporary storage.
+// 3 characters in reverse order. Alcoves let characters pass each other.
 const level5 = buildLevel({
   id: 'level-5',
   name: 'Sort It Out',

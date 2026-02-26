@@ -10,13 +10,10 @@ export type TileType =
   | 'wall'
   | 'floor'
   | 'floor-white'
-  | 'floor-black'
-  | 'water'
   | 'goal'
   | 'start'
   | 'door'
   | 'paint'
-  | 'ice'
   | 'switch'
   | 'one-way'
   | 'lock';
@@ -30,9 +27,6 @@ export type EntityType =
 
 export type RuleType =
   | 'reach-goal'
-  | 'parity-even'
-  | 'parity-odd'
-  | 'alternate-colors'
   | 'max-steps';
 
 export interface Rule {
