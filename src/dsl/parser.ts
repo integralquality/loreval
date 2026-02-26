@@ -12,10 +12,10 @@ import {
 // ── Regex patterns ──────────────────────────────────────────
 
 const HEADER_RE = /^level\s+"([^"]+)"\s+(\d+)x(\d+)$/;
-const TILES_START_RE = /^tiles:\s*$/;
+const GRID_START_RE = /^grid:\s*$/;
 const TILE_ROW_RE = /^\s+(\S(?:\s+\S)*)\s*$/;
-const LEGEND_RE = /^([^\s])\s*=\s*(.+)$/;
-const ENTITY_RE = /^(player|dog|cat|rabbit|robot)\s+(\S+)\s+@(\d+),(\d+)(?:\s+->\s+(\S))?(?:\s+\[([^\]]+)\])?$/;
+const LET_RE = /^let\s+([^\s])\s*=\s*(.+)$/;
+const AGENT_RE = /^agent\s+(player|dog|cat|rabbit|robot)\s+(\S+)\s+start\((\d+),(\d+)\)(?:\s+->\s+reach\((\d+),(\d+)\))?(?:\s+\[([^\]]+)\])?$/;
 const COMMENT_RE = /^\s*#/;
 const BLANK_RE = /^\s*$/;
 
@@ -32,7 +32,7 @@ function parseHeader(
   return { name: m[1], width: parseInt(m[2], 10), height: parseInt(m[3], 10) };
 }
 
-// ── Legend parsing ───────────────────────────────────────────
+// ── Let parsing ─────────────────────────────────────────────
 
 function parseTileSpec(
   spec: string,
@@ -66,13 +66,13 @@ function parseTileSpec(
   return { tileType, color, meta };
 }
 
-function parseLegendLine(
+function parseLetLine(
   line: string,
   lineNum: number
 ): LegendEntry | ParseError {
-  const m = LEGEND_RE.exec(line);
+  const m = LET_RE.exec(line);
   if (!m) {
-    return { line: lineNum, message: `Invalid legend format. Expected: C = type:color` };
+    return { line: lineNum, message: `Invalid let format. Expected: let C = type:color` };
   }
 
   const char = m[1];
@@ -89,7 +89,7 @@ function parseLegendLine(
   };
 }
 
-// ── Entity parsing ──────────────────────────────────────────
+// ── Agent parsing ───────────────────────────────────────────
 
 function parseRuleList(
   text: string,
@@ -123,24 +123,25 @@ function parseRuleList(
   return rules;
 }
 
-function parseEntityLine(
+function parseAgentLine(
   line: string,
   lineNum: number
 ): RawEntity | ParseError {
-  const m = ENTITY_RE.exec(line);
+  const m = AGENT_RE.exec(line);
   if (!m) {
-    return { line: lineNum, message: `Invalid entity format. Expected: type color @x,y -> target [rules]` };
+    return { line: lineNum, message: `Invalid agent format. Expected: agent type color start(x,y) -> reach(x,y)` };
   }
 
   const entityType = m[1];
   const color = m[2];
   const x = parseInt(m[3], 10);
   const y = parseInt(m[4], 10);
-  const targetChar = m[5] || undefined;
-  const rulesText = m[6] || undefined;
+  const reachX = m[5] !== undefined ? parseInt(m[5], 10) : undefined;
+  const reachY = m[6] !== undefined ? parseInt(m[6], 10) : undefined;
+  const rulesText = m[7] || undefined;
 
   if (!ENTITY_TYPE_SET.has(entityType as any)) {
-    return { line: lineNum, message: `Unknown entity type "${entityType}"` };
+    return { line: lineNum, message: `Unknown agent type "${entityType}"` };
   }
 
   let rules: Array<{ type: string; value?: number }> = [];
@@ -150,7 +151,7 @@ function parseEntityLine(
     rules = parsed;
   }
 
-  return { line: lineNum, entityType, color, x, y, targetChar, rules };
+  return { line: lineNum, entityType, color, x, y, reachX, reachY, rules };
 }
 
 // ── Level resolution ────────────────────────────────────────
@@ -200,7 +201,7 @@ function resolveLevel(
   if (charGrid.length !== height) {
     errors.push({
       line: 0,
-      message: `Expected ${height} tile rows, got ${charGrid.length}`,
+      message: `Expected ${height} grid rows, got ${charGrid.length}`,
     });
   }
 
@@ -211,7 +212,7 @@ function resolveLevel(
     if (row.length !== width) {
       errors.push({
         line: 0,
-        message: `Tile row ${y + 1} has ${row.length} tokens, expected ${width}`,
+        message: `Grid row ${y + 1} has ${row.length} tokens, expected ${width}`,
       });
     }
 
@@ -222,7 +223,7 @@ function resolveLevel(
       if (!def) {
         errors.push({
           line: 0,
-          message: `Unknown character '${ch}' in tile grid at (${x}, ${y})`,
+          message: `Unknown character '${ch}' in grid at (${x}, ${y})`,
         });
         tileRow.push({ x, y, type: 'empty' });
       } else {
@@ -240,62 +241,59 @@ function resolveLevel(
 
   if (errors.length > 0) return null;
 
-  // Resolve entities
+  // Resolve agents
   const entityCounts: Record<string, number> = {};
   const entities: Entity[] = [];
 
   for (const raw of rawEntities) {
-    // Validate position
+    // Validate start position
     if (raw.x < 0 || raw.x >= width || raw.y < 0 || raw.y >= height) {
       errors.push({
         line: raw.line,
-        message: `Entity position @${raw.x},${raw.y} is outside grid bounds (${width}x${height})`,
+        message: `Agent start(${raw.x},${raw.y}) is outside grid bounds (${width}x${height})`,
       });
       continue;
+    }
+
+    // Validate reach position
+    if (raw.reachX !== undefined && raw.reachY !== undefined) {
+      if (raw.reachX < 0 || raw.reachX >= width || raw.reachY < 0 || raw.reachY >= height) {
+        errors.push({
+          line: raw.line,
+          message: `Agent reach(${raw.reachX},${raw.reachY}) is outside grid bounds (${width}x${height})`,
+        });
+        continue;
+      }
     }
 
     // Generate deterministic ID
     entityCounts[raw.entityType] = (entityCounts[raw.entityType] || 0) + 1;
     const entityId = `${raw.entityType}-${entityCounts[raw.entityType]}`;
 
-    // Resolve goal target
+    // Resolve reach target → goal tile
     let goalTargetId: string | undefined;
-    if (raw.targetChar) {
-      const legendEntry = legend.get(raw.targetChar);
-      if (!legendEntry) {
+    if (raw.reachX !== undefined && raw.reachY !== undefined) {
+      const targetTile = tiles[raw.reachY]?.[raw.reachX];
+      if (!targetTile) {
         errors.push({
           line: raw.line,
-          message: `Target '${raw.targetChar}' not found in legend`,
+          message: `No tile at reach(${raw.reachX},${raw.reachY})`,
         });
-      } else if (legendEntry.tileType !== 'goal') {
+      } else if (targetTile.type !== 'goal') {
         warnings.push({
           line: raw.line,
-          message: `Target '${raw.targetChar}' is "${legendEntry.tileType}", not a goal`,
+          message: `Tile at reach(${raw.reachX},${raw.reachY}) is "${targetTile.type}", not a goal`,
         });
+        // Still create the reach-goal rule — the position is the intent
+        goalTargetId = targetTile.meta?.id || `goal-${raw.reachX}-${raw.reachY}`;
       } else {
-        goalTargetId = legendEntry.meta?.id || `goal-${raw.targetChar}`;
+        goalTargetId = targetTile.meta?.id || `goal-${raw.reachX}-${raw.reachY}`;
         // Ensure the goal tile has this ID in its meta
-        if (!legendEntry.meta?.id) {
-          legendEntry.meta = { ...legendEntry.meta, id: goalTargetId };
-          // Update the charMap entry too
-          const existing = charMap.get(raw.targetChar);
-          if (existing) {
-            charMap.set(raw.targetChar, {
-              ...existing,
-              meta: { ...existing.meta, id: goalTargetId },
-            });
-          }
-          // Patch tiles that use this char
-          for (let y = 0; y < charGrid.length; y++) {
-            for (let x = 0; x < charGrid[y].length; x++) {
-              if (charGrid[y][x] === raw.targetChar && tiles[y]?.[x]) {
-                tiles[y][x] = {
-                  ...tiles[y][x],
-                  meta: { ...tiles[y][x].meta, id: goalTargetId },
-                };
-              }
-            }
-          }
+        if (!targetTile.meta?.id) {
+          tiles[raw.reachY][raw.reachX] = {
+            ...targetTile,
+            meta: { ...targetTile.meta, id: goalTargetId },
+          };
         }
       }
     }
@@ -304,7 +302,7 @@ function resolveLevel(
     const rules: Rule[] = [];
     let ruleIdx = 0;
 
-    // If there's a target, add reach-goal if not already in rules
+    // If there's a reach target, add reach-goal if not already in rules
     if (goalTargetId && !raw.rules.some(r => r.type === 'reach-goal')) {
       ruleIdx++;
       rules.push({
@@ -364,18 +362,18 @@ export function parseDSL(source: string): ParseResult {
   const legend = new Map<string, LegendEntry>();
   const rawEntities: RawEntity[] = [];
 
-  type Phase = 'header' | 'tiles' | 'body';
+  type Phase = 'header' | 'grid' | 'body';
   let phase: Phase = 'header';
-  let tileRowStart = 0;
+  let gridRowStart = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const lineNum = i + 1;
     const line = lines[i];
 
-    // Skip comments and blanks (except in tiles phase where blank ends the block)
+    // Skip comments and blanks (except in grid phase where blank ends the block)
     if (COMMENT_RE.test(line)) continue;
     if (BLANK_RE.test(line)) {
-      if (phase === 'tiles' && charGrid.length > 0) {
+      if (phase === 'grid' && charGrid.length > 0) {
         phase = 'body';
       }
       continue;
@@ -383,12 +381,12 @@ export function parseDSL(source: string): ParseResult {
 
     switch (phase) {
       case 'header': {
-        if (TILES_START_RE.test(line)) {
+        if (GRID_START_RE.test(line)) {
           if (!headerResult) {
-            errors.push({ line: lineNum, message: 'Missing header before "tiles:"' });
+            errors.push({ line: lineNum, message: 'Missing header before "grid:"' });
           }
-          phase = 'tiles';
-          tileRowStart = lineNum;
+          phase = 'grid';
+          gridRowStart = lineNum;
           break;
         }
 
@@ -401,13 +399,13 @@ export function parseDSL(source: string): ParseResult {
         break;
       }
 
-      case 'tiles': {
+      case 'grid': {
         const rowMatch = TILE_ROW_RE.exec(line);
         if (rowMatch) {
           const tokens = rowMatch[1].split(/\s+/);
           charGrid.push(tokens);
         } else {
-          // Non-indented line ends tiles block
+          // Non-indented line ends grid block
           phase = 'body';
           // Fall through to body processing
           i--;
@@ -416,9 +414,9 @@ export function parseDSL(source: string): ParseResult {
       }
 
       case 'body': {
-        // Try legend
-        if (LEGEND_RE.test(line)) {
-          const result = parseLegendLine(line, lineNum);
+        // Try let declaration
+        if (LET_RE.test(line)) {
+          const result = parseLetLine(line, lineNum);
           if ('message' in result) {
             errors.push(result);
           } else {
@@ -439,10 +437,9 @@ export function parseDSL(source: string): ParseResult {
           break;
         }
 
-        // Try entity
-        const entityMatch = ENTITY_RE.test(line);
-        if (entityMatch) {
-          const result = parseEntityLine(line, lineNum);
+        // Try agent
+        if (AGENT_RE.test(line)) {
+          const result = parseAgentLine(line, lineNum);
           if ('message' in result) {
             errors.push(result);
           } else {
@@ -467,7 +464,7 @@ export function parseDSL(source: string): ParseResult {
   }
 
   if (charGrid.length === 0) {
-    errors.push({ line: tileRowStart || 1, message: 'No tile rows found' });
+    errors.push({ line: gridRowStart || 1, message: 'No grid rows found' });
     return { level: null, errors, warnings };
   }
 

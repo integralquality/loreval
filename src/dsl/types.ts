@@ -20,13 +20,14 @@ export interface LegendEntry {
   meta?: Record<string, string>;
 }
 
-/** Internal: a raw entity parsed before resolution */
+/** Internal: a raw agent parsed before resolution */
 export interface RawEntity {
   line: number;
   entityType: string;
   color: string;
   x: number;
   y: number;
-  targetChar?: string;
+  reachX?: number;
+  reachY?: number;
   rules: Array<{ type: string; value?: number }>;
 }

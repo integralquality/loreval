@@ -130,7 +130,7 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
             autoCapitalize="off"
             className="flex-1 bg-zinc-950 text-zinc-200 font-mono text-sm leading-6 py-4 pl-3 pr-4 resize-none outline-none border-none min-h-0"
             style={{ tabSize: 2 }}
-            placeholder={`level "My Level" 8x6\n\ntiles:\n  W W W W W W W W\n  W R R R R R R W\n  W R W W R W R W\n  W R R R R W R W\n  W W R W R R R W\n  W W W W W W W W`}
+            placeholder={`level "My Level" 8x6\n\ngrid:\n  W W W W W W W W\n  W R R R R R R W\n  W R W G R W R W\n  W R R R R W R W\n  W W R W R R R W\n  W W W W W W W W\n\nlet G = goal:orange:id=g1\n\nagent dog orange start(1,1) -> reach(3,2)`}
           />
         </div>
 

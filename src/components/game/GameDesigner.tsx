@@ -672,8 +672,8 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                   <p className="text-zinc-500">level "Name" 8x6</p>
                 </div>
                 <div>
-                  <p className="text-zinc-300 mb-1">Tiles</p>
-                  <p className="text-zinc-500">tiles:</p>
+                  <p className="text-zinc-300 mb-1">Grid</p>
+                  <p className="text-zinc-500">grid:</p>
                   <p className="text-zinc-500 ml-2">W W R R . .</p>
                 </div>
                 <div>
@@ -683,14 +683,15 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                   <p className="text-zinc-500">R = road</p>
                 </div>
                 <div>
-                  <p className="text-zinc-300 mb-1">Legend</p>
-                  <p className="text-zinc-500">D = door:blue</p>
-                  <p className="text-zinc-500">G = goal:orange:id=g1</p>
+                  <p className="text-zinc-300 mb-1">Variables</p>
+                  <p className="text-zinc-500">let D = door:blue</p>
+                  <p className="text-zinc-500">let G = goal:orange:id=g1</p>
                 </div>
                 <div>
-                  <p className="text-zinc-300 mb-1">Entities</p>
-                  <p className="text-zinc-500">dog orange @2,3 -&gt; G</p>
-                  <p className="text-zinc-500">[reach-goal, max-steps:10]</p>
+                  <p className="text-zinc-300 mb-1">Agents</p>
+                  <p className="text-zinc-500">agent dog orange</p>
+                  <p className="text-zinc-500 ml-2">start(2,3) -&gt; reach(7,1)</p>
+                  <p className="text-zinc-500 ml-2">[max-steps:10]</p>
                 </div>
                 <div>
                   <p className="text-zinc-300 mb-1">Comments</p>

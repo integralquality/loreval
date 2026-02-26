@@ -147,8 +147,8 @@ export function serializeDSL(level: Level): string {
     return builtinReverse.get(tile.type) || '.';
   }
 
-  // Tiles block
-  lines.push('tiles:');
+  // Grid block
+  lines.push('grid:');
   for (let y = 0; y < level.height; y++) {
     const row: string[] = [];
     for (let x = 0; x < level.width; x++) {
@@ -158,7 +158,7 @@ export function serializeDSL(level: Level): string {
     lines.push('  ' + row.join(' '));
   }
 
-  // Legend section
+  // Let declarations
   const legendEntries = Array.from(sigToChar.entries())
     .map(([sig, ch]) => ({ sig, ch, info: sigToInfo.get(sig)! }))
     .sort((a, b) => a.ch.localeCompare(b.ch));
@@ -174,29 +174,29 @@ export function serializeDSL(level: Level): string {
           .map(([k, v]) => `${k}=${v}`);
         spec += ':' + metaParts.join(',');
       }
-      lines.push(`${ch} = ${spec}`);
+      lines.push(`let ${ch} = ${spec}`);
     }
   }
 
-  // Entity section
+  // Agent section
   if (level.entities.length > 0) {
     lines.push('');
     for (const entity of level.entities) {
-      let line = `${entity.type} ${entity.color || 'none'} @${entity.position.x},${entity.position.y}`;
+      let line = `agent ${entity.type} ${entity.color || 'none'} start(${entity.position.x},${entity.position.y})`;
 
-      // Find target goal char
+      // Find reach target position from reach-goal rule
       const reachGoal = entity.rules.find(r => r.type === 'reach-goal');
       if (reachGoal?.targetId) {
-        // Find which legend char maps to a goal with this ID
-        const targetChar = findGoalChar(reachGoal.targetId, sigToChar, sigToInfo);
-        if (targetChar) {
-          line += ` -> ${targetChar}`;
+        const pos = findGoalPosition(reachGoal.targetId, level);
+        if (pos) {
+          line += ` -> reach(${pos.x},${pos.y})`;
         }
       }
 
-      // Rules
+      // Extra rules (skip reach-goal since it's expressed via -> reach())
+      const extraRules = entity.rules.filter(r => r.type !== 'reach-goal');
       const ruleStrs: string[] = [];
-      for (const rule of entity.rules) {
+      for (const rule of extraRules) {
         if (rule.value !== undefined) {
           ruleStrs.push(`${rule.type}:${rule.value}`);
         } else {
@@ -215,15 +215,17 @@ export function serializeDSL(level: Level): string {
   return lines.join('\n');
 }
 
-/** Find the legend char that corresponds to a goal tile with the given meta ID */
-function findGoalChar(
+/** Find the grid position of a goal tile by its meta ID */
+function findGoalPosition(
   goalId: string,
-  sigToChar: Map<string, string>,
-  sigToInfo: Map<string, { type: TileType; color?: string; meta?: Record<string, string> }>
-): string | null {
-  for (const [sig, info] of sigToInfo) {
-    if (info.type === 'goal' && info.meta?.id === goalId) {
-      return sigToChar.get(sig) || null;
+  level: Level
+): { x: number; y: number } | null {
+  for (let y = 0; y < level.height; y++) {
+    for (let x = 0; x < level.width; x++) {
+      const tile = level.tiles[y]?.[x];
+      if (tile?.type === 'goal' && tile.meta?.id === goalId) {
+        return { x, y };
+      }
     }
   }
   return null;
