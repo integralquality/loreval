@@ -368,52 +368,20 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
           </div>
         </div>
 
-        {/* Mode Toggle */}
-        {!playOnly && (
-          <div className="p-4 space-y-2">
-            <div className="flex bg-zinc-800 p-1 rounded-lg">
-              <button
-                onClick={() => setMode('edit')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm ${
-                  mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <Grid3X3 size={16} /> Visual
+        {/* Save/Load/Clear (edit mode only) */}
+        {!playOnly && mode === 'edit' && (
+          <div className="p-4">
+            <div className="flex gap-2">
+              <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
+                <Save size={14} /> Save
               </button>
-              <button
-                onClick={() => {
-                  setDslCode(serializeDSL(level));
-                  setMode('code');
-                }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm ${
-                  mode === 'code' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <Code2 size={16} /> Code
+              <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
+                <Settings size={14} /> Load
               </button>
-              <button
-                onClick={() => setMode('play')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm ${
-                  mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
-              >
-                <Play size={16} /> Play
+              <button onClick={handleClear} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-red-400 rounded-lg text-xs">
+                <Trash2 size={14} /> Clear
               </button>
             </div>
-
-            {mode === 'edit' && (
-              <div className="flex gap-2">
-                <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
-                  <Save size={14} /> Save
-                </button>
-                <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
-                  <Settings size={14} /> Load
-                </button>
-                <button onClick={handleClear} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-red-400 rounded-lg text-xs">
-                  <Trash2 size={14} /> Clear
-                </button>
-              </div>
-            )}
           </div>
         )}
 
@@ -723,20 +691,57 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
         )}
       </div>
 
-      {/* Code Editor (replaces canvas in code mode) */}
-      {mode === 'code' && (
-        <div className="flex-1 bg-zinc-950 relative overflow-hidden">
-          <CodeEditorPanel
-            initialCode={dslCode}
-            onApply={(parsed) => setLevel(parsed)}
-            onCodeChange={(c) => setDslCode(c)}
-          />
-        </div>
-      )}
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Mode Toggle Tabs */}
+        {!playOnly && (
+          <div className="flex items-center justify-center px-4 py-3 bg-zinc-950 border-b border-zinc-800 shrink-0">
+            <div className="flex bg-zinc-800 p-1 rounded-lg">
+              <button
+                onClick={() => setMode('edit')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${
+                  mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Grid3X3 size={15} /> Visual
+              </button>
+              <button
+                onClick={() => {
+                  setDslCode(serializeDSL(level));
+                  setMode('code');
+                }}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${
+                  mode === 'code' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Code2 size={15} /> Code
+              </button>
+              <button
+                onClick={() => setMode('play')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${
+                  mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Play size={15} /> Play
+              </button>
+            </div>
+          </div>
+        )}
 
-      {/* Main Canvas */}
-      {mode !== 'code' && (
-      <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center">
+        {/* Code Editor */}
+        {mode === 'code' && (
+          <div className="flex-1 min-h-0">
+            <CodeEditorPanel
+              initialCode={dslCode}
+              onApply={(parsed) => setLevel(parsed)}
+              onCodeChange={(c) => setDslCode(c)}
+            />
+          </div>
+        )}
+
+        {/* Grid Canvas */}
+        {mode !== 'code' && (
+        <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 to-zinc-950 -z-10" />
 
         {/* Grid Container */}
@@ -828,6 +833,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
         </div>
       </div>
       )}
+      </div>
     </div>
   );
 }
