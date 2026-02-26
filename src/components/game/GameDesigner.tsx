@@ -18,15 +18,18 @@ import {
   ToggleLeft,
   ArrowUp,
   Lock,
-  Home
+  Home,
+  Code2
 } from 'lucide-react';
 import type { Level, Tile, TileType, EntityType, Entity, RuleType, Direction, GameState } from '../../types';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
 import { executeMove } from '../../gameLogic';
+import { serializeDSL } from '../../dsl/serializer';
 import { TileIcon } from './TileIcon';
 import { EntityIcon } from './EntityIcon';
 import { ToolButton } from './ToolButton';
+import { CodeEditorPanel } from './CodeEditorPanel';
 
 const ENTITY_GLOW: Record<string, { bg: string; glow: string }> = {
   orange: { bg: '#fb923c', glow: 'rgba(251,146,60,0.4)' },
@@ -39,8 +42,9 @@ const ENTITY_GLOW: Record<string, { bg: string; glow: string }> = {
 
 export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?: Level; playOnly?: boolean } = {}) {
   const [level, setLevel] = useState<Level>(initialLevel || INITIAL_LEVEL);
-  const [mode, setMode] = useState<'edit' | 'play'>(playOnly ? 'play' : 'edit');
-  const [selectedTool, setSelectedTool] = useState<TileType | EntityType | 'erase'>('wall');
+  const [mode, setMode] = useState<'edit' | 'code' | 'play'>(playOnly ? 'play' : 'edit');
+  const [dslCode, setDslCode] = useState<string>('');
+  const [selectedTool, setSelectedTool] = useState<TileType | EntityType | 'erase' | 'goal-universal'>('wall');
   const [toolCategory, setToolCategory] = useState<'tiles' | 'entities'>('tiles');
 
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
@@ -370,19 +374,30 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
             <div className="flex bg-zinc-800 p-1 rounded-lg">
               <button
                 onClick={() => setMode('edit')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm ${
                   mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
-                <Grid3X3 size={18} /> Editor
+                <Grid3X3 size={16} /> Visual
+              </button>
+              <button
+                onClick={() => {
+                  setDslCode(serializeDSL(level));
+                  setMode('code');
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm ${
+                  mode === 'code' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Code2 size={16} /> Code
               </button>
               <button
                 onClick={() => setMode('play')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md transition-all text-sm ${
                   mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
-                <Play size={18} /> Play
+                <Play size={16} /> Play
               </button>
             </div>
 
@@ -453,8 +468,6 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                 <span className="text-purple-400">Doors</span> block unless color matches.
                 <br/>
                 <span className="text-purple-400">Paint</span> changes character color.
-                <br/>
-                <span className="text-cyan-400">Ice</span> makes characters slide until blocked.
                 <br/>
                 <span className="text-amber-400">Switches</span> toggle doors of matching color.
                 <br/>
@@ -647,9 +660,81 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
             </div>
           </div>
         )}
+
+        {/* Code Mode Sidebar */}
+        {mode === 'code' && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">DSL Syntax</h3>
+              <div className="space-y-3 text-xs text-zinc-400 font-mono">
+                <div>
+                  <p className="text-zinc-300 mb-1">Header</p>
+                  <p className="text-zinc-500">level "Name" 8x6</p>
+                </div>
+                <div>
+                  <p className="text-zinc-300 mb-1">Tiles</p>
+                  <p className="text-zinc-500">tiles:</p>
+                  <p className="text-zinc-500 ml-2">W W R R . .</p>
+                </div>
+                <div>
+                  <p className="text-zinc-300 mb-1">Built-in chars</p>
+                  <p className="text-zinc-500">. = empty</p>
+                  <p className="text-zinc-500">W = wall</p>
+                  <p className="text-zinc-500">R = road</p>
+                </div>
+                <div>
+                  <p className="text-zinc-300 mb-1">Legend</p>
+                  <p className="text-zinc-500">D = door:blue</p>
+                  <p className="text-zinc-500">G = goal:orange:id=g1</p>
+                </div>
+                <div>
+                  <p className="text-zinc-300 mb-1">Entities</p>
+                  <p className="text-zinc-500">dog orange @2,3 -&gt; G</p>
+                  <p className="text-zinc-500">[reach-goal, max-steps:10]</p>
+                </div>
+                <div>
+                  <p className="text-zinc-300 mb-1">Comments</p>
+                  <p className="text-zinc-500"># This is a comment</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Tile types</h3>
+              <div className="grid grid-cols-2 gap-1 text-xs text-zinc-400">
+                <span>wall</span><span>floor-white</span>
+                <span>goal</span><span>door</span>
+                <span>switch</span><span>paint</span>
+                <span>one-way</span><span>lock</span>
+              </div>
+            </div>
+
+            <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Arrows</h3>
+              <div className="grid grid-cols-2 gap-1 text-xs text-zinc-400 font-mono">
+                <span>^ = one-way up</span>
+                <span>v = one-way down</span>
+                <span>&lt; = one-way left</span>
+                <span>&gt; = one-way right</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* Code Editor (replaces canvas in code mode) */}
+      {mode === 'code' && (
+        <div className="flex-1 bg-zinc-950 relative overflow-hidden">
+          <CodeEditorPanel
+            initialCode={dslCode}
+            onApply={(parsed) => setLevel(parsed)}
+            onCodeChange={(c) => setDslCode(c)}
+          />
+        </div>
+      )}
+
       {/* Main Canvas */}
+      {mode !== 'code' && (
       <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 to-zinc-950 -z-10" />
 
@@ -741,6 +826,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

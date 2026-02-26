@@ -7,7 +7,12 @@
       "Bash(cd /e/Projects/AI/make-game && npx tsc -b 2>&1)",
       "Bash(true:*)",
       "Bash(cd /e/Projects/AI/make-game && npx tsc --noEmit 2>&1)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(cd /e/Projects/AI/make-game && npx tsx test-dsl.ts 2>&1)",
+      "Bash(cd /e/Projects/AI/make-game && npx tsc --noEmit --incremental false 2>&1)",
+      "Bash(cd /e/Projects/AI/make-game && npx tsc --noEmit --pretty false src/components/game/GameDesigner.tsx 2>&1)",
+      "Bash(cd /e/Projects/AI/make-game && npx tsc --noEmit --project tsconfig.app.json 2>&1)",
+      "Bash(tail:*)"
     ]
   }
 }
