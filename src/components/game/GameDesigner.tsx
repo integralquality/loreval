@@ -658,7 +658,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                 <div>
                   <p className="text-zinc-300 mb-1">Agents</p>
                   <p className="text-zinc-500">agent dog orange</p>
-                  <p className="text-zinc-500 ml-2">start(2,3) -&gt; reach(7,1)</p>
+                  <p className="text-zinc-500 ml-2">start(2,3) and reach(7,1)</p>
                   <p className="text-zinc-500 ml-2">[max-steps:10]</p>
                 </div>
                 <div>

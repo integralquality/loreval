@@ -189,11 +189,11 @@ export function serializeDSL(level: Level): string {
       if (reachGoal?.targetId) {
         const pos = findGoalPosition(reachGoal.targetId, level);
         if (pos) {
-          line += ` -> reach(${pos.x},${pos.y})`;
+          line += ` and reach(${pos.x},${pos.y})`;
         }
       }
 
-      // Extra rules (skip reach-goal since it's expressed via -> reach())
+      // Extra rules (skip reach-goal since it's expressed via "and reach()")
       const extraRules = entity.rules.filter(r => r.type !== 'reach-goal');
       const ruleStrs: string[] = [];
       for (const rule of extraRules) {

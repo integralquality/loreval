@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Eye, EyeOff, Copy, AlertTriangle, Check } from 'lucide-react';
 import type { Level } from '../../types';
@@ -25,7 +25,7 @@ const TILE_TYPES = new Set([
   'wall', 'floor', 'floor-white', 'empty', 'goal', 'door',
   'switch', 'paint', 'one-way', 'lock', 'start',
 ]);
-const AGENT_TYPES = new Set(['player', 'dog', 'cat', 'rabbit', 'robot']);
+const AGENT_TYPES_SET = new Set(['player', 'dog', 'cat', 'rabbit', 'robot']);
 const COLOR_MAP: Record<string, string> = {
   orange: '#fb923c', purple: '#c084fc', pink: '#f472b6',
   blue: '#60a5fa', green: '#6ee7b7', red: '#f87171',
@@ -33,19 +33,14 @@ const COLOR_MAP: Record<string, string> = {
 };
 
 function span(text: string, color: string): string {
-  // Escape HTML
   const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   return `<span style="color:${color}">${escaped}</span>`;
 }
 
 function highlightLine(line: string): string {
-  // Blank
   if (/^\s*$/.test(line)) return '\n';
-
-  // Comment
   if (/^\s*#/.test(line)) return span(line, COMMENT_COLOR) + '\n';
 
-  // Header: level "name" WxH
   const headerMatch = /^(level)\s+("(?:[^"\\]|\\.)*")\s+(\d+x\d+)$/.exec(line);
   if (headerMatch) {
     return span(headerMatch[1], KEYWORD_COLOR) + ' '
@@ -53,10 +48,8 @@ function highlightLine(line: string): string {
       + span(headerMatch[3], NUMBER_COLOR) + '\n';
   }
 
-  // Grid label
   if (/^grid:\s*$/.test(line)) return span('grid:', KEYWORD_COLOR) + '\n';
 
-  // Grid row (indented single chars separated by spaces)
   if (/^\s+\S(\s+\S)*\s*$/.test(line)) {
     const indent = line.match(/^(\s+)/)![1];
     const tokens = line.trim().split(/\s+/);
@@ -65,13 +58,11 @@ function highlightLine(line: string): string {
       if (ch === 'R') return span(ch, GRID_ROAD);
       if (ch === '.') return span(ch, GRID_EMPTY);
       if ('^v<>'.includes(ch)) return span(ch, ARROW_COLOR);
-      // Custom legend chars — use a distinct color
       return span(ch, TYPE_COLOR);
     });
     return span(indent, DEFAULT_COLOR) + highlighted.join(' ') + '\n';
   }
 
-  // Let declaration: let C = type:color:meta
   const letMatch = /^(let)\s+(\S)\s*(=)\s*(.+)$/.exec(line);
   if (letMatch) {
     const spec = highlightTileSpec(letMatch[4].trim());
@@ -81,46 +72,11 @@ function highlightLine(line: string): string {
       + spec + '\n';
   }
 
-  // Agent line: agent type color start(x,y) -> reach(x,y) [rules]
-  const agentMatch = /^(agent)\s+(\S+)\s+(\S+)\s+(start)\((\d+),(\d+)\)(.*)$/.exec(line);
-  if (agentMatch) {
-    let result = span(agentMatch[1], KEYWORD_COLOR) + ' '
-      + span(agentMatch[2], AGENT_TYPES.has(agentMatch[2]) ? AGENT_COLOR : DEFAULT_COLOR) + ' '
-      + span(agentMatch[3], COLOR_MAP[agentMatch[3]] || DEFAULT_COLOR) + ' '
-      + span(agentMatch[4], KEYWORD_COLOR)
-      + span('(', OPERATOR_COLOR)
-      + span(agentMatch[5], NUMBER_COLOR)
-      + span(',', OPERATOR_COLOR)
-      + span(agentMatch[6], NUMBER_COLOR)
-      + span(')', OPERATOR_COLOR);
-
-    let rest = agentMatch[7];
-
-    // -> reach(x,y)
-    const reachMatch = /^\s*(->)\s*(reach)\((\d+),(\d+)\)(.*)$/.exec(rest);
-    if (reachMatch) {
-      result += ' ' + span(reachMatch[1], OPERATOR_COLOR) + ' '
-        + span(reachMatch[2], KEYWORD_COLOR)
-        + span('(', OPERATOR_COLOR)
-        + span(reachMatch[3], NUMBER_COLOR)
-        + span(',', OPERATOR_COLOR)
-        + span(reachMatch[4], NUMBER_COLOR)
-        + span(')', OPERATOR_COLOR);
-      rest = reachMatch[5];
-    }
-
-    // [rules]
-    const rulesMatch = /^\s*(\[)([^\]]*)(\])$/.exec(rest);
-    if (rulesMatch) {
-      result += ' ' + span(rulesMatch[1], OPERATOR_COLOR)
-        + highlightRules(rulesMatch[2])
-        + span(rulesMatch[3], OPERATOR_COLOR);
-    }
-
-    return result + '\n';
+  // Agent line — token-by-token to handle partial input
+  if (/^agent\b/.test(line)) {
+    return highlightAgentLine(line) + '\n';
   }
 
-  // Fallback — plain text
   return span(line, DEFAULT_COLOR) + '\n';
 }
 
@@ -135,7 +91,6 @@ function highlightTileSpec(spec: string): string {
     } else if (COLOR_MAP[part]) {
       result.push(span(part, COLOR_MAP[part]));
     } else if (part.includes('=')) {
-      // meta: key=val,key=val
       const pairs = part.split(',');
       result.push(pairs.map(pair => {
         const eq = pair.indexOf('=');
@@ -155,20 +110,336 @@ function highlightRules(text: string): string {
   const tokens = text.split(',');
   return tokens.map((token, i) => {
     const trimmed = token.trim();
-    const prefix = i > 0 ? span(', ', OPERATOR_COLOR) : '';
+    const pfx = i > 0 ? span(', ', OPERATOR_COLOR) : '';
     const colonIdx = trimmed.indexOf(':');
-    if (colonIdx === -1) {
-      return prefix + span(trimmed, TYPE_COLOR);
-    }
-    return prefix
+    if (colonIdx === -1) return pfx + span(trimmed, TYPE_COLOR);
+    return pfx
       + span(trimmed.slice(0, colonIdx), TYPE_COLOR)
       + span(':', OPERATOR_COLOR)
       + span(trimmed.slice(colonIdx + 1), NUMBER_COLOR);
   }).join('');
 }
 
+/** Highlight an agent line progressively — handles partial input at any point */
+function highlightAgentLine(line: string): string {
+  let pos = 0;
+  const out: string[] = [];
+
+  function eat(re: RegExp): RegExpExecArray | null {
+    const m = re.exec(line.slice(pos));
+    if (m) pos += m[0].length;
+    return m;
+  }
+
+  function rest(): string {
+    if (pos < line.length) {
+      const r = line.slice(pos);
+      pos = line.length;
+      return span(r, DEFAULT_COLOR);
+    }
+    return '';
+  }
+
+  // "agent"
+  const kw = eat(/^(agent)\b/);
+  if (!kw) return span(line, DEFAULT_COLOR);
+  out.push(span(kw[1], KEYWORD_COLOR));
+
+  // whitespace + agent type
+  const ws1 = eat(/^(\s+)/);
+  if (!ws1) return out.join('') + rest();
+  out.push(ws1[1]);
+  const atype = eat(/^(\S+)/);
+  if (!atype) return out.join('') + rest();
+  out.push(span(atype[1], AGENT_TYPES_SET.has(atype[1]) ? AGENT_COLOR : DEFAULT_COLOR));
+
+  // whitespace + color
+  const ws2 = eat(/^(\s+)/);
+  if (!ws2) return out.join('') + rest();
+  out.push(ws2[1]);
+  const acolor = eat(/^(\S+)/);
+  if (!acolor) return out.join('') + rest();
+  out.push(span(acolor[1], COLOR_MAP[acolor[1]] || DEFAULT_COLOR));
+
+  // whitespace + start(x,y) — handle partial
+  const ws3 = eat(/^(\s+)/);
+  if (!ws3) return out.join('') + rest();
+  out.push(ws3[1]);
+
+  // "start" keyword
+  const startKw = eat(/^(start)/);
+  if (!startKw) return out.join('') + rest();
+  out.push(span(startKw[1], KEYWORD_COLOR));
+
+  // "("
+  const lp1 = eat(/^(\()/);
+  if (!lp1) return out.join('') + rest();
+  out.push(span(lp1[1], OPERATOR_COLOR));
+
+  // x
+  const sx = eat(/^(\d+)/);
+  if (!sx) return out.join('') + rest();
+  out.push(span(sx[1], NUMBER_COLOR));
+
+  // ","
+  const c1 = eat(/^(,)/);
+  if (!c1) return out.join('') + rest();
+  out.push(span(c1[1], OPERATOR_COLOR));
+
+  // y
+  const sy = eat(/^(\d+)/);
+  if (!sy) return out.join('') + rest();
+  out.push(span(sy[1], NUMBER_COLOR));
+
+  // ")"
+  const rp1 = eat(/^(\))/);
+  if (!rp1) return out.join('') + rest();
+  out.push(span(rp1[1], OPERATOR_COLOR));
+
+  // Optional: " and reach(x,y)" — handle partial
+  const andKw = eat(/^(\s+)(and)\b/);
+  if (!andKw) {
+    // Maybe partial keyword or brackets
+    return out.join('') + highlightAgentTail(line.slice(pos));
+  }
+  out.push(andKw[1]);
+  out.push(span(andKw[2], KEYWORD_COLOR));
+
+  const ws4 = eat(/^(\s*)/);
+  out.push(ws4 ? ws4[1] : '');
+
+  // "reach" keyword
+  const reachKw = eat(/^(reach)/);
+  if (!reachKw) return out.join('') + rest();
+  out.push(span(reachKw[1], KEYWORD_COLOR));
+
+  // "("
+  const lp2 = eat(/^(\()/);
+  if (!lp2) return out.join('') + rest();
+  out.push(span(lp2[1], OPERATOR_COLOR));
+
+  // x
+  const rx = eat(/^(\d+)/);
+  if (!rx) return out.join('') + rest();
+  out.push(span(rx[1], NUMBER_COLOR));
+
+  // ","
+  const c2 = eat(/^(,)/);
+  if (!c2) return out.join('') + rest();
+  out.push(span(c2[1], OPERATOR_COLOR));
+
+  // y
+  const ry = eat(/^(\d+)/);
+  if (!ry) return out.join('') + rest();
+  out.push(span(ry[1], NUMBER_COLOR));
+
+  // ")"
+  const rp2 = eat(/^(\))/);
+  if (!rp2) return out.join('') + rest();
+  out.push(span(rp2[1], OPERATOR_COLOR));
+
+  // Tail: optional [rules] or leftover
+  out.push(highlightAgentTail(line.slice(pos)));
+
+  return out.join('');
+}
+
+/** Highlight trailing portion of agent line — brackets with rules, or leftover text */
+function highlightAgentTail(text: string): string {
+  if (!text || !text.trim()) return span(text, DEFAULT_COLOR);
+  const rulesMatch = /^(\s*)(\[)([^\]]*)(\])?(.*)$/.exec(text);
+  if (rulesMatch) {
+    let result = rulesMatch[1]
+      + span(rulesMatch[2], OPERATOR_COLOR)
+      + highlightRules(rulesMatch[3]);
+    if (rulesMatch[4]) result += span(rulesMatch[4], OPERATOR_COLOR);
+    if (rulesMatch[5]) result += span(rulesMatch[5], DEFAULT_COLOR);
+    return result;
+  }
+  return span(text, DEFAULT_COLOR);
+}
+
 function highlightDSL(source: string): string {
   return source.split('\n').map(highlightLine).join('');
+}
+
+// ── Autocomplete ────────────────────────────────────────────
+
+interface Suggestion {
+  label: string;
+  detail?: string;
+  insert: string; // text to insert (may differ from label, e.g. include trailing colon)
+}
+
+interface ACState {
+  items: Suggestion[];
+  index: number;
+  top: number;
+  left: number;
+  prefix: string;       // the partial word being matched
+  prefixStart: number;  // position in code where prefix begins
+}
+
+const LINE_HEIGHT = 24; // leading-6
+const PAD_TOP = 16;     // py-4
+const PAD_LEFT = 12;    // pl-3
+
+const KW_SUGGESTIONS: Suggestion[] = [
+  { label: 'level',  detail: 'Level header',  insert: 'level ' },
+  { label: 'grid:',  detail: 'Grid block',    insert: 'grid:\n  ' },
+  { label: 'let',    detail: 'Variable',      insert: 'let ' },
+  { label: 'agent',  detail: 'Agent',         insert: 'agent ' },
+  { label: '#',       detail: 'Comment',      insert: '# ' },
+];
+
+const TILE_SUGGESTIONS: Suggestion[] = [
+  { label: 'wall',       detail: 'Brick wall',       insert: 'wall' },
+  { label: 'floor-white', detail: 'Road tile',       insert: 'floor-white' },
+  { label: 'goal',       detail: 'Exit tile',        insert: 'goal:' },
+  { label: 'door',       detail: 'Color door',       insert: 'door:' },
+  { label: 'switch',     detail: 'Toggle switch',    insert: 'switch:' },
+  { label: 'paint',      detail: 'Color changer',    insert: 'paint:' },
+  { label: 'one-way',    detail: 'Directional',      insert: 'one-way:' },
+  { label: 'lock',       detail: 'Color lock',       insert: 'lock:' },
+  { label: 'empty',      detail: 'Empty tile',       insert: 'empty' },
+];
+
+const AGENT_SUGGESTIONS: Suggestion[] = [
+  { label: 'dog',    detail: 'Dog agent',    insert: 'dog ' },
+  { label: 'cat',    detail: 'Cat agent',    insert: 'cat ' },
+  { label: 'rabbit', detail: 'Rabbit agent', insert: 'rabbit ' },
+  { label: 'robot',  detail: 'Robot agent',  insert: 'robot ' },
+  { label: 'player', detail: 'Player agent', insert: 'player ' },
+];
+
+const COLOR_SUGGESTIONS: Suggestion[] = [
+  { label: 'orange', insert: 'orange' },
+  { label: 'purple', insert: 'purple' },
+  { label: 'pink',   insert: 'pink' },
+  { label: 'blue',   insert: 'blue' },
+  { label: 'green',  insert: 'green' },
+  { label: 'red',    insert: 'red' },
+  { label: 'none',   detail: 'No color', insert: 'none' },
+];
+
+const RULE_SUGGESTIONS: Suggestion[] = [
+  { label: 'max-steps',  detail: 'Limit moves', insert: 'max-steps:' },
+  { label: 'reach-goal', detail: 'Reach exit',  insert: 'reach-goal' },
+];
+
+const META_KEY_SUGGESTIONS: Suggestion[] = [
+  { label: 'id=',        detail: 'Tile identifier', insert: 'id=' },
+  { label: 'direction=', detail: 'Direction',       insert: 'direction=' },
+];
+
+const DIRECTION_SUGGESTIONS: Suggestion[] = [
+  { label: 'up',    insert: 'up' },
+  { label: 'down',  insert: 'down' },
+  { label: 'left',  insert: 'left' },
+  { label: 'right', insert: 'right' },
+];
+
+type ContextType = 'line-start' | 'tile-type' | 'tile-color' | 'tile-meta-key' | 'direction-val'
+  | 'agent-type' | 'agent-color' | 'agent-start' | 'agent-and' | 'agent-reach' | 'rule' | 'none';
+
+function getContext(code: string, cursor: number): { type: ContextType; prefix: string; prefixStart: number } {
+  const lineStart = code.lastIndexOf('\n', cursor - 1) + 1;
+  const lineBefore = code.slice(lineStart, cursor);
+
+  // Find current word
+  const wordMatch = /(\S*)$/.exec(lineBefore);
+  const prefix = wordMatch ? wordMatch[1] : '';
+  const prefixStart = cursor - prefix.length;
+  const before = lineBefore.slice(0, lineBefore.length - prefix.length).trimEnd();
+
+  // Inside grid rows (indented lines when we've seen grid:)
+  if (/^\s+\S/.test(lineBefore) && !lineBefore.trimStart().startsWith('let') && !lineBefore.trimStart().startsWith('agent')) {
+    return { type: 'none', prefix, prefixStart };
+  }
+
+  // Empty or whitespace-only before prefix → line start
+  if (before === '') return { type: 'line-start', prefix, prefixStart };
+
+  // After "let X = "
+  if (/^let\s+\S\s*=\s*$/.test(before + ' ')) return { type: 'tile-type', prefix, prefixStart };
+
+  // After "let X = type:" (color or meta)
+  if (/^let\s+\S\s*=\s*\S+:$/.test(before)) {
+    // Check if it's after second colon (meta position)
+    const eqIdx = before.indexOf('=');
+    const afterEq = before.slice(eqIdx + 1).trim();
+    const colonCount = (afterEq.match(/:/g) || []).length;
+    if (colonCount >= 2) return { type: 'tile-meta-key', prefix, prefixStart };
+    return { type: 'tile-color', prefix, prefixStart };
+  }
+
+  // After "let X = type:color:" (meta keys)
+  if (/^let\s+\S\s*=\s*\S+:\S+:$/.test(before)) return { type: 'tile-meta-key', prefix, prefixStart };
+
+  // After "direction="
+  if (/direction=$/.test(before)) return { type: 'direction-val', prefix, prefixStart };
+
+  // After "agent "
+  if (/^agent\s*$/.test(before)) return { type: 'agent-type', prefix, prefixStart };
+
+  // After "agent type "
+  if (/^agent\s+\S+\s*$/.test(before)) return { type: 'agent-color', prefix, prefixStart };
+
+  // After "agent type color " — suggest start(
+  if (/^agent\s+\S+\s+\S+\s*$/.test(before)) return { type: 'agent-start', prefix, prefixStart };
+
+  // After "start(x,y) " — suggest and
+  if (/^agent\s+.*start\(\d+,\d+\)\s*$/.test(before)) return { type: 'agent-and', prefix, prefixStart };
+
+  // After "and " — suggest reach(
+  if (/^agent\s+.*\)\s+and\s*$/.test(before)) return { type: 'agent-reach', prefix, prefixStart };
+
+  // Inside brackets [...]
+  const openBracket = lineBefore.lastIndexOf('[');
+  const closeBracket = lineBefore.lastIndexOf(']');
+  if (openBracket > closeBracket) {
+    // Check if after a comma or right after [
+    const insideBracket = lineBefore.slice(openBracket + 1);
+    if (/^[^,]*$/.test(insideBracket) || /,\s*\S*$/.test(insideBracket)) {
+      return { type: 'rule', prefix, prefixStart };
+    }
+  }
+
+  return { type: 'none', prefix, prefixStart };
+}
+
+function getSuggestions(type: ContextType, prefix: string): Suggestion[] {
+  let pool: Suggestion[];
+  switch (type) {
+    case 'line-start':    pool = KW_SUGGESTIONS; break;
+    case 'tile-type':     pool = TILE_SUGGESTIONS; break;
+    case 'tile-color':    pool = COLOR_SUGGESTIONS; break;
+    case 'tile-meta-key': pool = META_KEY_SUGGESTIONS; break;
+    case 'direction-val': pool = DIRECTION_SUGGESTIONS; break;
+    case 'agent-type':    pool = AGENT_SUGGESTIONS; break;
+    case 'agent-color':   pool = COLOR_SUGGESTIONS; break;
+    case 'agent-start':   pool = [{ label: 'start(', detail: 'Start position', insert: 'start(' }]; break;
+    case 'agent-and':     pool = [{ label: 'and', detail: 'Chain condition', insert: 'and ' }]; break;
+    case 'agent-reach':   pool = [{ label: 'reach(', detail: 'Target position', insert: 'reach(' }]; break;
+    case 'rule':          pool = RULE_SUGGESTIONS; break;
+    default: return [];
+  }
+  if (!prefix) return pool;
+  const lower = prefix.toLowerCase();
+  return pool.filter(s => s.label.toLowerCase().startsWith(lower));
+}
+
+function measureCharWidth(): number {
+  const el = document.createElement('span');
+  el.style.fontFamily = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
+  el.style.fontSize = '14px';
+  el.style.position = 'absolute';
+  el.style.visibility = 'hidden';
+  el.textContent = 'X';
+  document.body.appendChild(el);
+  const w = el.getBoundingClientRect().width;
+  document.body.removeChild(el);
+  return w;
 }
 
 // ── Component ───────────────────────────────────────────────
@@ -184,15 +455,82 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [ac, setAc] = useState<ACState | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLPreElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
+  const charWidthRef = useRef(8.4);
+  const suppressAcRef = useRef(false);
 
   const lineCount = code.split('\n').length;
-
   const highlighted = useMemo(() => highlightDSL(code), [code]);
 
-  // Sync scroll across gutter, highlight overlay, and textarea
+  // Measure monospace char width once
+  useEffect(() => {
+    charWidthRef.current = measureCharWidth();
+  }, []);
+
+  // Compute autocomplete position from cursor
+  const computeAcPosition = useCallback((cursor: number) => {
+    const ta = textareaRef.current;
+    if (!ta) return { top: 0, left: 0 };
+    const textBefore = code.slice(0, cursor);
+    const lines = textBefore.split('\n');
+    const line = lines.length - 1;
+    const col = lines[lines.length - 1].length;
+    return {
+      top: line * LINE_HEIGHT + PAD_TOP + LINE_HEIGHT - ta.scrollTop,
+      left: col * charWidthRef.current + PAD_LEFT - ta.scrollLeft,
+    };
+  }, [code]);
+
+  // Update autocomplete based on cursor position
+  const updateAutocomplete = useCallback((newCode: string, cursor: number) => {
+    if (suppressAcRef.current) {
+      suppressAcRef.current = false;
+      setAc(null);
+      return;
+    }
+    const ctx = getContext(newCode, cursor);
+    const items = getSuggestions(ctx.type, ctx.prefix);
+    if (items.length === 0 || (items.length === 1 && items[0].label === ctx.prefix)) {
+      setAc(null);
+      return;
+    }
+    const textBefore = newCode.slice(0, cursor);
+    const lines = textBefore.split('\n');
+    const line = lines.length - 1;
+    const col = lines[lines.length - 1].length;
+    const prefixCol = col - ctx.prefix.length;
+    const ta = textareaRef.current;
+    setAc({
+      items,
+      index: 0,
+      top: line * LINE_HEIGHT + PAD_TOP + LINE_HEIGHT - (ta?.scrollTop || 0),
+      left: prefixCol * charWidthRef.current + PAD_LEFT - (ta?.scrollLeft || 0),
+      prefix: ctx.prefix,
+      prefixStart: ctx.prefixStart,
+    });
+  }, []);
+
+  // Accept a suggestion
+  const acceptSuggestion = useCallback((suggestion: Suggestion) => {
+    const ta = textareaRef.current;
+    if (!ac || !ta) return;
+    const before = code.slice(0, ac.prefixStart);
+    const after = code.slice(ac.prefixStart + ac.prefix.length);
+    const newCode = before + suggestion.insert + after;
+    const newCursor = ac.prefixStart + suggestion.insert.length;
+    suppressAcRef.current = true;
+    setCode(newCode);
+    onCodeChange?.(newCode);
+    setAc(null);
+    requestAnimationFrame(() => {
+      ta.selectionStart = ta.selectionEnd = newCursor;
+      ta.focus();
+    });
+  }, [ac, code, onCodeChange]);
+
   const handleScroll = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -201,12 +539,18 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
       highlightRef.current.scrollTop = ta.scrollTop;
       highlightRef.current.scrollLeft = ta.scrollLeft;
     }
+    setAc(null); // dismiss on scroll
   }, []);
 
   const handleCodeChange = useCallback((value: string) => {
     setCode(value);
     onCodeChange?.(value);
-  }, [onCodeChange]);
+    // Schedule autocomplete after React updates the textarea
+    requestAnimationFrame(() => {
+      const ta = textareaRef.current;
+      if (ta) updateAutocomplete(value, ta.selectionStart);
+    });
+  }, [onCodeChange, updateAutocomplete]);
 
   const handleParse = useCallback(() => {
     const result = parseDSL(code);
@@ -218,20 +562,51 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
   }, [code, onApply]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Tab inserts 2 spaces
+    // Autocomplete navigation
+    if (ac && ac.items.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setAc(prev => prev ? { ...prev, index: (prev.index + 1) % prev.items.length } : null);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setAc(prev => prev ? { ...prev, index: (prev.index - 1 + prev.items.length) % prev.items.length } : null);
+        return;
+      }
+      if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        acceptSuggestion(ac.items[ac.index]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setAc(null);
+        return;
+      }
+    }
+
+    // Tab inserts 2 spaces (only when autocomplete not showing)
     if (e.key === 'Tab') {
       e.preventDefault();
       const ta = e.currentTarget;
       const start = ta.selectionStart;
       const end = ta.selectionEnd;
       const newCode = code.slice(0, start) + '  ' + code.slice(end);
-      handleCodeChange(newCode);
-      // Restore cursor position
+      suppressAcRef.current = true;
+      setCode(newCode);
+      onCodeChange?.(newCode);
       requestAnimationFrame(() => {
         ta.selectionStart = ta.selectionEnd = start + 2;
       });
     }
-  }, [code, handleCodeChange]);
+  }, [code, ac, acceptSuggestion, onCodeChange]);
+
+  // Dismiss autocomplete on blur
+  const handleBlur = useCallback(() => {
+    // Delay so clicks on dropdown items register first
+    setTimeout(() => setAc(null), 150);
+  }, []);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -292,8 +667,8 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
               <div key={i + 1}>{i + 1}</div>
             ))}
           </div>
-          {/* Editor area: highlight overlay + textarea stacked */}
-          <div className="flex-1 relative min-h-0">
+          {/* Editor area: highlight overlay + textarea + autocomplete */}
+          <div className="flex-1 relative min-h-0 bg-zinc-950">
             {/* Syntax highlight layer */}
             <pre
               ref={highlightRef}
@@ -309,13 +684,41 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
               onChange={(e) => handleCodeChange(e.target.value)}
               onKeyDown={handleKeyDown}
               onScroll={handleScroll}
+              onBlur={handleBlur}
               spellCheck={false}
               autoCorrect="off"
               autoCapitalize="off"
               className="absolute inset-0 w-full h-full bg-transparent font-mono text-sm leading-6 py-4 pl-3 pr-4 resize-none outline-none border-none text-transparent caret-zinc-200 selection:bg-purple-500/30"
               style={{ tabSize: 2 }}
-              placeholder={`level "My Level" 8x6\n\ngrid:\n  W W W W W W W W\n  W R R R R R R W\n  W R W G R W R W\n  W R R R R W R W\n  W W R W R R R W\n  W W W W W W W W\n\nlet G = goal:orange:id=g1\n\nagent dog orange start(1,1) -> reach(3,2)`}
+              placeholder={`level "My Level" 8x6\n\ngrid:\n  W W W W W W W W\n  W R R R R R R W\n  W R W G R W R W\n  W R R R R W R W\n  W W R W R R R W\n  W W W W W W W W\n\nlet G = goal:orange:id=g1\n\nagent dog orange start(1,1) and reach(3,2)`}
             />
+            {/* Autocomplete dropdown */}
+            {ac && ac.items.length > 0 && (
+              <div
+                className="absolute z-50 min-w-[140px] max-h-[160px] overflow-y-auto bg-zinc-800/95 border border-zinc-700/80 rounded-md shadow-lg py-0.5 backdrop-blur-sm"
+                style={{ top: ac.top, left: Math.min(ac.left, 300) }}
+              >
+                {ac.items.map((item, i) => (
+                  <button
+                    key={item.label}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      acceptSuggestion(item);
+                    }}
+                    className={`w-full text-left px-2 py-0.5 text-xs flex items-center gap-2 ${
+                      i === ac.index
+                        ? 'bg-zinc-600/60 text-zinc-100'
+                        : 'text-zinc-300 hover:bg-zinc-700/40'
+                    }`}
+                  >
+                    <span className="font-mono">{item.label}</span>
+                    {item.detail && (
+                      <span className="text-[10px] text-zinc-500 ml-auto">{item.detail}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

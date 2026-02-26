@@ -15,7 +15,7 @@ const HEADER_RE = /^level\s+"([^"]+)"\s+(\d+)x(\d+)$/;
 const GRID_START_RE = /^grid:\s*$/;
 const TILE_ROW_RE = /^\s+(\S(?:\s+\S)*)\s*$/;
 const LET_RE = /^let\s+([^\s])\s*=\s*(.+)$/;
-const AGENT_RE = /^agent\s+(player|dog|cat|rabbit|robot)\s+(\S+)\s+start\((\d+),(\d+)\)(?:\s+->\s+reach\((\d+),(\d+)\))?(?:\s+\[([^\]]+)\])?$/;
+const AGENT_RE = /^agent\s+(player|dog|cat|rabbit|robot)\s+(\S+)\s+start\((\d+),(\d+)\)(?:\s+and\s+reach\((\d+),(\d+)\))?(?:\s+\[([^\]]+)\])?$/;
 const COMMENT_RE = /^\s*#/;
 const BLANK_RE = /^\s*$/;
 
@@ -129,7 +129,7 @@ function parseAgentLine(
 ): RawEntity | ParseError {
   const m = AGENT_RE.exec(line);
   if (!m) {
-    return { line: lineNum, message: `Invalid agent format. Expected: agent type color start(x,y) -> reach(x,y)` };
+    return { line: lineNum, message: `Invalid agent format. Expected: agent type color start(x,y) and reach(x,y)` };
   }
 
   const entityType = m[1];
