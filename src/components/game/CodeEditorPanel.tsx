@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Eye, EyeOff, Copy, AlertTriangle, Check } from 'lucide-react';
 import type { Level } from '../../types';
@@ -18,6 +18,16 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
   const [showPreview, setShowPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const gutterRef = useRef<HTMLDivElement>(null);
+
+  const lineCount = code.split('\n').length;
+
+  // Sync gutter scroll with textarea scroll
+  const handleScroll = useCallback(() => {
+    if (textareaRef.current && gutterRef.current) {
+      gutterRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  }, []);
 
   const handleCodeChange = useCallback((value: string) => {
     setCode(value);
@@ -96,16 +106,29 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
       {/* Main area */}
       <div className={`flex-1 flex ${showPreview && previewLevel ? 'flex-row' : 'flex-col'} min-h-0 overflow-hidden`}>
         {/* Code textarea */}
-        <div className={`${showPreview && previewLevel ? 'w-1/2 border-r border-zinc-800' : 'flex-1'} flex flex-col min-h-0`}>
+        <div className={`${showPreview && previewLevel ? 'w-1/2 border-r border-zinc-800' : 'flex-1'} flex min-h-0`}>
+          {/* Line numbers gutter */}
+          <div
+            ref={gutterRef}
+            className="shrink-0 bg-zinc-900/50 text-zinc-600 font-mono text-sm leading-6 pt-4 pb-4 text-right select-none overflow-hidden border-r border-zinc-800/50"
+            style={{ minWidth: `${String(lineCount).length + 2}ch`, paddingLeft: '0.5ch', paddingRight: '1ch' }}
+            aria-hidden="true"
+          >
+            {Array.from({ length: lineCount }, (_, i) => (
+              <div key={i + 1}>{i + 1}</div>
+            ))}
+          </div>
+          {/* Textarea */}
           <textarea
             ref={textareaRef}
             value={code}
             onChange={(e) => handleCodeChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            onScroll={handleScroll}
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="off"
-            className="flex-1 w-full bg-zinc-950 text-zinc-200 font-mono text-sm leading-6 p-4 resize-none outline-none border-none min-h-0"
+            className="flex-1 bg-zinc-950 text-zinc-200 font-mono text-sm leading-6 py-4 pl-3 pr-4 resize-none outline-none border-none min-h-0"
             style={{ tabSize: 2 }}
             placeholder={`level "My Level" 8x6\n\ntiles:\n  W W W W W W W W\n  W R R R R R R W\n  W R W W R W R W\n  W R R R R W R W\n  W W R W R R R W\n  W W W W W W W W`}
           />
