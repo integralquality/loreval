@@ -25,7 +25,7 @@ const TILE_TYPES = new Set([
   'wall', 'floor', 'floor-white', 'empty', 'goal', 'door',
   'switch', 'paint', 'one-way', 'lock', 'start',
 ]);
-const AGENT_TYPES_SET = new Set(['player', 'dog', 'cat', 'rabbit', 'robot']);
+// No agent types needed — syntax is now: agent color start(x,y)
 const COLOR_MAP: Record<string, string> = {
   orange: '#fb923c', purple: '#c084fc', pink: '#f472b6',
   blue: '#60a5fa', green: '#6ee7b7', red: '#f87171',
@@ -145,26 +145,18 @@ function highlightAgentLine(line: string): string {
   if (!kw) return span(line, DEFAULT_COLOR);
   out.push(span(kw[1], KEYWORD_COLOR));
 
-  // whitespace + agent type
+  // whitespace + color
   const ws1 = eat(/^(\s+)/);
   if (!ws1) return out.join('') + rest();
   out.push(ws1[1]);
-  const atype = eat(/^(\S+)/);
-  if (!atype) return out.join('') + rest();
-  out.push(span(atype[1], AGENT_TYPES_SET.has(atype[1]) ? AGENT_COLOR : DEFAULT_COLOR));
-
-  // whitespace + color
-  const ws2 = eat(/^(\s+)/);
-  if (!ws2) return out.join('') + rest();
-  out.push(ws2[1]);
   const acolor = eat(/^(\S+)/);
   if (!acolor) return out.join('') + rest();
   out.push(span(acolor[1], COLOR_MAP[acolor[1]] || DEFAULT_COLOR));
 
   // whitespace + start(x,y) — handle partial
-  const ws3 = eat(/^(\s+)/);
-  if (!ws3) return out.join('') + rest();
-  out.push(ws3[1]);
+  const ws2 = eat(/^(\s+)/);
+  if (!ws2) return out.join('') + rest();
+  out.push(ws2[1]);
 
   // "start" keyword
   const startKw = eat(/^(start)/);
@@ -304,12 +296,13 @@ const TILE_SUGGESTIONS: Suggestion[] = [
   { label: 'empty',      detail: 'Empty tile',       insert: 'empty' },
 ];
 
-const AGENT_SUGGESTIONS: Suggestion[] = [
-  { label: 'dog',    detail: 'Dog agent',    insert: 'dog ' },
-  { label: 'cat',    detail: 'Cat agent',    insert: 'cat ' },
-  { label: 'rabbit', detail: 'Rabbit agent', insert: 'rabbit ' },
-  { label: 'robot',  detail: 'Robot agent',  insert: 'robot ' },
-  { label: 'player', detail: 'Player agent', insert: 'player ' },
+const AGENT_COLOR_SUGGESTIONS: Suggestion[] = [
+  { label: 'orange', insert: 'orange ' },
+  { label: 'purple', insert: 'purple ' },
+  { label: 'pink',   insert: 'pink ' },
+  { label: 'blue',   insert: 'blue ' },
+  { label: 'green',  insert: 'green ' },
+  { label: 'red',    insert: 'red ' },
 ];
 
 const COLOR_SUGGESTIONS: Suggestion[] = [
@@ -340,7 +333,7 @@ const DIRECTION_SUGGESTIONS: Suggestion[] = [
 ];
 
 type ContextType = 'line-start' | 'tile-type' | 'tile-color' | 'tile-meta-key' | 'direction-val'
-  | 'agent-type' | 'agent-color' | 'agent-start' | 'agent-and' | 'agent-reach' | 'rule' | 'none';
+  | 'agent-color' | 'agent-start' | 'agent-and' | 'agent-reach' | 'rule' | 'none';
 
 function getContext(code: string, cursor: number): { type: ContextType; prefix: string; prefixStart: number } {
   const lineStart = code.lastIndexOf('\n', cursor - 1) + 1;
@@ -379,14 +372,11 @@ function getContext(code: string, cursor: number): { type: ContextType; prefix: 
   // After "direction="
   if (/direction=$/.test(before)) return { type: 'direction-val', prefix, prefixStart };
 
-  // After "agent "
-  if (/^agent\s*$/.test(before)) return { type: 'agent-type', prefix, prefixStart };
+  // After "agent " — suggest color
+  if (/^agent\s*$/.test(before)) return { type: 'agent-color', prefix, prefixStart };
 
-  // After "agent type "
-  if (/^agent\s+\S+\s*$/.test(before)) return { type: 'agent-color', prefix, prefixStart };
-
-  // After "agent type color " — suggest start(
-  if (/^agent\s+\S+\s+\S+\s*$/.test(before)) return { type: 'agent-start', prefix, prefixStart };
+  // After "agent color " — suggest start(
+  if (/^agent\s+\S+\s*$/.test(before)) return { type: 'agent-start', prefix, prefixStart };
 
   // After "start(x,y) " — suggest and
   if (/^agent\s+.*start\(\d+,\d+\)\s*$/.test(before)) return { type: 'agent-and', prefix, prefixStart };
@@ -416,8 +406,7 @@ function getSuggestions(type: ContextType, prefix: string): Suggestion[] {
     case 'tile-color':    pool = COLOR_SUGGESTIONS; break;
     case 'tile-meta-key': pool = META_KEY_SUGGESTIONS; break;
     case 'direction-val': pool = DIRECTION_SUGGESTIONS; break;
-    case 'agent-type':    pool = AGENT_SUGGESTIONS; break;
-    case 'agent-color':   pool = COLOR_SUGGESTIONS; break;
+    case 'agent-color':   pool = AGENT_COLOR_SUGGESTIONS; break;
     case 'agent-start':   pool = [{ label: 'start(', detail: 'Start position', insert: 'start(' }]; break;
     case 'agent-and':     pool = [{ label: 'and', detail: 'Chain condition', insert: 'and ' }]; break;
     case 'agent-reach':   pool = [{ label: 'reach(', detail: 'Target position', insert: 'reach(' }]; break;
@@ -690,7 +679,7 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
               autoCapitalize="off"
               className="absolute inset-0 w-full h-full bg-transparent font-mono text-sm leading-6 py-4 pl-3 pr-4 resize-none outline-none border-none text-transparent caret-zinc-200 selection:bg-purple-500/30"
               style={{ tabSize: 2 }}
-              placeholder={`level "My Level" 8x6\n\ngrid:\n  W W W W W W W W\n  W R R R R R R W\n  W R W G R W R W\n  W R R R R W R W\n  W W R W R R R W\n  W W W W W W W W\n\nlet G = goal:orange:id=g1\n\nagent dog orange start(1,1) and reach(3,2)`}
+              placeholder={`level "My Level" 8x6\n\ngrid:\n  W W W W W W W W\n  W R R R R R R W\n  W R W G R W R W\n  W R R R R W R W\n  W W R W R R R W\n  W W W W W W W W\n\nlet G = goal:orange:id=g1\n\nagent orange start(1,1) and reach(3,2)`}
             />
             {/* Autocomplete dropdown */}
             {ac && ac.items.length > 0 && (

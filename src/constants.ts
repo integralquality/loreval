@@ -8,33 +8,37 @@ export const INITIAL_LEVEL: Level = {
   tiles: [], // Will be filled in initialization
   entities: [
     {
-      id: 'dog-1',
-      type: 'dog',
+      id: 'robot-1',
+      type: 'robot',
       position: { x: 2, y: 1 },
+      color: 'orange',
       rules: [
         { id: 'r1', type: 'reach-goal', targetId: 'goal-dog' }
       ]
     },
     {
-      id: 'cat-1',
-      type: 'cat',
+      id: 'robot-2',
+      type: 'robot',
       position: { x: 1, y: 5 },
+      color: 'purple',
       rules: [
         { id: 'r3', type: 'reach-goal', targetId: 'goal-cat' }
       ]
     },
     {
-      id: 'rabbit-1',
-      type: 'rabbit',
+      id: 'robot-3',
+      type: 'robot',
       position: { x: 1, y: 9 },
+      color: 'pink',
       rules: [
         { id: 'r5', type: 'reach-goal', targetId: 'goal-rabbit' }
       ]
     },
     {
-      id: 'bot-1',
+      id: 'robot-4',
       type: 'robot',
       position: { x: 2, y: 3 },
+      color: 'red',
       rules: [
         { id: 'r7', type: 'reach-goal', targetId: 'goal-bot' }
       ]

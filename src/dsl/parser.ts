@@ -15,7 +15,7 @@ const HEADER_RE = /^level\s+"([^"]+)"\s+(\d+)x(\d+)$/;
 const GRID_START_RE = /^grid:\s*$/;
 const TILE_ROW_RE = /^\s+(\S(?:\s+\S)*)\s*$/;
 const LET_RE = /^let\s+([^\s])\s*=\s*(.+)$/;
-const AGENT_RE = /^agent\s+(player|dog|cat|rabbit|robot)\s+(\S+)\s+start\((\d+),(\d+)\)(?:\s+and\s+reach\((\d+),(\d+)\))?(?:\s+\[([^\]]+)\])?$/;
+const AGENT_RE = /^agent\s+(\S+)\s+start\((\d+),(\d+)\)(?:\s+and\s+reach\((\d+),(\d+)\))?(?:\s+\[([^\]]+)\])?$/;
 const COMMENT_RE = /^\s*#/;
 const BLANK_RE = /^\s*$/;
 
@@ -129,20 +129,15 @@ function parseAgentLine(
 ): RawEntity | ParseError {
   const m = AGENT_RE.exec(line);
   if (!m) {
-    return { line: lineNum, message: `Invalid agent format. Expected: agent type color start(x,y) and reach(x,y)` };
+    return { line: lineNum, message: `Invalid agent format. Expected: agent color start(x,y) and reach(x,y)` };
   }
 
-  const entityType = m[1];
-  const color = m[2];
-  const x = parseInt(m[3], 10);
-  const y = parseInt(m[4], 10);
-  const reachX = m[5] !== undefined ? parseInt(m[5], 10) : undefined;
-  const reachY = m[6] !== undefined ? parseInt(m[6], 10) : undefined;
-  const rulesText = m[7] || undefined;
-
-  if (!ENTITY_TYPE_SET.has(entityType as any)) {
-    return { line: lineNum, message: `Unknown agent type "${entityType}"` };
-  }
+  const color = m[1];
+  const x = parseInt(m[2], 10);
+  const y = parseInt(m[3], 10);
+  const reachX = m[4] !== undefined ? parseInt(m[4], 10) : undefined;
+  const reachY = m[5] !== undefined ? parseInt(m[5], 10) : undefined;
+  const rulesText = m[6] || undefined;
 
   let rules: Array<{ type: string; value?: number }> = [];
   if (rulesText) {
@@ -151,7 +146,7 @@ function parseAgentLine(
     rules = parsed;
   }
 
-  return { line: lineNum, entityType, color, x, y, reachX, reachY, rules };
+  return { line: lineNum, entityType: 'robot', color, x, y, reachX, reachY, rules };
 }
 
 // ── Level resolution ────────────────────────────────────────

@@ -15,7 +15,7 @@ export const TILE_TYPE_SET = new Set<TileType>([
 
 /** All valid entity type strings */
 export const ENTITY_TYPE_SET = new Set<EntityType>([
-  'player', 'dog', 'cat', 'rabbit', 'robot',
+  'robot',
 ]);
 
 /** All valid rule type strings */

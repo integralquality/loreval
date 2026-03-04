@@ -99,11 +99,11 @@ export default function HomePage() {
                 <span className="font-mono text-[10px] uppercase tracking-widest text-purple-300">The Human-AI Logic Laboratory</span>
               </div>
               <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.05] tracking-tight mb-8">
-                Logic games<br />
-                <span className="text-purple-300 font-medium">for humans and machines</span>
+                Playground<br />
+                <span className="text-purple-300 font-medium">for humans <br />and machines</span>
               </h1>
               <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed mb-10">
-                Design logic puzzles, play through challenges, and share your creations. Build levels yourself or let AI generate them — then see who can solve them.
+                Make your own puzzles.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link to="/designer" className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-xl shadow-purple-500/20">
@@ -212,7 +212,7 @@ export default function HomePage() {
           </p>
           <div className="mt-16">
             <Link to="/designer" className="inline-flex items-center gap-2 text-purple-400 font-bold text-lg hover:gap-4 transition-all group">
-              Enter the Laboratory <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+              Design your game <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </motion.div>

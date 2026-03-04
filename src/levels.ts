@@ -79,7 +79,7 @@ const level1 = buildLevel({
   entities: [
     {
       id: 'dog-1',
-      type: 'dog',
+      type: 'robot',
       position: { x: 1, y: 0 },
       color: 'orange',
       rules: [{ id: 'r1', type: 'reach-goal', targetId: 'goal-1' }],
@@ -111,7 +111,7 @@ const level2 = buildLevel({
   entities: [
     {
       id: 'dog-1',
-      type: 'dog',
+      type: 'robot',
       position: { x: 1, y: 0 },
       color: 'orange',
       rules: [{ id: 'r1', type: 'reach-goal', targetId: 'goal-2' }],
@@ -148,7 +148,7 @@ const level3 = buildLevel({
   entities: [
     {
       id: 'dog-1',
-      type: 'dog',
+      type: 'robot',
       position: { x: 2, y: 1 },
       color: 'orange',
       rules: [
@@ -166,7 +166,7 @@ const level3 = buildLevel({
     },
     {
       id: 'cat-1',
-      type: 'cat',
+      type: 'robot',
       position: { x: 1, y: 5 },
       color: 'purple',
       rules: [
@@ -175,7 +175,7 @@ const level3 = buildLevel({
     },
     {
       id: 'rabbit-1',
-      type: 'rabbit',
+      type: 'robot',
       position: { x: 1, y: 9 },
       color: 'pink',
       rules: [
@@ -213,14 +213,14 @@ const level4 = buildLevel({
   entities: [
     {
       id: 'cat-1',
-      type: 'cat',
+      type: 'robot',
       position: { x: 2, y: 1 },
       color: 'purple',
       rules: [{ id: 'r1', type: 'reach-goal' }],
     },
     {
       id: 'dog-1',
-      type: 'dog',
+      type: 'robot',
       position: { x: 5, y: 1 },
       color: 'orange',
       rules: [{ id: 'r2', type: 'reach-goal' }],
@@ -250,21 +250,21 @@ const level5 = buildLevel({
   entities: [
     {
       id: 'rabbit-1',
-      type: 'rabbit',
+      type: 'robot',
       position: { x: 2, y: 1 },
       color: 'pink',
       rules: [{ id: 'r1', type: 'reach-goal' }],
     },
     {
       id: 'dog-1',
-      type: 'dog',
+      type: 'robot',
       position: { x: 5, y: 1 },
       color: 'orange',
       rules: [{ id: 'r2', type: 'reach-goal' }],
     },
     {
       id: 'cat-1',
-      type: 'cat',
+      type: 'robot',
       position: { x: 7, y: 1 },
       color: 'purple',
       rules: [{ id: 'r3', type: 'reach-goal' }],

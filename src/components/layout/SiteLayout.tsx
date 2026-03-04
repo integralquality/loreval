@@ -16,7 +16,6 @@ export default function SiteLayout() {
               <span className="text-sm font-semibold text-zinc-400">Make Your Game</span>
             </div>
             <div className="flex gap-8 text-sm text-zinc-500">
-              <Link to="/mission" className="hover:text-purple-300">Mission</Link>
               <Link to="/play" className="hover:text-purple-300">Explore</Link>
               <Link to="/designer" className="hover:text-purple-300">Build</Link>
               <Link to="/account" className="hover:text-purple-300">Account</Link>

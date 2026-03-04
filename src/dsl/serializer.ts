@@ -182,7 +182,7 @@ export function serializeDSL(level: Level): string {
   if (level.entities.length > 0) {
     lines.push('');
     for (const entity of level.entities) {
-      let line = `agent ${entity.type} ${entity.color || 'none'} start(${entity.position.x},${entity.position.y})`;
+      let line = `agent ${entity.color || 'none'} start(${entity.position.x},${entity.position.y})`;
 
       // Find reach target position from reach-goal rule
       const reachGoal = entity.rules.find(r => r.type === 'reach-goal');

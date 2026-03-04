@@ -7,9 +7,6 @@ import {
   Save,
   Trash2,
   Settings,
-  Dog,
-  Cat,
-  Rabbit,
   Bot,
   LogOut,
   Ban,
@@ -21,7 +18,7 @@ import {
   Home,
   Code2
 } from 'lucide-react';
-import type { Level, Tile, TileType, EntityType, Entity, RuleType, Direction, GameState } from '../../types';
+import type { Level, Tile, TileType, Entity, RuleType, Direction, GameState } from '../../types';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
 import { executeMove } from '../../gameLogic';
@@ -34,21 +31,20 @@ import { CodeEditorPanel } from './CodeEditorPanel';
 const ENTITY_GLOW: Record<string, { bg: string; glow: string }> = {
   orange: { bg: '#fb923c', glow: 'rgba(251,146,60,0.4)' },
   purple: { bg: '#c084fc', glow: 'rgba(192,132,252,0.4)' },
-  pink:   { bg: '#f472b6', glow: 'rgba(244,114,182,0.4)' },
-  blue:   { bg: '#60a5fa', glow: 'rgba(96,165,250,0.4)' },
-  green:  { bg: '#6ee7b7', glow: 'rgba(110,231,183,0.4)' },
-  red:    { bg: '#f87171', glow: 'rgba(248,113,113,0.4)' },
+  pink: { bg: '#f472b6', glow: 'rgba(244,114,182,0.4)' },
+  blue: { bg: '#60a5fa', glow: 'rgba(96,165,250,0.4)' },
+  green: { bg: '#6ee7b7', glow: 'rgba(110,231,183,0.4)' },
+  red: { bg: '#f87171', glow: 'rgba(248,113,113,0.4)' },
 };
 
 export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?: Level; playOnly?: boolean } = {}) {
   const [level, setLevel] = useState<Level>(initialLevel || INITIAL_LEVEL);
   const [mode, setMode] = useState<'edit' | 'code' | 'play'>(playOnly ? 'play' : 'edit');
   const [dslCode, setDslCode] = useState<string>('');
-  const [selectedTool, setSelectedTool] = useState<TileType | EntityType | 'erase' | 'goal-universal'>('wall');
-  const [toolCategory, setToolCategory] = useState<'tiles' | 'entities'>('tiles');
+  const [selectedTool, setSelectedTool] = useState<TileType | 'robot' | 'erase' | 'goal-universal'>('wall');
 
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
-  const [selectedTilePos, setSelectedTilePos] = useState<{x: number, y: number} | null>(null);
+  const [selectedTilePos, setSelectedTilePos] = useState<{ x: number, y: number } | null>(null);
   const [hiddenEntityIds, setHiddenEntityIds] = useState<string[]>([]);
 
   // Play state
@@ -126,16 +122,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
         }
       }
 
-      // Set initial entities with colors
-      const initialEntities = INITIAL_LEVEL.entities.map(e => {
-        if (e.type === 'dog') return { ...e, color: 'orange' };
-        if (e.type === 'cat') return { ...e, color: 'purple' };
-        if (e.type === 'rabbit') return { ...e, color: 'pink' };
-        if (e.type === 'robot') return { ...e, color: 'red' };
-        return e;
-      });
-
-      setLevel(prev => ({ ...prev, tiles: newTiles, entities: initialEntities }));
+      setLevel(prev => ({ ...prev, tiles: newTiles }));
     }
   }, []);
 
@@ -143,8 +130,8 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
   const resetPlayState = useCallback(() => {
     setGameState({
       entities: JSON.parse(JSON.stringify(level.entities)),
-      moves: level.entities.reduce((acc, e) => ({...acc, [e.id]: 0}), {}),
-      history: level.entities.reduce((acc, e) => ({...acc, [e.id]: [e.position]}), {}),
+      moves: level.entities.reduce((acc, e) => ({ ...acc, [e.id]: 0 }), {}),
+      history: level.entities.reduce((acc, e) => ({ ...acc, [e.id]: [e.position] }), {}),
       status: 'playing',
       message: 'Select a character to move!',
       selectedEntityId: level.entities[0]?.id || null,
@@ -208,16 +195,16 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
 
     const clickedTile = level.tiles[y][x];
     if (['goal', 'door', 'paint', 'switch', 'one-way', 'lock'].includes(clickedTile.type) && selectedTool !== 'erase') {
-       if (selectedTool === clickedTile.type) {
-         setSelectedTilePos({x, y});
-         setSelectedEntityId(null);
-         return;
-       }
+      if (selectedTool === clickedTile.type) {
+        setSelectedTilePos({ x, y });
+        setSelectedEntityId(null);
+        return;
+      }
     }
 
-    if (toolCategory === 'tiles') {
-       setSelectedEntityId(null);
-       setSelectedTilePos(null);
+    if (selectedTool !== 'robot') {
+      setSelectedEntityId(null);
+      setSelectedTilePos(null);
     }
 
     if (selectedTool === 'erase') {
@@ -243,7 +230,30 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
       return;
     }
 
-    if (toolCategory === 'tiles') {
+    if (selectedTool === 'robot') {
+      // Auto-assign first available color, prevent duplicates
+      const AGENT_COLORS = ['orange', 'purple', 'pink', 'blue', 'green', 'red'];
+      const usedColors = new Set(level.entities.map(e => e.color));
+      const nextColor = AGENT_COLORS.find(c => !usedColors.has(c));
+      if (!nextColor) return; // all colors used — can't add more agents
+
+      const filteredEntities = level.entities.filter(e => e.position.x !== x || e.position.y !== y);
+      const newEntity: Entity = {
+        id: `robot-${Date.now()}`,
+        type: 'robot',
+        position: { x, y },
+        color: nextColor,
+        rules: [{ id: `r-${Date.now()}`, type: 'reach-goal' }]
+      };
+      // Auto-set empty tiles to road so entities start on walkable ground
+      const newTiles = [...level.tiles];
+      if (newTiles[y][x].type === 'empty') {
+        newTiles[y][x] = { ...newTiles[y][x], type: 'floor-white' };
+      }
+      setLevel(prev => ({ ...prev, tiles: newTiles, entities: [...filteredEntities, newEntity] }));
+      setSelectedEntityId(newEntity.id);
+      setSelectedTilePos(null);
+    } else {
       const newTiles = [...level.tiles];
       const newType = selectedTool as TileType;
       let defaultColor: string | undefined = undefined;
@@ -261,25 +271,8 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
       setLevel(prev => ({ ...prev, tiles: newTiles }));
 
       if (['goal', 'door', 'paint', 'switch', 'one-way', 'lock'].includes(newType)) {
-        setSelectedTilePos({x, y});
+        setSelectedTilePos({ x, y });
       }
-    } else {
-      const filteredEntities = level.entities.filter(e => e.position.x !== x || e.position.y !== y);
-      const newEntity: Entity = {
-        id: `${selectedTool}-${Date.now()}`,
-        type: selectedTool as EntityType,
-        position: { x, y },
-        color: selectedTool === 'dog' ? 'orange' : selectedTool === 'cat' ? 'purple' : selectedTool === 'rabbit' ? 'pink' : 'blue',
-        rules: [{ id: `r-${Date.now()}`, type: 'reach-goal' }]
-      };
-      // Auto-set empty tiles to road so entities start on walkable ground
-      const newTiles = [...level.tiles];
-      if (newTiles[y][x].type === 'empty') {
-        newTiles[y][x] = { ...newTiles[y][x], type: 'floor-white' };
-      }
-      setLevel(prev => ({ ...prev, tiles: newTiles, entities: [...filteredEntities, newEntity] }));
-      setSelectedEntityId(newEntity.id);
-      setSelectedTilePos(null);
     }
   };
 
@@ -299,6 +292,8 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
   };
 
   const updateEntityColor = (entityId: string, color: string) => {
+    // Prevent duplicate colors
+    if (level.entities.some(e => e.id !== entityId && e.color === color)) return;
     setLevel(prev => ({
       ...prev,
       entities: prev.entities.map(e => e.id === entityId ? { ...e, color } : e)
@@ -330,14 +325,14 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
     const handleKeyDown = (e: KeyboardEvent) => {
       if (mode !== 'play') return;
 
-      switch(e.key) {
+      switch (e.key) {
         case 'ArrowUp': handleMove(0, -1); break;
         case 'ArrowDown': handleMove(0, 1); break;
         case 'ArrowLeft': handleMove(-1, 0); break;
         case 'ArrowRight': handleMove(1, 0); break;
-        case '1': if (gameState.entities[0]) setGameState(prev => ({...prev, selectedEntityId: gameState.entities[0].id})); break;
-        case '2': if (gameState.entities[1]) setGameState(prev => ({...prev, selectedEntityId: gameState.entities[1].id})); break;
-        case '3': if (gameState.entities[2]) setGameState(prev => ({...prev, selectedEntityId: gameState.entities[2].id})); break;
+        case '1': if (gameState.entities[0]) setGameState(prev => ({ ...prev, selectedEntityId: gameState.entities[0].id })); break;
+        case '2': if (gameState.entities[1]) setGameState(prev => ({ ...prev, selectedEntityId: gameState.entities[1].id })); break;
+        case '3': if (gameState.entities[2]) setGameState(prev => ({ ...prev, selectedEntityId: gameState.entities[2].id })); break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -388,66 +383,26 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
         {/* Editor Tools */}
         {mode === 'edit' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {/* Categories */}
-            <div className="flex gap-2 border-b border-zinc-800 pb-2">
-              <button
-                onClick={() => setToolCategory('tiles')}
-                className={`px-3 py-1 text-sm rounded-full ${toolCategory === 'tiles' ? 'bg-zinc-700 text-white' : 'text-zinc-500'}`}
-              >
-                Tiles
-              </button>
-              <button
-                onClick={() => setToolCategory('entities')}
-                className={`px-3 py-1 text-sm rounded-full ${toolCategory === 'entities' ? 'bg-zinc-700 text-white' : 'text-zinc-500'}`}
-              >
-                Characters
-              </button>
-            </div>
-
             <div className="grid grid-cols-4 gap-2">
-              {toolCategory === 'tiles' ? (
-                <>
-                  <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23351008'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%239b3a10' rx='1'/%3E%3C/svg%3E")`, backgroundSize: '14px 14px' }} />} label="Brick" tooltip="Solid brick wall — nothing can pass through" />
-                  <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundColor: 'rgba(120,113,108,0.4)' }} />} label="Road" tooltip="Walkable road tile" />
-                  <ToolButton active={selectedTool === 'goal'} onClick={() => setSelectedTool('goal')} icon={<LogOut className="text-emerald-500" />} label="Exit" tooltip="Color exit — only the matching character can use it" />
-                  <ToolButton active={selectedTool === 'goal-universal' as any} onClick={() => setSelectedTool('goal-universal' as any)} icon={<LogOut className="text-zinc-300" />} label="Open Exit" tooltip="Universal exit — any character can use it" />
-                  <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-zinc-400" />} label="Door" tooltip="Blocks passage unless character color matches or a switch opens it" />
-                  <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-zinc-400" />} label="Paint" tooltip="Changes a character's color when stepped on" />
-                  <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-zinc-400" />} label="Switch" tooltip="Toggles all doors of the same color open or closed" />
-                  <ToolButton active={selectedTool === 'one-way'} onClick={() => setSelectedTool('one-way')} icon={<ArrowUp className="text-amber-400" />} label="1-Way" tooltip="Can only be entered from the arrow's direction" />
-                  <ToolButton active={selectedTool === 'lock'} onClick={() => setSelectedTool('lock')} icon={<Lock className="text-zinc-400" />} label="Lock" tooltip="Only a matching-color character can open it — stays open once unlocked" />
-                </>
-              ) : (
-                <>
-                  <ToolButton active={selectedTool === 'dog'} onClick={() => setSelectedTool('dog')} icon={<Dog className="text-orange-500" />} label="Dog" tooltip="Place a dog character" />
-                  <ToolButton active={selectedTool === 'cat'} onClick={() => setSelectedTool('cat')} icon={<Cat className="text-purple-500" />} label="Cat" tooltip="Place a cat character" />
-                  <ToolButton active={selectedTool === 'rabbit'} onClick={() => setSelectedTool('rabbit')} icon={<Rabbit className="text-pink-500" />} label="Rabbit" tooltip="Place a rabbit character" />
-                  <ToolButton active={selectedTool === 'robot'} onClick={() => setSelectedTool('robot')} icon={<Bot className="text-blue-500" />} label="Bot" tooltip="Place a robot — future programming target" />
-                </>
-              )}
+              <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23351008'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%239b3a10' rx='1'/%3E%3C/svg%3E")`, backgroundSize: '14px 14px' }} />} label="Brick" tooltip="Solid brick wall — nothing can pass through" />
+              <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundColor: 'rgba(120,113,108,0.4)' }} />} label="Road" tooltip="Walkable road tile" />
+              <ToolButton active={selectedTool === 'goal'} onClick={() => setSelectedTool('goal')} icon={<LogOut className="text-emerald-500" />} label="Exit" tooltip="Color exit — only the matching character can use it" />
+              <ToolButton active={selectedTool === 'goal-universal' as any} onClick={() => setSelectedTool('goal-universal' as any)} icon={<LogOut className="text-zinc-300" />} label="Open Exit" tooltip="Universal exit — any character can use it" />
+              <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-zinc-400" />} label="Door" tooltip="Blocks passage unless character color matches or a switch opens it" />
+              <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-zinc-400" />} label="Paint" tooltip="Changes a character's color when stepped on" />
+              <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-zinc-400" />} label="Switch" tooltip="Toggles all doors of the same color open or closed" />
+              <ToolButton active={selectedTool === 'one-way'} onClick={() => setSelectedTool('one-way')} icon={<ArrowUp className="text-amber-400" />} label="1-Way" tooltip="Can only be entered from the arrow's direction" />
+              <ToolButton active={selectedTool === 'lock'} onClick={() => setSelectedTool('lock')} icon={<Lock className="text-zinc-400" />} label="Lock" tooltip="Only a matching-color character can open it — stays open once unlocked" />
+              <ToolButton active={selectedTool === 'robot'} onClick={() => setSelectedTool('robot')} icon={<Bot className="text-blue-500" />} label="Agent" tooltip="Place an agent — uses first available color" />
               <ToolButton active={selectedTool === 'erase'} onClick={() => setSelectedTool('erase')} icon={<Trash2 className="text-red-400" />} label="Erase" tooltip="Remove a tile or character from the grid" />
             </div>
 
-            <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
-              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Instructions</h3>
-              <p className="text-sm text-zinc-400">
-                Click grid to place items. Select items to edit properties (Color, Rules).
-                <br/><br/>
-                <span className="text-purple-400">Doors</span> block unless color matches.
-                <br/>
-                <span className="text-purple-400">Paint</span> changes character color.
-                <br/>
-                <span className="text-amber-400">Switches</span> toggle doors of matching color.
-                <br/>
-                <span className="text-amber-400">One-way</span> tiles only allow entry from one direction.
-              </p>
-            </div>
 
             {/* Entity Properties Panel */}
             {selectedEntityId && (
               <div className="bg-zinc-800/50 p-4 rounded-xl border border-purple-500/30 animate-in fade-in slide-in-from-right-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-purple-300">Character</h3>
+                  <h3 className="text-sm font-bold text-purple-300">Agent</h3>
                   <button onClick={() => setSelectedEntityId(null)} className="text-zinc-500 hover:text-zinc-300">
                     <Ban size={14} />
                   </button>
@@ -463,14 +418,19 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                       <div>
                         <label className="text-xs text-zinc-400 block mb-1">Color</label>
                         <div className="flex gap-2">
-                          {['orange', 'purple', 'pink', 'blue', 'green', 'red'].map(c => (
-                            <button
-                              key={c}
-                              onClick={() => updateEntityColor(entity.id, c)}
-                              className={`w-6 h-6 rounded-full border-2 ${entity.color === c ? 'border-white scale-110' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                              style={{ backgroundColor: c }}
-                            />
-                          ))}
+                          {['orange', 'purple', 'pink', 'blue', 'green', 'red'].map(c => {
+                            const takenByOther = level.entities.some(e => e.id !== entity.id && e.color === c);
+                            return (
+                              <button
+                                key={c}
+                                onClick={() => updateEntityColor(entity.id, c)}
+                                disabled={takenByOther}
+                                className={`w-6 h-6 rounded-full border-2 ${entity.color === c ? 'border-white scale-110' : takenByOther ? 'border-transparent opacity-20 cursor-not-allowed' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                                style={{ backgroundColor: c }}
+                                title={takenByOther ? `Already used by another agent` : c}
+                              />
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -487,6 +447,20 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
               </div>
             )}
 
+            <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
+              <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">Instructions</h3>
+              <p className="text-sm text-zinc-400">
+                Click grid to place items. Select items to edit properties (Color, Rules).
+                <br /><br />
+                <span className="text-purple-400">Doors</span> block unless color matches.
+                <br />
+                <span className="text-purple-400">Paint</span> changes character color.
+                <br />
+                <span className="text-amber-400">Switches</span> toggle doors of matching color.
+                <br />
+                <span className="text-amber-400">One-way</span> tiles only allow entry from one direction.
+              </p>
+            </div>
             {/* Tile Properties Panel */}
             {selectedTilePos && (
               <div className="bg-zinc-800/50 p-4 rounded-xl border border-emerald-500/30 animate-in fade-in slide-in-from-right-4">
@@ -533,11 +507,10 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                               <button
                                 key={dir}
                                 onClick={() => updateTileDirection(selectedTilePos.x, selectedTilePos.y, dir)}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all ${
-                                  tile.meta?.direction === dir
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all ${tile.meta?.direction === dir
                                     ? 'border-amber-400 bg-amber-400/20 text-amber-300'
                                     : 'border-zinc-700 bg-zinc-800 text-zinc-500 hover:text-zinc-300'
-                                }`}
+                                  }`}
                               >
                                 <ArrowUp
                                   size={14}
@@ -562,7 +535,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
         {mode === 'play' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700">
-              <h3 className="text-sm font-medium text-zinc-300 mb-3">Characters</h3>
+              <h3 className="text-sm font-medium text-zinc-300 mb-3">Agents</h3>
               <div className="space-y-2">
                 {gameState.entities.map((entity) => {
                   const original = level.entities.find(e => e.id === entity.id);
@@ -571,20 +544,19 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                   return (
                     <button
                       key={entity.id}
-                      onClick={() => !isFinished && setGameState(prev => ({...prev, selectedEntityId: entity.id}))}
+                      onClick={() => !isFinished && setGameState(prev => ({ ...prev, selectedEntityId: entity.id }))}
                       disabled={isFinished}
-                      className={`w-full text-left p-2 rounded-lg transition-colors ${
-                        isFinished
+                      className={`w-full text-left p-2 rounded-lg transition-colors ${isFinished
                           ? 'bg-zinc-900/50 opacity-40 cursor-default'
                           : gameState.selectedEntityId === entity.id
                             ? 'bg-purple-600/20 border border-purple-500/50'
                             : 'bg-zinc-900 hover:bg-zinc-800'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <EntityIcon type={entity.type} className="w-5 h-5" />
-                          <span className={`text-sm capitalize ${isFinished ? 'line-through text-zinc-600' : ''}`}>{entity.type}</span>
+                          <span className={`text-sm capitalize ${isFinished ? 'line-through text-zinc-600' : ''}`}>{entity.color || 'agent'}</span>
                         </div>
                         <div className="text-xs font-mono text-zinc-500">
                           {isFinished ? 'Done' : `${gameState.moves[entity.id]} steps`}
@@ -607,9 +579,9 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
             </div>
 
             {gameState.message && (
-               <div className="bg-purple-900/30 border border-purple-500/30 p-4 rounded-xl">
-                 <p className="text-purple-200 text-sm">{gameState.message}</p>
-               </div>
+              <div className="bg-purple-900/30 border border-purple-500/30 p-4 rounded-xl">
+                <p className="text-purple-200 text-sm">{gameState.message}</p>
+              </div>
             )}
 
             <button
@@ -657,7 +629,7 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                 </div>
                 <div>
                   <p className="text-zinc-300 mb-1">Agents</p>
-                  <p className="text-zinc-500">agent dog orange</p>
+                  <p className="text-zinc-500">agent orange</p>
                   <p className="text-zinc-500 ml-2">start(2,3) and reach(7,1)</p>
                   <p className="text-zinc-500 ml-2">[max-steps:10]</p>
                 </div>
@@ -699,9 +671,8 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
             <div className="flex bg-zinc-800 p-1 rounded-lg">
               <button
                 onClick={() => setMode('edit')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${
-                  mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
               >
                 <Grid3X3 size={15} /> Visual
               </button>
@@ -710,17 +681,15 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                   setDslCode(serializeDSL(level));
                   setMode('code');
                 }}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${
-                  mode === 'code' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'code' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
               >
                 <Code2 size={15} /> Code
               </button>
               <button
                 onClick={() => setMode('play')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${
-                  mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                }`}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
+                  }`}
               >
                 <Play size={15} /> Play
               </button>
@@ -741,98 +710,98 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
 
         {/* Grid Canvas */}
         {mode !== 'code' && (
-        <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 to-zinc-950 -z-10" />
+          <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 to-zinc-950 -z-10" />
 
-        {/* Grid Container */}
-        <div className="relative">
-          <div className="absolute inset-0 blur-3xl opacity-20 bg-purple-500/50 rounded-full scale-90 -z-10" />
-          <div
-            className="relative bg-zinc-800/20 rounded-lg border border-zinc-700/50 p-px"
-            style={{
-              width: level.width * TILE_SIZE + level.width + 1,
-              height: level.height * TILE_SIZE + level.height + 1
-            }}
-          >
-            <div
-              className="grid gap-px relative"
-              style={{
-                gridTemplateColumns: `repeat(${level.width}, ${TILE_SIZE}px)`,
-                gridTemplateRows: `repeat(${level.height}, ${TILE_SIZE}px)`
-              }}
-            >
-            {/* Render Tiles */}
-            {level.tiles.map((row, y) => (
-              row.map((tile, x) => (
+            {/* Grid Container */}
+            <div className="relative">
+              <div className="absolute inset-0 blur-3xl opacity-20 bg-purple-500/50 rounded-full scale-90 -z-10" />
+              <div
+                className="relative bg-zinc-800/20 rounded-lg border border-zinc-700/50 p-px"
+                style={{
+                  width: level.width * TILE_SIZE + level.width + 1,
+                  height: level.height * TILE_SIZE + level.height + 1
+                }}
+              >
                 <div
-                  key={`${x}-${y}`}
-                  onClick={() => handleTileClick(x, y)}
-                  className={`w-full h-full cursor-pointer transition-colors hover:brightness-110 relative rounded-sm`}
+                  className="grid gap-px relative"
+                  style={{
+                    gridTemplateColumns: `repeat(${level.width}, ${TILE_SIZE}px)`,
+                    gridTemplateRows: `repeat(${level.height}, ${TILE_SIZE}px)`
+                  }}
                 >
-                  <TileIcon
-                    type={tile.type}
-                    color={tile.color}
-                    meta={tile.meta}
-                    isOpen={
-                      mode === 'play' && (
-                        (tile.type === 'door' && tile.color != null && gameState.toggledColors.includes(tile.color)) ||
-                        (tile.type === 'lock' && (gameState.openedLocks || []).includes(`${x},${y}`))
-                      )
-                    }
-                  />
+                  {/* Render Tiles */}
+                  {level.tiles.map((row, y) => (
+                    row.map((tile, x) => (
+                      <div
+                        key={`${x}-${y}`}
+                        onClick={() => handleTileClick(x, y)}
+                        className={`w-full h-full cursor-pointer transition-colors hover:brightness-110 relative rounded-sm`}
+                      >
+                        <TileIcon
+                          type={tile.type}
+                          color={tile.color}
+                          meta={tile.meta}
+                          isOpen={
+                            mode === 'play' && (
+                              (tile.type === 'door' && tile.color != null && gameState.toggledColors.includes(tile.color)) ||
+                              (tile.type === 'lock' && (gameState.openedLocks || []).includes(`${x},${y}`))
+                            )
+                          }
+                        />
 
-                  <span className="absolute top-0.5 left-0.5 text-[8px] text-zinc-700 select-none pointer-events-none opacity-0 hover:opacity-100">
-                    {x},{y}
-                  </span>
+                        <span className="absolute top-0.5 left-0.5 text-[8px] text-zinc-700 select-none pointer-events-none opacity-0 hover:opacity-100">
+                          {x},{y}
+                        </span>
+                      </div>
+                    ))
+                  ))}
+
+                  {/* Render Entities */}
+                  <AnimatePresence>
+                    {(mode === 'play' ? gameState.entities : level.entities)
+                      .filter(entity => mode !== 'play' || !hiddenEntityIds.includes(entity.id))
+                      .map((entity) => {
+                        const glowColor = ENTITY_GLOW[entity.color || 'blue'] || ENTITY_GLOW.blue;
+                        const isSelected = mode === 'play' && gameState.selectedEntityId === entity.id;
+                        return (
+                          <motion.div
+                            key={entity.id}
+                            layoutId={entity.id}
+                            initial={false}
+                            animate={{
+                              x: entity.position.x * (TILE_SIZE + 1),
+                              y: entity.position.y * (TILE_SIZE + 1),
+                              opacity: 1,
+                              scale: 1,
+                            }}
+                            exit={{
+                              opacity: 0,
+                              scale: 0.3,
+                              filter: 'blur(8px)',
+                              transition: { duration: 0.5, ease: 'easeOut' }
+                            }}
+                            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                            className="absolute top-0 left-0 pointer-events-none flex items-center justify-center"
+                            style={{ width: TILE_SIZE, height: TILE_SIZE }}
+                          >
+                            <div
+                              className={`relative transition-transform ${isSelected ? 'scale-110' : ''}`}
+                              style={{
+                                filter: `drop-shadow(0 0 ${isSelected ? '10px' : '6px'} ${glowColor.glow})`,
+                              }}
+                            >
+                              <EntityIcon type={entity.type} color={entity.color} className="w-7 h-7" />
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                  </AnimatePresence>
                 </div>
-              ))
-            ))}
-
-            {/* Render Entities */}
-            <AnimatePresence>
-              {(mode === 'play' ? gameState.entities : level.entities)
-                .filter(entity => mode !== 'play' || !hiddenEntityIds.includes(entity.id))
-                .map((entity) => {
-                const glowColor = ENTITY_GLOW[entity.color || 'blue'] || ENTITY_GLOW.blue;
-                const isSelected = mode === 'play' && gameState.selectedEntityId === entity.id;
-                return (
-                  <motion.div
-                    key={entity.id}
-                    layoutId={entity.id}
-                    initial={false}
-                    animate={{
-                      x: entity.position.x * (TILE_SIZE + 1),
-                      y: entity.position.y * (TILE_SIZE + 1),
-                      opacity: 1,
-                      scale: 1,
-                    }}
-                    exit={{
-                      opacity: 0,
-                      scale: 0.3,
-                      filter: 'blur(8px)',
-                      transition: { duration: 0.5, ease: 'easeOut' }
-                    }}
-                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                    className="absolute top-0 left-0 pointer-events-none flex items-center justify-center"
-                    style={{ width: TILE_SIZE, height: TILE_SIZE }}
-                  >
-                    <div
-                      className={`relative transition-transform ${isSelected ? 'scale-110' : ''}`}
-                      style={{
-                        filter: `drop-shadow(0 0 ${isSelected ? '10px' : '6px'} ${glowColor.glow})`,
-                      }}
-                    >
-                      <EntityIcon type={entity.type} color={entity.color} className="w-7 h-7" />
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+              </div>
+            </div>
           </div>
-          </div>
-        </div>
-      </div>
-      )}
+        )}
       </div>
     </div>
   );

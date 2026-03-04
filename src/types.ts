@@ -18,12 +18,7 @@ export type TileType =
   | 'one-way'
   | 'lock';
 
-export type EntityType =
-  | 'player'
-  | 'dog'
-  | 'cat'
-  | 'rabbit'
-  | 'robot';
+export type EntityType = 'robot';
 
 export type RuleType =
   | 'reach-goal'

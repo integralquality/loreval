@@ -2,10 +2,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
 
 const navLinks = [
-  { to: '/mission', label: 'Mission' },
-  { to: '/designer', label: 'Designer' },
+  { to: '/designer', label: 'Make' },
   { to: '/play', label: 'Play' },
-  { to: '/account', label: 'Account' },
+  // { to: '/account', label: 'Account' },
 ];
 
 export default function Navbar() {
@@ -31,11 +30,10 @@ export default function Navbar() {
                 <Link
                   key={to}
                   to={to}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isActive
-                      ? 'text-white bg-zinc-800/50 border border-white/5'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive
+                    ? 'text-white bg-zinc-800/50 border border-white/5'
+                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
+                    }`}
                 >
                   {label}
                 </Link>
