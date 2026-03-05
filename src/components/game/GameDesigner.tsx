@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Play,
   Grid3X3,
@@ -16,13 +16,20 @@ import {
   ArrowUp,
   Lock,
   Home,
-  Code2
+  Code2,
+  Share2,
+  Cloud,
+  CloudOff,
+  Check,
+  Loader2
 } from 'lucide-react';
 import type { Level, Tile, TileType, Entity, RuleType, Direction, GameState } from '../../types';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
 import { executeMove } from '../../gameLogic';
 import { serializeDSL } from '../../dsl/serializer';
+import { useAuth } from '../../contexts/AuthContext';
+import { saveLevel, publishLevel, getLevelById, parseLevelDSL, levelToDSL } from '../../lib/levels-api';
 import { TileIcon } from './TileIcon';
 import { EntityIcon } from './EntityIcon';
 import { ToolButton } from './ToolButton';
@@ -37,7 +44,15 @@ const ENTITY_GLOW: Record<string, { bg: string; glow: string }> = {
   red: { bg: '#f87171', glow: 'rgba(248,113,113,0.4)' },
 };
 
-export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?: Level; playOnly?: boolean } = {}) {
+interface GameDesignerProps {
+  initialLevel?: Level;
+  playOnly?: boolean;
+  levelId?: string;
+}
+
+export default function GameDesigner({ initialLevel, playOnly, levelId: propLevelId }: GameDesignerProps = {}) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [level, setLevel] = useState<Level>(initialLevel || INITIAL_LEVEL);
   const [mode, setMode] = useState<'edit' | 'code' | 'play'>(playOnly ? 'play' : 'edit');
   const [dslCode, setDslCode] = useState<string>('');
@@ -46,6 +61,13 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [selectedTilePos, setSelectedTilePos] = useState<{ x: number, y: number } | null>(null);
   const [hiddenEntityIds, setHiddenEntityIds] = useState<string[]>([]);
+
+  // Cloud save state
+  const [cloudLevelId, setCloudLevelId] = useState<string | undefined>(propLevelId);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [cloudLoading, setCloudLoading] = useState(!!propLevelId);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Play state
   const [gameState, setGameState] = useState<GameState>({
@@ -70,6 +92,25 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
       return () => clearTimeout(timer);
     }
   }, [gameState.finishedEntityIds]);
+
+  // Load level from cloud if editing existing
+  useEffect(() => {
+    if (!propLevelId) return;
+    setCloudLoading(true);
+    getLevelById(propLevelId).then(row => {
+      if (row) {
+        const parsed = parseLevelDSL(row.dsl_code);
+        if (parsed) {
+          setLevel(parsed);
+          setCloudLevelId(row.id);
+          if (row.is_published && row.short_id) {
+            setShareUrl(`${window.location.origin}/play/s/${row.short_id}`);
+          }
+        }
+      }
+      setCloudLoading(false);
+    });
+  }, [propLevelId]);
 
   // Initialize grid if empty (skip when pre-built level provided)
   useEffect(() => {
@@ -150,10 +191,61 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
     }
   }, [mode, level]);
 
-  const handleSave = () => {
-    const data = JSON.stringify(level);
-    localStorage.setItem('my-game-level', data);
-    alert('Level saved to local storage!');
+  const handleSave = async () => {
+    if (!user) {
+      // Fallback: save to localStorage if not logged in
+      const data = JSON.stringify(level);
+      localStorage.setItem('my-game-level', data);
+      navigate('/login');
+      return;
+    }
+
+    setSaveStatus('saving');
+    const dsl = serializeDSL(level);
+    const result = await saveLevel(level, level.name, dsl, cloudLevelId);
+    if (result.error) {
+      setSaveStatus('error');
+    } else {
+      setCloudLevelId(result.id);
+      setSaveStatus('saved');
+      // Update URL if this is a new save
+      if (!propLevelId && result.id) {
+        window.history.replaceState(null, '', `/designer/${result.id}`);
+      }
+    }
+    // Reset status after 2s
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+  };
+
+  const handleShare = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    // Save first if not saved
+    if (!cloudLevelId) {
+      await handleSave();
+    }
+    if (!cloudLevelId && !shareUrl) return;
+
+    const id = cloudLevelId!;
+    if (shareUrl) {
+      // Already published — copy link
+      navigator.clipboard.writeText(shareUrl);
+      setSaveStatus('saved');
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+      return;
+    }
+
+    // Publish + get shortId
+    const result = await publishLevel(id);
+    if (result.shortId) {
+      const url = `${window.location.origin}/play/s/${result.shortId}`;
+      setShareUrl(url);
+      navigator.clipboard.writeText(url);
+    }
   };
 
   const handleLoad = () => {
@@ -339,6 +431,14 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleMove, mode, gameState.entities]);
 
+  if (cloudLoading) {
+    return (
+      <div className="flex h-screen bg-zinc-950 items-center justify-center">
+        <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
       {/* Sidebar */}
@@ -363,13 +463,19 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
           </div>
         </div>
 
-        {/* Save/Load/Clear (edit mode only) */}
+        {/* Save/Share/Load/Clear (edit mode only) */}
         {!playOnly && mode === 'edit' && (
-          <div className="p-4">
+          <div className="p-4 space-y-2">
             <div className="flex gap-2">
-              <button onClick={handleSave} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
-                <Save size={14} /> Save
+              <button onClick={handleSave} disabled={saveStatus === 'saving'} className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
+                {saveStatus === 'saving' ? <Loader2 size={14} className="animate-spin" /> : saveStatus === 'saved' ? <Check size={14} /> : user ? <Cloud size={14} /> : <Save size={14} />}
+                {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
               </button>
+              <button onClick={handleShare} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs transition-colors">
+                <Share2 size={14} /> {shareUrl ? 'Copy Link' : 'Share'}
+              </button>
+            </div>
+            <div className="flex gap-2">
               <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs">
                 <Settings size={14} /> Load
               </button>
@@ -377,6 +483,14 @@ export default function GameDesigner({ initialLevel, playOnly }: { initialLevel?
                 <Trash2 size={14} /> Clear
               </button>
             </div>
+            {saveStatus === 'error' && (
+              <p className="text-xs text-red-400 text-center">Save failed. Try again.</p>
+            )}
+            {!user && (
+              <p className="text-xs text-zinc-600 text-center">
+                <Link to="/login" className="text-purple-400 hover:text-purple-300">Sign in</Link> to save to cloud
+              </p>
+            )}
           </div>
         )}
 

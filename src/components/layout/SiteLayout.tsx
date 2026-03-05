@@ -17,9 +17,10 @@ export default function SiteLayout() {
             </div>
             <div className="flex gap-8 text-sm text-zinc-500">
               <Link to="/play" className="hover:text-purple-300">Explore</Link>
+              <Link to="/browse" className="hover:text-purple-300">Browse</Link>
               <Link to="/designer" className="hover:text-purple-300">Build</Link>
+              <Link to="/my-levels" className="hover:text-purple-300">My Levels</Link>
               <Link to="/account" className="hover:text-purple-300">Account</Link>
-              <a href="#" className="hover:text-purple-300">Privacy</a>
             </div>
             <p className="text-xs text-zinc-600">© 2026 Logic Playground. All rights reserved.</p>
           </div>
