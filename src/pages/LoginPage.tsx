@@ -4,11 +4,15 @@ import { motion } from 'motion/react';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function LoginPage() {
+export default function LoginPage({ defaultSignUp = false }: { defaultSignUp?: boolean }) {
   const { user, loading: authLoading, signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(defaultSignUp);
+
+  useEffect(() => {
+    setIsSignUp(defaultSignUp);
+  }, [defaultSignUp]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -77,7 +81,7 @@ export default function LoginPage() {
           Save your levels, share them with the world, and play puzzles from other creators.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-3 text-left">
+        <form key={isSignUp ? 'signup' : 'signin'} onSubmit={handleSubmit} className="space-y-3 text-left">
           <div className="relative">
             <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
             <input
@@ -86,6 +90,8 @@ export default function LoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
+              autoComplete="email"
+              name="email"
               className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-purple-500 transition-colors"
             />
           </div>
@@ -98,6 +104,8 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
               required
               minLength={6}
+              autoComplete={isSignUp ? 'new-password' : 'current-password'}
+              name="password"
               className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-purple-500 transition-colors"
             />
           </div>
@@ -135,12 +143,12 @@ export default function LoginPage() {
 
         <p className="text-sm text-zinc-500 mt-6">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-          <button
-            onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
+          <Link
+            to={isSignUp ? '/login' : '/signup'}
             className="text-purple-400 hover:text-purple-300"
           >
             {isSignUp ? 'Sign in' : 'Sign up'}
-          </button>
+          </Link>
         </p>
       </motion.div>
     </div>

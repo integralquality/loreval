@@ -21,6 +21,7 @@ export default function App() {
             <Route index element={<HomePage />} />
             <Route path="play" element={<PlayPage />} />
             <Route path="login" element={<LoginPage />} />
+            <Route path="signup" element={<LoginPage defaultSignUp />} />
             <Route path="my-levels" element={<MyLevelsPage />} />
             <Route path="browse" element={<BrowsePage />} />
             <Route path="account" element={<AccountPage />} />
