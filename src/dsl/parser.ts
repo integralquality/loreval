@@ -12,12 +12,18 @@ import {
 // ── Regex patterns ──────────────────────────────────────────
 
 const HEADER_RE = /^level\s+"([^"]+)"\s+(\d+)x(\d+)$/;
-const GRID_START_RE = /^grid:\s*$/;
-const TILE_ROW_RE = /^\s+(\S(?:\s+\S)*)\s*$/;
+const GRID_START_RE = /^grid\s*=\s*\[\s*$/;
+const GRID_START_LEGACY_RE = /^grid:\s*$/;
+const GRID_END_RE = /^\s*\]\s*$/;
+const TILE_ROW_RE = /^\s+(\S(?:\s+\S)*)\s*,?\s*$/;
+const TILE_ROW_COMMA_RE = /^\s+(\S(?:\s+\S)*)\s*,\s*$/;
 const LET_RE = /^let\s+([^\s])\s*=\s*(.+)$/;
-const AGENT_RE = /^agent\s+(\S+)\s+start\((\d+),(\d+)\)(?:\s+and\s+reach\((\d+),(\d+)\))?(?:\s+\[([^\]]+)\])?$/;
+const AGENT_RE = /^agent(?:\((\S+?)\)|\s+(\S+))\s+start\((\d+),(\d+)\)(?:\s+and\s+reach\((\d+),(\d+)\))?(?:\s+\[([^\]]+)\])?$/;
 const COMMENT_RE = /^\s*#/;
 const BLANK_RE = /^\s*$/;
+
+// Function-style tile spec: type(arg1, arg2, ...)
+const FUNC_SPEC_RE = /^(\S+?)\(([^)]*)\)$/;
 
 // ── Header parsing ──────────────────────────────────────────
 
@@ -38,7 +44,49 @@ function parseTileSpec(
   spec: string,
   lineNum: number
 ): { tileType: string; color?: string; meta?: Record<string, string> } | ParseError {
-  // spec format: "type:color:key=val,key=val"
+  const trimmed = spec.trim();
+
+  // Try function syntax first: type(args)
+  const funcMatch = FUNC_SPEC_RE.exec(trimmed);
+  if (funcMatch) {
+    return parseFuncSpec(funcMatch[1], funcMatch[2], lineNum);
+  }
+
+  // Fall back to colon syntax: type:color:key=val,key=val
+  return parseColonSpec(trimmed, lineNum);
+}
+
+/** Parse function-style: goal(orange), door(blue), one-way(right) */
+function parseFuncSpec(
+  tileType: string,
+  argsStr: string,
+  lineNum: number
+): { tileType: string; color?: string; meta?: Record<string, string> } | ParseError {
+  if (!TILE_TYPE_SET.has(tileType as TileType)) {
+    return { line: lineNum, message: `Unknown tile type "${tileType}"` };
+  }
+
+  const args = argsStr.split(',').map(a => a.trim()).filter(Boolean);
+
+  // For one-way, the argument is a direction
+  if (tileType === 'one-way') {
+    const direction = args[0];
+    if (!direction || !DIRECTION_SET.has(direction as Direction)) {
+      return { line: lineNum, message: `one-way requires a direction: up, down, left, right` };
+    }
+    return { tileType, meta: { direction } };
+  }
+
+  // For other tiles, first arg is color
+  const color = args[0] || undefined;
+  return { tileType, color };
+}
+
+/** Parse colon-style: goal:orange:id=goal-1 (legacy, still supported) */
+function parseColonSpec(
+  spec: string,
+  lineNum: number
+): { tileType: string; color?: string; meta?: Record<string, string> } | ParseError {
   const parts = spec.split(':');
   const tileType = parts[0].trim();
 
@@ -52,7 +100,6 @@ function parseTileSpec(
   for (let i = 1; i < parts.length; i++) {
     const part = parts[i].trim();
     if (part.includes('=')) {
-      // This is a meta section: "key=val,key=val"
       meta = meta || {};
       for (const pair of part.split(',')) {
         const [k, v] = pair.split('=').map(s => s.trim());
@@ -72,7 +119,7 @@ function parseLetLine(
 ): LegendEntry | ParseError {
   const m = LET_RE.exec(line);
   if (!m) {
-    return { line: lineNum, message: `Invalid let format. Expected: let C = type:color` };
+    return { line: lineNum, message: `Invalid let format. Expected: let C = goal(orange)` };
   }
 
   const char = m[1];
@@ -129,15 +176,15 @@ function parseAgentLine(
 ): RawEntity | ParseError {
   const m = AGENT_RE.exec(line);
   if (!m) {
-    return { line: lineNum, message: `Invalid agent format. Expected: agent color start(x,y) and reach(x,y)` };
+    return { line: lineNum, message: `Invalid agent format. Expected: agent(color) start(x,y) and reach(x,y)` };
   }
 
-  const color = m[1];
-  const x = parseInt(m[2], 10);
-  const y = parseInt(m[3], 10);
-  const reachX = m[4] !== undefined ? parseInt(m[4], 10) : undefined;
-  const reachY = m[5] !== undefined ? parseInt(m[5], 10) : undefined;
-  const rulesText = m[6] || undefined;
+  const color = m[1] || m[2]; // m[1] = agent(color), m[2] = agent color
+  const x = parseInt(m[3], 10);
+  const y = parseInt(m[4], 10);
+  const reachX = m[5] !== undefined ? parseInt(m[5], 10) : undefined;
+  const reachY = m[6] !== undefined ? parseInt(m[6], 10) : undefined;
+  const rulesText = m[7] || undefined;
 
   let rules: Array<{ type: string; value?: number }> = [];
   if (rulesText) {
@@ -236,6 +283,30 @@ function resolveLevel(
 
   if (errors.length > 0) return null;
 
+  // Auto-assign IDs to goal tiles that don't have one
+  let goalCounter = 0;
+  for (let y = 0; y < tiles.length; y++) {
+    for (let x = 0; x < tiles[y].length; x++) {
+      const tile = tiles[y][x];
+      if (tile.type === 'goal' && !tile.meta?.id) {
+        goalCounter++;
+        const autoId = tile.color ? `exit-${tile.color}` : `exit-${goalCounter}`;
+        // Ensure uniqueness by appending counter if needed
+        const existingIds = new Set<string>();
+        for (const row of tiles) {
+          for (const t of row) {
+            if (t.meta?.id) existingIds.add(t.meta.id);
+          }
+        }
+        const finalId = existingIds.has(autoId) ? `${autoId}-${goalCounter}` : autoId;
+        tiles[y][x] = {
+          ...tile,
+          meta: { ...tile.meta, id: finalId },
+        };
+      }
+    }
+  }
+
   // Resolve agents
   const entityCounts: Record<string, number> = {};
   const entities: Entity[] = [];
@@ -279,11 +350,9 @@ function resolveLevel(
           line: raw.line,
           message: `Tile at reach(${raw.reachX},${raw.reachY}) is "${targetTile.type}", not a goal`,
         });
-        // Still create the reach-goal rule — the position is the intent
         goalTargetId = targetTile.meta?.id || `goal-${raw.reachX}-${raw.reachY}`;
       } else {
         goalTargetId = targetTile.meta?.id || `goal-${raw.reachX}-${raw.reachY}`;
-        // Ensure the goal tile has this ID in its meta
         if (!targetTile.meta?.id) {
           tiles[raw.reachY][raw.reachX] = {
             ...targetTile,
@@ -297,7 +366,6 @@ function resolveLevel(
     const rules: Rule[] = [];
     let ruleIdx = 0;
 
-    // If there's a reach target, add reach-goal if not already in rules
     if (goalTargetId && !raw.rules.some(r => r.type === 'reach-goal')) {
       ruleIdx++;
       rules.push({
@@ -349,7 +417,6 @@ export function parseDSL(source: string): ParseResult {
   const errors: ParseError[] = [];
   const warnings: ParseError[] = [];
 
-  // Normalize line endings
   const lines = source.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
   let headerResult: { name: string; width: number; height: number } | null = null;
@@ -360,12 +427,12 @@ export function parseDSL(source: string): ParseResult {
   type Phase = 'header' | 'grid' | 'body';
   let phase: Phase = 'header';
   let gridRowStart = 0;
+  let bracketGrid = false;
 
   for (let i = 0; i < lines.length; i++) {
     const lineNum = i + 1;
     const line = lines[i];
 
-    // Skip comments and blanks (except in grid phase where blank ends the block)
     if (COMMENT_RE.test(line)) continue;
     if (BLANK_RE.test(line)) {
       if (phase === 'grid' && charGrid.length > 0) {
@@ -376,10 +443,11 @@ export function parseDSL(source: string): ParseResult {
 
     switch (phase) {
       case 'header': {
-        if (GRID_START_RE.test(line)) {
+        if (GRID_START_RE.test(line) || GRID_START_LEGACY_RE.test(line)) {
           if (!headerResult) {
-            errors.push({ line: lineNum, message: 'Missing header before "grid:"' });
+            errors.push({ line: lineNum, message: 'Missing header before grid' });
           }
+          bracketGrid = GRID_START_RE.test(line);
           phase = 'grid';
           gridRowStart = lineNum;
           break;
@@ -395,21 +463,28 @@ export function parseDSL(source: string): ParseResult {
       }
 
       case 'grid': {
-        const rowMatch = TILE_ROW_RE.exec(line);
+        // Closing bracket ends grid
+        if (GRID_END_RE.test(line)) {
+          phase = 'body';
+          break;
+        }
+        const rowRe = bracketGrid ? TILE_ROW_COMMA_RE : TILE_ROW_RE;
+        const rowMatch = rowRe.exec(line);
         if (rowMatch) {
           const tokens = rowMatch[1].split(/\s+/);
           charGrid.push(tokens);
+        } else if (bracketGrid && TILE_ROW_RE.test(line)) {
+          errors.push({ line: lineNum, message: 'Missing comma at end of grid row' });
+          const fallback = TILE_ROW_RE.exec(line)!;
+          charGrid.push(fallback[1].split(/\s+/));
         } else {
-          // Non-indented line ends grid block
           phase = 'body';
-          // Fall through to body processing
           i--;
         }
         break;
       }
 
       case 'body': {
-        // Try let declaration
         if (LET_RE.test(line)) {
           const result = parseLetLine(line, lineNum);
           if ('message' in result) {
@@ -432,7 +507,6 @@ export function parseDSL(source: string): ParseResult {
           break;
         }
 
-        // Try agent
         if (AGENT_RE.test(line)) {
           const result = parseAgentLine(line, lineNum);
           if ('message' in result) {
@@ -443,7 +517,6 @@ export function parseDSL(source: string): ParseResult {
           break;
         }
 
-        // Unknown line
         errors.push({
           line: lineNum,
           message: `Unexpected: "${line.trim()}"`,

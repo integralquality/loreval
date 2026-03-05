@@ -13,7 +13,7 @@ export const INITIAL_LEVEL: Level = {
       position: { x: 2, y: 1 },
       color: 'orange',
       rules: [
-        { id: 'r1', type: 'reach-goal', targetId: 'goal-dog' }
+        { id: 'r1', type: 'reach-goal', targetId: 'exit-orange' }
       ]
     },
     {
@@ -22,7 +22,7 @@ export const INITIAL_LEVEL: Level = {
       position: { x: 1, y: 5 },
       color: 'purple',
       rules: [
-        { id: 'r3', type: 'reach-goal', targetId: 'goal-cat' }
+        { id: 'r3', type: 'reach-goal', targetId: 'exit-purple' }
       ]
     },
     {
@@ -31,7 +31,7 @@ export const INITIAL_LEVEL: Level = {
       position: { x: 1, y: 9 },
       color: 'pink',
       rules: [
-        { id: 'r5', type: 'reach-goal', targetId: 'goal-rabbit' }
+        { id: 'r5', type: 'reach-goal', targetId: 'exit-pink' }
       ]
     },
     {
@@ -40,7 +40,7 @@ export const INITIAL_LEVEL: Level = {
       position: { x: 2, y: 3 },
       color: 'red',
       rules: [
-        { id: 'r7', type: 'reach-goal', targetId: 'goal-bot' }
+        { id: 'r7', type: 'reach-goal', targetId: 'exit-red' }
       ]
     }
   ]

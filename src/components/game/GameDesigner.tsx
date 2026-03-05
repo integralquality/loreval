@@ -56,7 +56,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   const [level, setLevel] = useState<Level>(initialLevel || INITIAL_LEVEL);
   const [mode, setMode] = useState<'edit' | 'code' | 'play'>(playOnly ? 'play' : 'edit');
   const [dslCode, setDslCode] = useState<string>('');
-  const [selectedTool, setSelectedTool] = useState<TileType | 'robot' | 'erase' | 'goal-universal'>('wall');
+  const [selectedTool, setSelectedTool] = useState<TileType | 'robot' | 'erase' | 'goal-universal' | 'switch-universal'>('wall');
 
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [selectedTilePos, setSelectedTilePos] = useState<{ x: number, y: number } | null>(null);
@@ -125,19 +125,19 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       // Level layout map — each char = a tile type
       // . = empty, R = road, W = wall
       // S = switch(blue), D = door(blue), P = paint(blue), > = one-way right
-      // 1 = dog goal, 2 = cat goal, 3 = rabbit goal, 4 = bot goal
+      // 1 = orange exit, 2 = purple exit, 3 = pink exit, 4 = red exit
       const layout = [
         //0    1    2    3    4    5    6    7    8    9
         '.    R    R    R    R    R    R    R    R    .'.split(/\s+/),  // 0
-        '.    R    R    R    R    W    R    R    1    .'.split(/\s+/),  // 1 — dog(2,1) goal (orange)
+        '.    R    R    R    R    W    R    R    1    .'.split(/\s+/),  // 1 — orange exit
         '.    R    R    W    W    R    W    W    R    .'.split(/\s+/),  // 2 — wall corridor
-        '.    R    R    S    R    R    R    D    4    .'.split(/\s+/),  // 3 — robot(2,3) switch → door → bot goal
+        '.    R    R    S    R    R    R    D    4    .'.split(/\s+/),  // 3 — switch → door → red exit
         '.    W    W    W    R    R    R    W    R    .'.split(/\s+/),  // 4 — wall barrier
-        '.    R    R    R    R    R    >    R    2    .'.split(/\s+/),  // 5 — cat(1,5) goal (purple), one-way
+        '.    R    R    R    R    R    >    R    2    .'.split(/\s+/),  // 5 — purple exit, one-way
         '.    R    R    W    P    W    R    W    R    .'.split(/\s+/),  // 6 — paint (blue)
         '.    R    R    R    R    R    R    R    R    .'.split(/\s+/),  // 7 — open area
-        '.    R    R    R    R    R    R    R    3    .'.split(/\s+/),  // 8 — rabbit goal
-        '.    R    R    R    R    R    R    R    R    .'.split(/\s+/),  // 9 — rabbit(1,9) start area
+        '.    R    R    R    R    R    R    R    3    .'.split(/\s+/),  // 8 — pink exit
+        '.    R    R    R    R    R    R    R    R    .'.split(/\s+/),  // 9
       ];
 
       const charToTile: Record<string, () => Partial<Tile>> = {
@@ -148,10 +148,10 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         'D': () => ({ type: 'door', color: 'blue' }),
         'P': () => ({ type: 'paint', color: 'blue' }),
         '>': () => ({ type: 'one-way', meta: { direction: 'right' as Direction } }),
-        '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-dog' } }),
-        '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'goal-cat' } }),
-        '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'goal-rabbit' } }),
-        '4': () => ({ type: 'goal', color: 'red', meta: { id: 'goal-bot' } }),
+        '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'exit-orange' } }),
+        '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'exit-purple' } }),
+        '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'exit-pink' } }),
+        '4': () => ({ type: 'goal', color: 'red', meta: { id: 'exit-red' } }),
       };
 
       for (let y = 0; y < level.height; y++) {
@@ -322,6 +322,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       return;
     }
 
+    if (selectedTool === 'switch-universal') {
+      const newTiles = [...level.tiles];
+      newTiles[y][x] = { ...newTiles[y][x], type: 'switch', color: undefined };
+      setLevel(prev => ({ ...prev, tiles: newTiles }));
+      return;
+    }
+
     if (selectedTool === 'robot') {
       // Auto-assign first available color, prevent duplicates
       const AGENT_COLORS = ['orange', 'purple', 'pink', 'blue', 'green', 'red'];
@@ -422,9 +429,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         case 'ArrowDown': handleMove(0, 1); break;
         case 'ArrowLeft': handleMove(-1, 0); break;
         case 'ArrowRight': handleMove(1, 0); break;
-        case '1': if (gameState.entities[0]) setGameState(prev => ({ ...prev, selectedEntityId: gameState.entities[0].id })); break;
-        case '2': if (gameState.entities[1]) setGameState(prev => ({ ...prev, selectedEntityId: gameState.entities[1].id })); break;
-        case '3': if (gameState.entities[2]) setGameState(prev => ({ ...prev, selectedEntityId: gameState.entities[2].id })); break;
+        default: {
+          const num = parseInt(e.key, 10);
+          if (num >= 1 && num <= gameState.entities.length) {
+            setGameState(prev => ({ ...prev, selectedEntityId: gameState.entities[num - 1].id }));
+          }
+          break;
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -501,10 +512,11 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
               <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23351008'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%239b3a10' rx='1'/%3E%3C/svg%3E")`, backgroundSize: '14px 14px' }} />} label="Brick" tooltip="Solid brick wall — nothing can pass through" />
               <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundColor: 'rgba(120,113,108,0.4)' }} />} label="Road" tooltip="Walkable road tile" />
               <ToolButton active={selectedTool === 'goal'} onClick={() => setSelectedTool('goal')} icon={<LogOut className="text-emerald-500" />} label="Exit" tooltip="Color exit — only the matching character can use it" />
-              <ToolButton active={selectedTool === 'goal-universal' as any} onClick={() => setSelectedTool('goal-universal' as any)} icon={<LogOut className="text-zinc-300" />} label="Open Exit" tooltip="Universal exit — any character can use it" />
+              <ToolButton active={selectedTool === 'goal-universal'} onClick={() => setSelectedTool('goal-universal')} icon={<LogOut className="text-zinc-300" />} label="Open Exit" tooltip="Universal exit — any character can use it" />
               <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-zinc-400" />} label="Door" tooltip="Blocks passage unless character color matches or a switch opens it" />
               <ToolButton active={selectedTool === 'paint'} onClick={() => setSelectedTool('paint')} icon={<PaintBucket className="text-zinc-400" />} label="Paint" tooltip="Changes a character's color when stepped on" />
-              <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-zinc-400" />} label="Switch" tooltip="Toggles all doors of the same color open or closed" />
+              <ToolButton active={selectedTool === 'switch'} onClick={() => setSelectedTool('switch')} icon={<ToggleLeft className="text-amber-400" />} label="Switch" tooltip="Color switch — toggles doors of the same color" />
+              <ToolButton active={selectedTool === 'switch-universal'} onClick={() => setSelectedTool('switch-universal')} icon={<ToggleLeft className="text-zinc-300" />} label="Open Switch" tooltip="Universal switch — toggles all doors regardless of color" />
               <ToolButton active={selectedTool === 'one-way'} onClick={() => setSelectedTool('one-way')} icon={<ArrowUp className="text-amber-400" />} label="1-Way" tooltip="Can only be entered from the arrow's direction" />
               <ToolButton active={selectedTool === 'lock'} onClick={() => setSelectedTool('lock')} icon={<Lock className="text-zinc-400" />} label="Lock" tooltip="Only a matching-color character can open it — stays open once unlocked" />
               <ToolButton active={selectedTool === 'robot'} onClick={() => setSelectedTool('robot')} icon={<Bot className="text-blue-500" />} label="Agent" tooltip="Place an agent — uses first available color" />
@@ -727,8 +739,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 </div>
                 <div>
                   <p className="text-zinc-300 mb-1">Grid</p>
-                  <p className="text-zinc-500">grid:</p>
-                  <p className="text-zinc-500 ml-2">W W R R . .</p>
+                  <p className="text-zinc-500">grid = [</p>
+                  <p className="text-zinc-500 ml-2">W W R R . .,</p>
+                  <p className="text-zinc-500">]</p>
                 </div>
                 <div>
                   <p className="text-zinc-300 mb-1">Built-in chars</p>
@@ -738,13 +751,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 </div>
                 <div>
                   <p className="text-zinc-300 mb-1">Variables</p>
-                  <p className="text-zinc-500">let D = door:blue</p>
-                  <p className="text-zinc-500">let G = goal:orange:id=g1</p>
+                  <p className="text-zinc-500">let D = door(blue)</p>
+                  <p className="text-zinc-500">let G = goal(orange)</p>
                 </div>
                 <div>
                   <p className="text-zinc-300 mb-1">Agents</p>
-                  <p className="text-zinc-500">agent orange</p>
-                  <p className="text-zinc-500 ml-2">start(2,3) and reach(7,1)</p>
+                  <p className="text-zinc-500">agent(orange) start(2,3)</p>
+                  <p className="text-zinc-500 ml-2">and reach(7,1)</p>
                   <p className="text-zinc-500 ml-2">[max-steps:10]</p>
                 </div>
                 <div>

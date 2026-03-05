@@ -13,7 +13,8 @@
       "Bash(cd /e/Projects/AI/make-game && npx tsc --noEmit --pretty false src/components/game/GameDesigner.tsx 2>&1)",
       "Bash(cd /e/Projects/AI/make-game && npx tsc --noEmit --project tsconfig.app.json 2>&1)",
       "Bash(tail:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

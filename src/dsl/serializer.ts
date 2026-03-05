@@ -13,7 +13,8 @@ function tileSignature(tile: Tile): string | null {
   if (tile.color) sig += ':' + tile.color;
   if (tile.meta) {
     const parts: string[] = [];
-    if (tile.meta.id) parts.push('id=' + tile.meta.id);
+    // Exclude auto-generated exit IDs from signature — they're internal
+    if (tile.meta.id && !tile.meta.id.startsWith('exit-')) parts.push('id=' + tile.meta.id);
     if (tile.meta.direction) parts.push('direction=' + tile.meta.direction);
     if (parts.length > 0) sig += ':' + parts.sort().join(',');
   }
@@ -32,19 +33,17 @@ function isArrowTile(tile: Tile): Direction | null {
 
 /** Pick a unique single char for each non-builtin tile signature */
 function assignLegendChars(
-  signatures: Map<string, { type: TileType; color?: string; meta?: Record<string, string> }>
+  signatures: Map<string, { type: TileType; color?: string; direction?: string }>
 ): Map<string, string> {
   const used = new Set(Object.keys(BUILTIN_CHARS));
-  // Also reserve arrow chars
   for (const arrow of Object.values(DIRECTION_ARROWS)) {
     used.add(arrow);
   }
 
   const assignments = new Map<string, string>();
-  const candidates = 'ABCDEFGHIJKLMNOPQSTUVXYZ123456789'; // skip R, W (builtins)
+  const candidates = 'ABCDEFGHIJKLMNOPQSTUVXYZ123456789';
 
   for (const [sig, info] of signatures) {
-    // Try first letter of type (uppercase)
     let candidate = info.type[0].toUpperCase();
     if (info.type === 'floor-white' || info.type === 'floor') candidate = 'F';
 
@@ -54,7 +53,6 @@ function assignLegendChars(
       continue;
     }
 
-    // Try first letter of color
     if (info.color) {
       candidate = info.color[0].toUpperCase();
       if (!used.has(candidate)) {
@@ -64,7 +62,6 @@ function assignLegendChars(
       }
     }
 
-    // Fallback: sequential from candidates
     let found = false;
     for (const ch of candidates) {
       if (!used.has(ch)) {
@@ -76,7 +73,6 @@ function assignLegendChars(
     }
 
     if (!found) {
-      // Extremely unlikely — more than 35 unique tile signatures
       assignments.set(sig, '?');
     }
   }
@@ -95,22 +91,19 @@ export function serializeDSL(level: Level): string {
   lines.push('');
 
   // Collect unique non-builtin tile signatures
-  const sigToInfo = new Map<string, { type: TileType; color?: string; meta?: Record<string, string> }>();
+  const sigToInfo = new Map<string, { type: TileType; color?: string; direction?: string }>();
 
   for (let y = 0; y < level.height; y++) {
     for (let x = 0; x < level.width; x++) {
       const tile = level.tiles[y]?.[x];
       if (!tile) continue;
-      if (isArrowTile(tile)) continue; // arrows use shorthand, no legend needed
+      if (isArrowTile(tile)) continue;
       const sig = tileSignature(tile);
       if (sig && !sigToInfo.has(sig)) {
-        const meta: Record<string, string> = {};
-        if (tile.meta?.id) meta.id = tile.meta.id;
-        if (tile.meta?.direction) meta.direction = tile.meta.direction;
         sigToInfo.set(sig, {
           type: tile.type,
           color: tile.color,
-          meta: Object.keys(meta).length > 0 ? meta : undefined,
+          direction: tile.meta?.direction,
         });
       }
     }
@@ -119,46 +112,43 @@ export function serializeDSL(level: Level): string {
   // Assign chars
   const sigToChar = assignLegendChars(sigToInfo);
 
-  // Build reverse lookup: for each tile, what char to emit
+  // Build reverse lookup
   const builtinReverse = new Map<TileType, string>();
   for (const [ch, def] of Object.entries(BUILTIN_CHARS)) {
     builtinReverse.set(def.type, ch);
   }
 
   function tileToChar(tile: Tile): string {
-    // Check arrow shorthand first
     const arrowDir = isArrowTile(tile);
     if (arrowDir) return DIRECTION_ARROWS[arrowDir];
 
-    // Check builtin (no color, no meta)
     if (!tile.color && !tile.meta) {
       const builtin = builtinReverse.get(tile.type);
       if (builtin) return builtin;
     }
 
-    // Look up in legend
     const sig = tileSignature(tile);
     if (sig) {
       const ch = sigToChar.get(sig);
       if (ch) return ch;
     }
 
-    // Fallback
     return builtinReverse.get(tile.type) || '.';
   }
 
   // Grid block
-  lines.push('grid:');
+  lines.push('grid = [');
   for (let y = 0; y < level.height; y++) {
     const row: string[] = [];
     for (let x = 0; x < level.width; x++) {
       const tile = level.tiles[y]?.[x];
       row.push(tile ? tileToChar(tile) : '.');
     }
-    lines.push('  ' + row.join(' '));
+    lines.push('  ' + row.join(' ') + ',');
   }
+  lines.push(']');
 
-  // Let declarations
+  // Let declarations — function syntax
   const legendEntries = Array.from(sigToChar.entries())
     .map(([sig, ch]) => ({ sig, ch, info: sigToInfo.get(sig)! }))
     .sort((a, b) => a.ch.localeCompare(b.ch));
@@ -166,13 +156,16 @@ export function serializeDSL(level: Level): string {
   if (legendEntries.length > 0) {
     lines.push('');
     for (const { ch, info } of legendEntries) {
-      let spec = info.type as string;
-      if (info.color) spec += ':' + info.color;
-      if (info.meta && Object.keys(info.meta).length > 0) {
-        const metaParts = Object.entries(info.meta)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([k, v]) => `${k}=${v}`);
-        spec += ':' + metaParts.join(',');
+      let spec: string;
+      const FUNC_TILES = new Set(['goal', 'door', 'switch', 'paint', 'lock', 'one-way']);
+      if (info.type === 'one-way' && info.direction) {
+        spec = `one-way(${info.direction})`;
+      } else if (info.color) {
+        spec = `${info.type}(${info.color})`;
+      } else if (FUNC_TILES.has(info.type)) {
+        spec = `${info.type}()`;
+      } else {
+        spec = info.type;
       }
       lines.push(`let ${ch} = ${spec}`);
     }
@@ -182,9 +175,8 @@ export function serializeDSL(level: Level): string {
   if (level.entities.length > 0) {
     lines.push('');
     for (const entity of level.entities) {
-      let line = `agent ${entity.color || 'none'} start(${entity.position.x},${entity.position.y})`;
+      let line = `agent(${entity.color || 'none'}) start(${entity.position.x},${entity.position.y})`;
 
-      // Find reach target position from reach-goal rule
       const reachGoal = entity.rules.find(r => r.type === 'reach-goal');
       if (reachGoal?.targetId) {
         const pos = findGoalPosition(reachGoal.targetId, level);
@@ -193,7 +185,6 @@ export function serializeDSL(level: Level): string {
         }
       }
 
-      // Extra rules (skip reach-goal since it's expressed via "and reach()")
       const extraRules = entity.rules.filter(r => r.type !== 'reach-goal');
       const ruleStrs: string[] = [];
       for (const rule of extraRules) {

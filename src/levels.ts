@@ -58,12 +58,10 @@ function buildLevel(def: LevelDef): CampaignLevel {
 }
 
 // ─── Level 1: First Steps ──────────────────────────────────
-// Simple maze. Dog must navigate to the exit.
-// Dog at (1,1) → goal at (6,5). No special rules.
 const level1 = buildLevel({
   id: 'level-1',
   name: 'First Steps',
-  description: 'Guide the dog through the maze to the exit.',
+  description: 'Guide the agent through the maze to the exit.',
   number: 1,
   width: 8,
   height: 7,
@@ -78,20 +76,19 @@ const level1 = buildLevel({
   ],
   entities: [
     {
-      id: 'dog-1',
+      id: 'robot-1',
       type: 'robot',
       position: { x: 1, y: 0 },
       color: 'orange',
-      rules: [{ id: 'r1', type: 'reach-goal', targetId: 'goal-1' }],
+      rules: [{ id: 'r1', type: 'reach-goal', targetId: 'exit-orange' }],
     },
   ],
   charMap: {
-    'F': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-1' } }),
+    'F': () => ({ type: 'goal', color: 'orange', meta: { id: 'exit-orange' } }),
   },
 });
 
 // ─── Level 2: Switch & Door ─────────────────────────────────
-// Dog must hit a switch to open a door blocking the path to the exit.
 const level2 = buildLevel({
   id: 'level-2',
   name: 'Switch & Door',
@@ -110,26 +107,25 @@ const level2 = buildLevel({
   ],
   entities: [
     {
-      id: 'dog-1',
+      id: 'robot-1',
       type: 'robot',
       position: { x: 1, y: 0 },
       color: 'orange',
-      rules: [{ id: 'r1', type: 'reach-goal', targetId: 'goal-2' }],
+      rules: [{ id: 'r1', type: 'reach-goal', targetId: 'exit-orange' }],
     },
   ],
   charMap: {
-    'F': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-2' } }),
+    'F': () => ({ type: 'goal', color: 'orange', meta: { id: 'exit-orange' } }),
     'S': () => ({ type: 'switch', color: 'blue' }),
     'D': () => ({ type: 'door', color: 'blue' }),
   },
 });
 
 // ─── Level 3: Full Challenge ─────────────────────────────
-// Multi-entity level with doors, switches, locks, one-way, paint.
 const level3 = buildLevel({
   id: 'level-3',
   name: 'Full Challenge',
-  description: 'Four characters, four exits, four different paths.',
+  description: 'Four agents, four exits, four different paths.',
   number: 3,
   width: 10,
   height: 10,
@@ -147,40 +143,32 @@ const level3 = buildLevel({
   ],
   entities: [
     {
-      id: 'dog-1',
+      id: 'robot-1',
       type: 'robot',
       position: { x: 2, y: 1 },
       color: 'orange',
-      rules: [
-        { id: 'r1', type: 'reach-goal', targetId: 'goal-dog' },
-      ],
+      rules: [{ id: 'r1', type: 'reach-goal', targetId: 'exit-orange' }],
     },
     {
-      id: 'bot-1',
+      id: 'robot-2',
       type: 'robot',
       position: { x: 2, y: 3 },
       color: 'red',
-      rules: [
-        { id: 'r3', type: 'reach-goal', targetId: 'goal-bot' },
-      ],
+      rules: [{ id: 'r3', type: 'reach-goal', targetId: 'exit-red' }],
     },
     {
-      id: 'cat-1',
+      id: 'robot-3',
       type: 'robot',
       position: { x: 1, y: 5 },
       color: 'purple',
-      rules: [
-        { id: 'r4', type: 'reach-goal', targetId: 'goal-cat' },
-      ],
+      rules: [{ id: 'r4', type: 'reach-goal', targetId: 'exit-purple' }],
     },
     {
-      id: 'rabbit-1',
+      id: 'robot-4',
       type: 'robot',
       position: { x: 1, y: 9 },
       color: 'pink',
-      rules: [
-        { id: 'r6', type: 'reach-goal', targetId: 'goal-rabbit' },
-      ],
+      rules: [{ id: 'r6', type: 'reach-goal', targetId: 'exit-pink' }],
     },
   ],
   charMap: {
@@ -188,20 +176,18 @@ const level3 = buildLevel({
     'D': () => ({ type: 'door', color: 'blue' }),
     'P': () => ({ type: 'paint', color: 'blue' }),
     '>': () => ({ type: 'one-way', meta: { direction: 'right' as Direction } }),
-    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-dog' } }),
-    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'goal-cat' } }),
-    '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'goal-rabbit' } }),
-    '4': () => ({ type: 'goal', color: 'red', meta: { id: 'goal-bot' } }),
+    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'exit-orange' } }),
+    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'exit-purple' } }),
+    '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'exit-pink' } }),
+    '4': () => ({ type: 'goal', color: 'red', meta: { id: 'exit-red' } }),
   },
 });
 
 // ─── Level 4: The Swap ───────────────────────────────────
-// 2 characters in a corridor with exits swapped.
-// They block each other — one must step into the alcove to let the other pass.
 const level4 = buildLevel({
   id: 'level-4',
   name: 'The Swap',
-  description: 'Two characters need to swap places. Use the alcove to let one pass.',
+  description: 'Two agents need to swap places. Use the alcove to let one pass.',
   number: 4,
   width: 8,
   height: 3,
@@ -212,14 +198,14 @@ const level4 = buildLevel({
   ],
   entities: [
     {
-      id: 'cat-1',
+      id: 'robot-1',
       type: 'robot',
       position: { x: 2, y: 1 },
       color: 'purple',
       rules: [{ id: 'r1', type: 'reach-goal' }],
     },
     {
-      id: 'dog-1',
+      id: 'robot-2',
       type: 'robot',
       position: { x: 5, y: 1 },
       color: 'orange',
@@ -227,17 +213,16 @@ const level4 = buildLevel({
     },
   ],
   charMap: {
-    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-dog' } }),
-    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'goal-cat' } }),
+    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'exit-orange' } }),
+    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'exit-purple' } }),
   },
 });
 
 // ─── Level 5: Sort It Out ────────────────────────────────
-// 3 characters in reverse order. Alcoves let characters pass each other.
 const level5 = buildLevel({
   id: 'level-5',
   name: 'Sort It Out',
-  description: 'Three characters in the wrong order. Shuffle them to their exits.',
+  description: 'Three agents in the wrong order. Shuffle them to their exits.',
   number: 5,
   width: 10,
   height: 4,
@@ -249,21 +234,21 @@ const level5 = buildLevel({
   ],
   entities: [
     {
-      id: 'rabbit-1',
+      id: 'robot-1',
       type: 'robot',
       position: { x: 2, y: 1 },
       color: 'pink',
       rules: [{ id: 'r1', type: 'reach-goal' }],
     },
     {
-      id: 'dog-1',
+      id: 'robot-2',
       type: 'robot',
       position: { x: 5, y: 1 },
       color: 'orange',
       rules: [{ id: 'r2', type: 'reach-goal' }],
     },
     {
-      id: 'cat-1',
+      id: 'robot-3',
       type: 'robot',
       position: { x: 7, y: 1 },
       color: 'purple',
@@ -271,9 +256,9 @@ const level5 = buildLevel({
     },
   ],
   charMap: {
-    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'goal-dog' } }),
-    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'goal-cat' } }),
-    '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'goal-rabbit' } }),
+    '1': () => ({ type: 'goal', color: 'orange', meta: { id: 'exit-orange' } }),
+    '2': () => ({ type: 'goal', color: 'purple', meta: { id: 'exit-purple' } }),
+    '3': () => ({ type: 'goal', color: 'pink', meta: { id: 'exit-pink' } }),
   },
 });
 

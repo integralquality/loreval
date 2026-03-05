@@ -48,11 +48,21 @@ function highlightLine(line: string): string {
       + span(headerMatch[3], NUMBER_COLOR) + '\n';
   }
 
+  // grid = [ or legacy grid:
+  const gridMatch = /^(grid)\s*(=)\s*(\[)\s*$/.exec(line);
+  if (gridMatch) {
+    return span(gridMatch[1], KEYWORD_COLOR) + ' '
+      + span(gridMatch[2], OPERATOR_COLOR) + ' '
+      + span(gridMatch[3], OPERATOR_COLOR) + '\n';
+  }
   if (/^grid:\s*$/.test(line)) return span('grid:', KEYWORD_COLOR) + '\n';
+  if (/^\s*\]\s*$/.test(line)) return span(line.trimEnd(), OPERATOR_COLOR) + '\n';
 
-  if (/^\s+\S(\s+\S)*\s*$/.test(line)) {
+  if (/^\s+\S(\s+\S)*\s*,?\s*$/.test(line)) {
     const indent = line.match(/^(\s+)/)![1];
-    const tokens = line.trim().split(/\s+/);
+    const hasComma = /,\s*$/.test(line);
+    const stripped = line.trim().replace(/,\s*$/, '');
+    const tokens = stripped.split(/\s+/);
     const highlighted = tokens.map(ch => {
       if (ch === 'W') return span(ch, GRID_WALL);
       if (ch === 'R') return span(ch, GRID_ROAD);
@@ -60,7 +70,7 @@ function highlightLine(line: string): string {
       if ('^v<>'.includes(ch)) return span(ch, ARROW_COLOR);
       return span(ch, TYPE_COLOR);
     });
-    return span(indent, DEFAULT_COLOR) + highlighted.join(' ') + '\n';
+    return span(indent, DEFAULT_COLOR) + highlighted.join(' ') + (hasComma ? span(',', OPERATOR_COLOR) : '') + '\n';
   }
 
   const letMatch = /^(let)\s+(\S)\s*(=)\s*(.+)$/.exec(line);
@@ -73,14 +83,48 @@ function highlightLine(line: string): string {
   }
 
   // Agent line — token-by-token to handle partial input
-  if (/^agent\b/.test(line)) {
+  if (/^agent(?=[\s(]|$)/.test(line)) {
     return highlightAgentLine(line) + '\n';
   }
 
   return span(line, DEFAULT_COLOR) + '\n';
 }
 
+const DIRECTIONS = new Set(['up', 'down', 'left', 'right']);
+
 function highlightTileSpec(spec: string): string {
+  // Function syntax: type(args)
+  const funcMatch = /^(\S+?)\(([^)]*)\)$/.exec(spec);
+  if (funcMatch) {
+    const type = funcMatch[1];
+    const argsStr = funcMatch[2];
+    const result: string[] = [];
+    result.push(span(type, TILE_TYPES.has(type) ? TYPE_COLOR : DEFAULT_COLOR));
+    result.push(span('(', OPERATOR_COLOR));
+    if (argsStr) {
+      const args = argsStr.split(',');
+      args.forEach((arg, i) => {
+        if (i > 0) result.push(span(',', OPERATOR_COLOR));
+        const trimmed = arg.trim();
+        if (COLOR_MAP[trimmed]) {
+          result.push(span(trimmed, COLOR_MAP[trimmed]));
+        } else if (DIRECTIONS.has(trimmed)) {
+          result.push(span(trimmed, ARROW_COLOR));
+        } else {
+          result.push(span(trimmed, STRING_COLOR));
+        }
+      });
+    }
+    result.push(span(')', OPERATOR_COLOR));
+    return result.join('');
+  }
+
+  // Bare type (no args): wall, empty, floor-white
+  if (TILE_TYPES.has(spec)) {
+    return span(spec, TYPE_COLOR);
+  }
+
+  // Legacy colon syntax fallback
   const parts = spec.split(':');
   const result: string[] = [];
   for (let i = 0; i < parts.length; i++) {
@@ -145,13 +189,28 @@ function highlightAgentLine(line: string): string {
   if (!kw) return span(line, DEFAULT_COLOR);
   out.push(span(kw[1], KEYWORD_COLOR));
 
-  // whitespace + color
-  const ws1 = eat(/^(\s+)/);
-  if (!ws1) return out.join('') + rest();
-  out.push(ws1[1]);
-  const acolor = eat(/^(\S+)/);
-  if (!acolor) return out.join('') + rest();
-  out.push(span(acolor[1], COLOR_MAP[acolor[1]] || DEFAULT_COLOR));
+  // Function syntax: agent(color) or legacy: agent color
+  const funcOpen = eat(/^(\()/);
+  if (funcOpen) {
+    // agent(color) syntax
+    out.push(span(funcOpen[1], OPERATOR_COLOR));
+    const acolor = eat(/^([^)]*)/);
+    if (acolor && acolor[1]) {
+      const colorName = acolor[1].trim();
+      out.push(span(colorName, COLOR_MAP[colorName] || DEFAULT_COLOR));
+    }
+    const funcClose = eat(/^(\))/);
+    if (!funcClose) return out.join('') + rest();
+    out.push(span(funcClose[1], OPERATOR_COLOR));
+  } else {
+    // Legacy: agent color
+    const ws1 = eat(/^(\s+)/);
+    if (!ws1) return out.join('') + rest();
+    out.push(ws1[1]);
+    const acolor = eat(/^(\S+)/);
+    if (!acolor) return out.join('') + rest();
+    out.push(span(acolor[1], COLOR_MAP[acolor[1]] || DEFAULT_COLOR));
+  }
 
   // whitespace + start(x,y) — handle partial
   const ws2 = eat(/^(\s+)/);
@@ -278,41 +337,41 @@ const PAD_LEFT = 12;    // pl-3
 
 const KW_SUGGESTIONS: Suggestion[] = [
   { label: 'level',  detail: 'Level header',  insert: 'level ' },
-  { label: 'grid:',  detail: 'Grid block',    insert: 'grid:\n  ' },
+  { label: 'grid',   detail: 'Grid block',    insert: 'grid = [\n  ' },
   { label: 'let',    detail: 'Variable',      insert: 'let ' },
-  { label: 'agent',  detail: 'Agent',         insert: 'agent ' },
+  { label: 'agent',  detail: 'Agent',         insert: 'agent(' },
   { label: '#',       detail: 'Comment',      insert: '# ' },
 ];
 
 const TILE_SUGGESTIONS: Suggestion[] = [
   { label: 'wall',       detail: 'Brick wall',       insert: 'wall' },
   { label: 'floor-white', detail: 'Road tile',       insert: 'floor-white' },
-  { label: 'goal',       detail: 'Exit tile',        insert: 'goal:' },
-  { label: 'door',       detail: 'Color door',       insert: 'door:' },
-  { label: 'switch',     detail: 'Toggle switch',    insert: 'switch:' },
-  { label: 'paint',      detail: 'Color changer',    insert: 'paint:' },
-  { label: 'one-way',    detail: 'Directional',      insert: 'one-way:' },
-  { label: 'lock',       detail: 'Color lock',       insert: 'lock:' },
+  { label: 'goal',       detail: 'Exit tile',        insert: 'goal(' },
+  { label: 'door',       detail: 'Color door',       insert: 'door(' },
+  { label: 'switch',     detail: 'Toggle switch',    insert: 'switch(' },
+  { label: 'paint',      detail: 'Color changer',    insert: 'paint(' },
+  { label: 'one-way',    detail: 'Directional',      insert: 'one-way(' },
+  { label: 'lock',       detail: 'Color lock',       insert: 'lock(' },
   { label: 'empty',      detail: 'Empty tile',       insert: 'empty' },
 ];
 
 const AGENT_COLOR_SUGGESTIONS: Suggestion[] = [
-  { label: 'orange', insert: 'orange ' },
-  { label: 'purple', insert: 'purple ' },
-  { label: 'pink',   insert: 'pink ' },
-  { label: 'blue',   insert: 'blue ' },
-  { label: 'green',  insert: 'green ' },
-  { label: 'red',    insert: 'red ' },
+  { label: 'orange', insert: 'orange) ' },
+  { label: 'purple', insert: 'purple) ' },
+  { label: 'pink',   insert: 'pink) ' },
+  { label: 'blue',   insert: 'blue) ' },
+  { label: 'green',  insert: 'green) ' },
+  { label: 'red',    insert: 'red) ' },
 ];
 
 const COLOR_SUGGESTIONS: Suggestion[] = [
-  { label: 'orange', insert: 'orange' },
-  { label: 'purple', insert: 'purple' },
-  { label: 'pink',   insert: 'pink' },
-  { label: 'blue',   insert: 'blue' },
-  { label: 'green',  insert: 'green' },
-  { label: 'red',    insert: 'red' },
-  { label: 'none',   detail: 'No color', insert: 'none' },
+  { label: 'orange', insert: 'orange)' },
+  { label: 'purple', insert: 'purple)' },
+  { label: 'pink',   insert: 'pink)' },
+  { label: 'blue',   insert: 'blue)' },
+  { label: 'green',  insert: 'green)' },
+  { label: 'red',    insert: 'red)' },
+  { label: 'none',   detail: 'No color', insert: 'none)' },
 ];
 
 const RULE_SUGGESTIONS: Suggestion[] = [
@@ -326,10 +385,10 @@ const META_KEY_SUGGESTIONS: Suggestion[] = [
 ];
 
 const DIRECTION_SUGGESTIONS: Suggestion[] = [
-  { label: 'up',    insert: 'up' },
-  { label: 'down',  insert: 'down' },
-  { label: 'left',  insert: 'left' },
-  { label: 'right', insert: 'right' },
+  { label: 'up',    insert: 'up)' },
+  { label: 'down',  insert: 'down)' },
+  { label: 'left',  insert: 'left)' },
+  { label: 'right', insert: 'right)' },
 ];
 
 type ContextType = 'line-start' | 'tile-type' | 'tile-color' | 'tile-meta-key' | 'direction-val'
@@ -356,9 +415,17 @@ function getContext(code: string, cursor: number): { type: ContextType; prefix: 
   // After "let X = "
   if (/^let\s+\S\s*=\s*$/.test(before + ' ')) return { type: 'tile-type', prefix, prefixStart };
 
-  // After "let X = type:" (color or meta)
+  // After "let X = type(" — suggest color (function syntax)
+  if (/^let\s+\S\s*=\s*\S+\($/.test(before)) {
+    const eqIdx = before.indexOf('=');
+    const afterEq = before.slice(eqIdx + 1).trim();
+    const tileType = afterEq.replace('(', '');
+    if (tileType === 'one-way') return { type: 'direction-val', prefix, prefixStart };
+    return { type: 'tile-color', prefix, prefixStart };
+  }
+
+  // After "let X = type:" (color or meta — legacy colon syntax)
   if (/^let\s+\S\s*=\s*\S+:$/.test(before)) {
-    // Check if it's after second colon (meta position)
     const eqIdx = before.indexOf('=');
     const afterEq = before.slice(eqIdx + 1).trim();
     const colonCount = (afterEq.match(/:/g) || []).length;
@@ -372,17 +439,20 @@ function getContext(code: string, cursor: number): { type: ContextType; prefix: 
   // After "direction="
   if (/direction=$/.test(before)) return { type: 'direction-val', prefix, prefixStart };
 
-  // After "agent " — suggest color
+  // After "agent(" — suggest color (function syntax)
+  if (/^agent\($/.test(before)) return { type: 'agent-color', prefix, prefixStart };
+
+  // After "agent " — suggest color (legacy syntax)
   if (/^agent\s*$/.test(before)) return { type: 'agent-color', prefix, prefixStart };
 
-  // After "agent color " — suggest start(
-  if (/^agent\s+\S+\s*$/.test(before)) return { type: 'agent-start', prefix, prefixStart };
+  // After "agent(color) " or "agent color " — suggest start(
+  if (/^agent(?:\(\S+\)|\s+\S+)\s*$/.test(before)) return { type: 'agent-start', prefix, prefixStart };
 
   // After "start(x,y) " — suggest and
-  if (/^agent\s+.*start\(\d+,\d+\)\s*$/.test(before)) return { type: 'agent-and', prefix, prefixStart };
+  if (/^agent.*start\(\d+,\d+\)\s*$/.test(before)) return { type: 'agent-and', prefix, prefixStart };
 
   // After "and " — suggest reach(
-  if (/^agent\s+.*\)\s+and\s*$/.test(before)) return { type: 'agent-reach', prefix, prefixStart };
+  if (/^agent.*\)\s+and\s*$/.test(before)) return { type: 'agent-reach', prefix, prefixStart };
 
   // Inside brackets [...]
   const openBracket = lineBefore.lastIndexOf('[');
@@ -679,7 +749,7 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
               autoCapitalize="off"
               className="absolute inset-0 w-full h-full bg-transparent font-mono text-sm leading-6 py-4 pl-3 pr-4 resize-none outline-none border-none text-transparent caret-zinc-200 selection:bg-purple-500/30"
               style={{ tabSize: 2 }}
-              placeholder={`level "My Level" 8x6\n\ngrid:\n  W W W W W W W W\n  W R R R R R R W\n  W R W G R W R W\n  W R R R R W R W\n  W W R W R R R W\n  W W W W W W W W\n\nlet G = goal:orange:id=g1\n\nagent orange start(1,1) and reach(3,2)`}
+              placeholder={`level "My Level" 8x6\n\ngrid = [\n  W W W W W W W W,\n  W R R R R R R W,\n  W R W G R W R W,\n  W R R R R W R W,\n  W W R W R R R W,\n  W W W W W W W W,\n]\n\nlet G = goal(orange)\n\nagent(orange) start(1,1) and reach(3,2)`}
             />
             {/* Autocomplete dropdown */}
             {ac && ac.items.length > 0 && (
