@@ -73,6 +73,19 @@ function highlightLine(line: string): string {
     return span(indent, DEFAULT_COLOR) + highlighted.join(' ') + (hasComma ? span(',', OPERATOR_COLOR) : '') + '\n';
   }
 
+  // tile A = tiles.goal(red) — new syntax
+  const tileMatch = /^(tile)\s+(\S)\s*(=)\s*(tiles)(\.)\s*(.*)$/.exec(line);
+  if (tileMatch) {
+    const spec = highlightTileSpec(tileMatch[6].trim());
+    return span(tileMatch[1], KEYWORD_COLOR) + ' '
+      + span(tileMatch[2], TYPE_COLOR) + ' '
+      + span(tileMatch[3], OPERATOR_COLOR) + ' '
+      + span(tileMatch[4], KEYWORD_COLOR)
+      + span(tileMatch[5], OPERATOR_COLOR)
+      + spec + '\n';
+  }
+
+  // let A = goal(red) — legacy syntax
   const letMatch = /^(let)\s+(\S)\s*(=)\s*(.+)$/.exec(line);
   if (letMatch) {
     const spec = highlightTileSpec(letMatch[4].trim());
@@ -338,7 +351,7 @@ const PAD_LEFT = 12;    // pl-3
 const KW_SUGGESTIONS: Suggestion[] = [
   { label: 'level',  detail: 'Level header',  insert: 'level ' },
   { label: 'grid',   detail: 'Grid block',    insert: 'grid = [\n  ' },
-  { label: 'let',    detail: 'Variable',      insert: 'let ' },
+  { label: 'tile',   detail: 'Tile variable', insert: 'tile ' },
   { label: 'agent',  detail: 'Agent',         insert: 'agent(' },
   { label: '#',       detail: 'Comment',      insert: '# ' },
 ];
@@ -391,35 +404,46 @@ const DIRECTION_SUGGESTIONS: Suggestion[] = [
   { label: 'right', insert: 'right)' },
 ];
 
-type ContextType = 'line-start' | 'tile-type' | 'tile-color' | 'tile-meta-key' | 'direction-val'
+type ContextType = 'line-start' | 'tile-ns' | 'tile-type' | 'tile-color' | 'tile-meta-key' | 'direction-val'
   | 'agent-color' | 'agent-start' | 'agent-and' | 'agent-reach' | 'rule' | 'none';
 
 function getContext(code: string, cursor: number): { type: ContextType; prefix: string; prefixStart: number } {
   const lineStart = code.lastIndexOf('\n', cursor - 1) + 1;
   const lineBefore = code.slice(lineStart, cursor);
 
-  // Find current word
-  const wordMatch = /(\S*)$/.exec(lineBefore);
+  // Find current word — treat . ( ) as word boundaries
+  const wordMatch = /([^\s.()]*)$/.exec(lineBefore);
   const prefix = wordMatch ? wordMatch[1] : '';
   const prefixStart = cursor - prefix.length;
   const before = lineBefore.slice(0, lineBefore.length - prefix.length).trimEnd();
 
   // Inside grid rows (indented lines when we've seen grid:)
-  if (/^\s+\S/.test(lineBefore) && !lineBefore.trimStart().startsWith('let') && !lineBefore.trimStart().startsWith('agent')) {
+  if (/^\s+\S/.test(lineBefore) && !lineBefore.trimStart().startsWith('tile') && !lineBefore.trimStart().startsWith('let') && !lineBefore.trimStart().startsWith('agent')) {
     return { type: 'none', prefix, prefixStart };
   }
 
   // Empty or whitespace-only before prefix → line start
   if (before === '') return { type: 'line-start', prefix, prefixStart };
 
-  // After "let X = "
+  // After "tile A = " — suggest tiles. namespace
+  if (/^tile\s+\S\s*=\s*$/.test(before + ' ')) return { type: 'tile-ns', prefix, prefixStart };
+
+  // After "tile A = tiles." — suggest tile types
+  if (/^tile\s+\S\s*=\s*tiles\.$/.test(before)) return { type: 'tile-type', prefix, prefixStart };
+
+  // After "tile A = tiles.type(" — suggest color/direction
+  if (/^tile\s+\S\s*=\s*tiles\.\S+\($/.test(before)) {
+    const tileType = before.match(/tiles\.(\S+?)\($/)?.[1] || '';
+    if (tileType === 'one-way') return { type: 'direction-val', prefix, prefixStart };
+    return { type: 'tile-color', prefix, prefixStart };
+  }
+
+  // After "let X = " (legacy)
   if (/^let\s+\S\s*=\s*$/.test(before + ' ')) return { type: 'tile-type', prefix, prefixStart };
 
-  // After "let X = type(" — suggest color (function syntax)
+  // After "let X = type(" — suggest color (legacy function syntax)
   if (/^let\s+\S\s*=\s*\S+\($/.test(before)) {
-    const eqIdx = before.indexOf('=');
-    const afterEq = before.slice(eqIdx + 1).trim();
-    const tileType = afterEq.replace('(', '');
+    const tileType = before.match(/=\s*(\S+?)\($/)?.[1] || '';
     if (tileType === 'one-way') return { type: 'direction-val', prefix, prefixStart };
     return { type: 'tile-color', prefix, prefixStart };
   }
@@ -472,6 +496,7 @@ function getSuggestions(type: ContextType, prefix: string): Suggestion[] {
   let pool: Suggestion[];
   switch (type) {
     case 'line-start':    pool = KW_SUGGESTIONS; break;
+    case 'tile-ns':       pool = [{ label: 'tiles.', detail: 'Tile namespace', insert: 'tiles.' }]; break;
     case 'tile-type':     pool = TILE_SUGGESTIONS; break;
     case 'tile-color':    pool = COLOR_SUGGESTIONS; break;
     case 'tile-meta-key': pool = META_KEY_SUGGESTIONS; break;
@@ -580,13 +605,16 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
     const after = code.slice(ac.prefixStart + ac.prefix.length);
     const newCode = before + suggestion.insert + after;
     const newCursor = ac.prefixStart + suggestion.insert.length;
-    suppressAcRef.current = true;
+    // Chain autocomplete if insertion ends with . or ( — otherwise suppress
+    const chainable = /[.(]$/.test(suggestion.insert);
+    if (!chainable) suppressAcRef.current = true;
     setCode(newCode);
     onCodeChange?.(newCode);
     setAc(null);
     requestAnimationFrame(() => {
       ta.selectionStart = ta.selectionEnd = newCursor;
       ta.focus();
+      if (chainable) updateAutocomplete(newCode, newCursor);
     });
   }, [ac, code, onCodeChange]);
 
@@ -749,7 +777,7 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
               autoCapitalize="off"
               className="absolute inset-0 w-full h-full bg-transparent font-mono text-sm leading-6 py-4 pl-3 pr-4 resize-none outline-none border-none text-transparent caret-zinc-200 selection:bg-purple-500/30"
               style={{ tabSize: 2 }}
-              placeholder={`level "My Level" 8x6\n\ngrid = [\n  W W W W W W W W,\n  W R R R R R R W,\n  W R W G R W R W,\n  W R R R R W R W,\n  W W R W R R R W,\n  W W W W W W W W,\n]\n\nlet G = goal(orange)\n\nagent(orange) start(1,1) and reach(3,2)`}
+              placeholder={`level "My Level" 8x6\n\ngrid = [\n  W W W W W W W W,\n  W R R R R R R W,\n  W R W G R W R W,\n  W R R R R W R W,\n  W W R W R R R W,\n  W W W W W W W W,\n]\n\ntile G = tiles.goal(orange)\n\nagent(orange) start(1,1) and reach(3,2)`}
             />
             {/* Autocomplete dropdown */}
             {ac && ac.items.length > 0 && (

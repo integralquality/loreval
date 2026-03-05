@@ -17,6 +17,7 @@ const GRID_START_LEGACY_RE = /^grid:\s*$/;
 const GRID_END_RE = /^\s*\]\s*$/;
 const TILE_ROW_RE = /^\s+(\S(?:\s+\S)*)\s*,?\s*$/;
 const TILE_ROW_COMMA_RE = /^\s+(\S(?:\s+\S)*)\s*,\s*$/;
+const TILE_DEF_RE = /^tile\s+([^\s])\s*=\s*tiles\.(.+)$/;
 const LET_RE = /^let\s+([^\s])\s*=\s*(.+)$/;
 const AGENT_RE = /^agent(?:\((\S+?)\)|\s+(\S+))\s+start\((\d+),(\d+)\)(?:\s+and\s+reach\((\d+),(\d+)\))?(?:\s+\[([^\]]+)\])?$/;
 const COMMENT_RE = /^\s*#/;
@@ -113,27 +114,31 @@ function parseColonSpec(
   return { tileType, color, meta };
 }
 
-function parseLetLine(
+function parseTileDefLine(
   line: string,
   lineNum: number
 ): LegendEntry | ParseError {
+  // Try new syntax: tile A = tiles.goal(red)
+  const tm = TILE_DEF_RE.exec(line);
+  if (tm) {
+    const char = tm[1];
+    const spec = tm[2].trim();
+    const result = parseTileSpec(spec, lineNum);
+    if ('message' in result) return result;
+    return { char, tileType: result.tileType, color: result.color, meta: result.meta };
+  }
+
+  // Legacy: let A = goal(red)
   const m = LET_RE.exec(line);
   if (!m) {
-    return { line: lineNum, message: `Invalid let format. Expected: let C = goal(orange)` };
+    return { line: lineNum, message: `Invalid tile format. Expected: tile A = tiles.goal(orange)` };
   }
 
   const char = m[1];
   const spec = m[2].trim();
   const result = parseTileSpec(spec, lineNum);
-
   if ('message' in result) return result;
-
-  return {
-    char,
-    tileType: result.tileType,
-    color: result.color,
-    meta: result.meta,
-  };
+  return { char, tileType: result.tileType, color: result.color, meta: result.meta };
 }
 
 // ── Agent parsing ───────────────────────────────────────────
@@ -485,8 +490,8 @@ export function parseDSL(source: string): ParseResult {
       }
 
       case 'body': {
-        if (LET_RE.test(line)) {
-          const result = parseLetLine(line, lineNum);
+        if (TILE_DEF_RE.test(line) || LET_RE.test(line)) {
+          const result = parseTileDefLine(line, lineNum);
           if ('message' in result) {
             errors.push(result);
           } else {

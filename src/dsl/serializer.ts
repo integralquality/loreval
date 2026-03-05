@@ -148,16 +148,16 @@ export function serializeDSL(level: Level): string {
   }
   lines.push(']');
 
-  // Let declarations — function syntax
+  // Tile declarations
   const legendEntries = Array.from(sigToChar.entries())
     .map(([sig, ch]) => ({ sig, ch, info: sigToInfo.get(sig)! }))
     .sort((a, b) => a.ch.localeCompare(b.ch));
 
   if (legendEntries.length > 0) {
     lines.push('');
+    const FUNC_TILES = new Set(['goal', 'door', 'switch', 'paint', 'lock', 'one-way']);
     for (const { ch, info } of legendEntries) {
       let spec: string;
-      const FUNC_TILES = new Set(['goal', 'door', 'switch', 'paint', 'lock', 'one-way']);
       if (info.type === 'one-way' && info.direction) {
         spec = `one-way(${info.direction})`;
       } else if (info.color) {
@@ -167,7 +167,7 @@ export function serializeDSL(level: Level): string {
       } else {
         spec = info.type;
       }
-      lines.push(`let ${ch} = ${spec}`);
+      lines.push(`tile ${ch} = tiles.${spec}`);
     }
   }
 

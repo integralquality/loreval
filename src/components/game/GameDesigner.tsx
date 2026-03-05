@@ -750,9 +750,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                   <p className="text-zinc-500">R = road</p>
                 </div>
                 <div>
-                  <p className="text-zinc-300 mb-1">Variables</p>
-                  <p className="text-zinc-500">let D = door(blue)</p>
-                  <p className="text-zinc-500">let G = goal(orange)</p>
+                  <p className="text-zinc-300 mb-1">Tiles</p>
+                  <p className="text-zinc-500">tile D = tiles.door(blue)</p>
+                  <p className="text-zinc-500">tile G = tiles.goal(orange)</p>
                 </div>
                 <div>
                   <p className="text-zinc-300 mb-1">Agents</p>
