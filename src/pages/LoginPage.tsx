@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
 
@@ -101,13 +102,30 @@ export default function LoginPage() {
             />
           </div>
 
+          {isSignUp && (
+            <label className="flex items-start gap-2.5 py-1 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={e => setAgreed(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-zinc-700 bg-zinc-900 accent-purple-500"
+              />
+              <span className="text-xs text-zinc-500 leading-relaxed">
+                I agree to the{' '}
+                <Link to="/privacy" target="_blank" className="text-purple-400 hover:text-purple-300 underline">
+                  Privacy Policy
+                </Link>
+              </span>
+            </label>
+          )}
+
           {error && (
             <p className="text-sm text-red-400 text-center">{error}</p>
           )}
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || (isSignUp && !agreed)}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-all disabled:opacity-50"
           >
             {submitting ? 'Please wait...' : isSignUp ? 'Create account' : 'Sign in'}

@@ -21,6 +21,7 @@ export default function SiteLayout() {
               <Link to="/designer" className="hover:text-purple-300">Build</Link>
               <Link to="/my-levels" className="hover:text-purple-300">My Levels</Link>
               <Link to="/account" className="hover:text-purple-300">Account</Link>
+              <Link to="/privacy" className="hover:text-purple-300">Privacy</Link>
             </div>
             <p className="text-xs text-zinc-600">© 2026 Logic Playground. All rights reserved.</p>
           </div>
