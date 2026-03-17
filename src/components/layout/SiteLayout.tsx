@@ -1,5 +1,6 @@
 import { Outlet, Link } from 'react-router-dom';
 import Navbar from './Navbar';
+import { CookieBanner } from '@/components/shared/cookie-banner';
 
 export default function SiteLayout() {
   return (
@@ -8,6 +9,7 @@ export default function SiteLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <CookieBanner />
       <footer className="border-t border-zinc-800/50 py-12 bg-zinc-950 mt-auto">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">

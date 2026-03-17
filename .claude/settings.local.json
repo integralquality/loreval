@@ -14,7 +14,11 @@
       "Bash(cd /e/Projects/AI/make-game && npx tsc --noEmit --project tsconfig.app.json 2>&1)",
       "Bash(tail:*)",
       "Bash(head:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:docs.creem.io)",
+      "WebSearch",
+      "WebFetch(domain:www.creem.io)",
+      "Bash(npm install:*)"
     ]
   }
 }

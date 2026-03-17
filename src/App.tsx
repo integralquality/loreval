@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ErrorBoundary } from './components/shared/error-boundary';
 import SiteLayout from './components/layout/SiteLayout';
 import HomePage from './pages/HomePage';
 import GameDesignerPage from './pages/GameDesignerPage';
@@ -14,6 +15,7 @@ import PrivacyPage from './pages/PrivacyPage';
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
         <Routes>
@@ -34,5 +36,6 @@ export default function App() {
         </Routes>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }
