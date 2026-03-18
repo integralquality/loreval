@@ -21,9 +21,13 @@ import {
   Cloud,
   CloudOff,
   Check,
-  Loader2
+  Loader2,
+  Sparkles,
+  Pause,
+  RotateCcw,
 } from 'lucide-react';
 import type { Level, Tile, TileType, Entity, RuleType, Direction, GameState } from '../../types';
+import { useAiPlayback } from '../../hooks/useAiPlayback';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
 import { executeMove } from '../../gameLogic';
@@ -81,6 +85,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
     finishedEntityIds: [],
     openedLocks: []
   });
+  const [playMode, setPlayMode] = useState<'human' | 'ai'>('human');
+  const aiPlayback = useAiPlayback(level, setGameState);
 
   // Delay hiding finished entities so the move animation plays first
   useEffect(() => {
@@ -169,6 +175,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
   // Reset game state when entering play mode
   const resetPlayState = useCallback(() => {
+    aiPlayback.stop();
+    setPlayMode('human');
     setGameState({
       entities: JSON.parse(JSON.stringify(level.entities)),
       moves: level.entities.reduce((acc, e) => ({ ...acc, [e.id]: 0 }), {}),
@@ -183,7 +191,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
     setHiddenEntityIds([]);
     setSelectedEntityId(null);
     setSelectedTilePos(null);
-  }, [level]);
+  }, [level]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (mode === 'play') {
@@ -422,7 +430,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (mode !== 'play') return;
+      if (mode !== 'play' || playMode === 'ai') return;
 
       switch (e.key) {
         case 'ArrowUp': handleMove(0, -1); break;
@@ -440,7 +448,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleMove, mode, gameState.entities]);
+  }, [handleMove, mode, playMode, gameState.entities]);
 
   if (cloudLoading) {
     return (
@@ -660,6 +668,116 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         {/* Play Stats */}
         {mode === 'play' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+            {/* Human / AI toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { aiPlayback.stop(); setPlayMode('human'); }}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  playMode === 'human'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                }`}
+              >
+                Human
+              </button>
+              <button
+                onClick={() => { aiPlayback.stop(); setPlayMode('ai'); }}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                  playMode === 'ai'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                }`}
+              >
+                <Sparkles size={13} /> AI
+              </button>
+            </div>
+
+            {/* AI playback status */}
+            {playMode === 'ai' && (
+              <div className="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700 space-y-2">
+                {aiPlayback.status === 'idle' && (
+                  <button
+                    onClick={() => void aiPlayback.startSolving(gameState)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors"
+                  >
+                    <Play size={14} /> Play
+                  </button>
+                )}
+
+                {aiPlayback.status === 'solving' && (
+                  <div className="flex items-center gap-2 text-sm text-purple-300">
+                    <Loader2 size={14} className="animate-spin" />
+                    AI Thinking...
+                  </div>
+                )}
+
+                {aiPlayback.status === 'playing' && (
+                  <>
+                    <div className="text-sm text-zinc-300">
+                      Move {aiPlayback.currentMoveIndex} / {aiPlayback.totalMoves}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={aiPlayback.pause}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                      >
+                        <Pause size={12} /> Pause
+                      </button>
+                      <button
+                        onClick={aiPlayback.stop}
+                        className="flex-1 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                      >
+                        Stop
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {aiPlayback.status === 'paused' && (
+                  <>
+                    <div className="text-sm text-zinc-300">
+                      Paused ({aiPlayback.currentMoveIndex}/{aiPlayback.totalMoves})
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={aiPlayback.resume}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs transition-colors hover:bg-purple-500"
+                      >
+                        <Play size={12} /> Resume
+                      </button>
+                      <button
+                        onClick={aiPlayback.stop}
+                        className="flex-1 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                      >
+                        Stop
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {aiPlayback.status === 'done' && (
+                  <div className="text-sm text-emerald-400 font-medium">
+                    ✓ Solved in {aiPlayback.currentMoveIndex} moves!
+                  </div>
+                )}
+
+                {aiPlayback.status === 'error' && (
+                  <>
+                    <div className="text-xs text-red-400 leading-relaxed">
+                      {aiPlayback.error}
+                    </div>
+                    <button
+                      onClick={() => void aiPlayback.startSolving(gameState)}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                    >
+                      <RotateCcw size={12} /> Retry
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700">
               <h3 className="text-sm font-medium text-zinc-300 mb-3">Agents</h3>
               <div className="space-y-2">
