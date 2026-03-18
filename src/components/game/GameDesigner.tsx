@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import type { Level, Tile, TileType, Entity, RuleType, Direction, GameState } from '../../types';
 import { useAiPlayback } from '../../hooks/useAiPlayback';
+import { AI_MODELS } from '../../lib/ai-solver';
+import type { AiModelId } from '../../lib/ai-solver';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
 import { executeMove } from '../../gameLogic';
@@ -87,6 +89,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   });
   const [playMode, setPlayMode] = useState<'human' | 'ai'>('human');
   const [aiSpeed, setAiSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
+  const [aiModel, setAiModel] = useState<AiModelId>('claude-sonnet-4-6');
   const [aiFeedback, setAiFeedback] = useState('');
   const aiPlayback = useAiPlayback(level, setGameState);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -101,6 +104,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       return () => clearTimeout(timer);
     }
   }, [gameState.finishedEntityIds]);
+
+  // Clear hidden entities whenever a new AI solve starts
+  useEffect(() => {
+    if (aiPlayback.status === 'solving') {
+      setHiddenEntityIds([]);
+    }
+  }, [aiPlayback.status]);
 
   // Auto-scroll chat to bottom on new messages
   useEffect(() => {
@@ -719,10 +729,30 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             {playMode === 'ai' && (
               <div className="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700 space-y-2">
 
+                {/* Model picker */}
+                {(aiPlayback.status === 'idle' || aiPlayback.status === 'done' || aiPlayback.status === 'error') && (
+                  <div className="flex gap-1">
+                    {AI_MODELS.map(m => (
+                      <button
+                        key={m.id}
+                        onClick={() => setAiModel(m.id)}
+                        className={`flex-1 py-1 rounded text-[11px] transition-colors ${
+                          aiModel === m.id
+                            ? 'bg-zinc-600 text-white'
+                            : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
+                        }`}
+                        title={m.note}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Idle — show Play */}
                 {aiPlayback.status === 'idle' && (
                   <button
-                    onClick={() => void aiPlayback.startSolving(gameState)}
+                    onClick={() => void aiPlayback.startSolving(gameState, undefined, aiModel)}
                     className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors"
                   >
                     <Play size={14} /> Play
@@ -839,7 +869,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         <Play size={12} /> Play myself
                       </button>
                       <button
-                        onClick={() => { setAiFeedback(''); aiPlayback.retry(); }}
+                        onClick={() => { setAiFeedback(''); aiPlayback.retry(aiModel); }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
                       >
                         <RotateCcw size={12} /> Retry
@@ -862,7 +892,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         <Play size={12} /> Play myself
                       </button>
                       <button
-                        onClick={() => { setAiFeedback(''); aiPlayback.retry(); }}
+                        onClick={() => { setAiFeedback(''); aiPlayback.retry(aiModel); }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
                       >
                         <RotateCcw size={12} /> Retry

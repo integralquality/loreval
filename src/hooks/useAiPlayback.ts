@@ -3,7 +3,7 @@ import type { Level, GameState } from '../types';
 import { executeMove } from '../gameLogic';
 import { serializeDSL } from '../dsl/serializer';
 import { solveLevel, directionToDelta } from '../lib/ai-solver';
-import type { AiMove, RetryContext } from '../lib/ai-solver';
+import type { AiMove, RetryContext, AiModelId } from '../lib/ai-solver';
 
 export type AiStatus = 'idle' | 'solving' | 'playing' | 'paused' | 'done' | 'error';
 
@@ -30,6 +30,7 @@ export function useAiPlayback(
   const moveIndexRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialGameStateRef = useRef<GameState | null>(null);
+  const modelRef = useRef<AiModelId | undefined>(undefined);
 
   // Stable refs so interval callback doesn't need re-registration when props change
   const levelRef = useRef(level);
@@ -211,7 +212,8 @@ export function useAiPlayback(
     }
   }, [clearTimer, tick]);
 
-  const startSolving = useCallback(async (gameState: GameState, retryContext?: RetryContext) => {
+  const startSolving = useCallback(async (gameState: GameState, retryContext?: RetryContext, model?: AiModelId) => {
+    if (model !== undefined) modelRef.current = model;
     clearTimer();
     setStatus('solving');
     setError(null);
@@ -230,7 +232,7 @@ export function useAiPlayback(
     }
 
     const dsl = serializeDSL(levelRef.current);
-    const result = await solveLevel(dsl, retryContext);
+    const result = await solveLevel(dsl, retryContext, modelRef.current);
 
     if (result.error || result.moves.length === 0) {
       setStatus('error');
@@ -251,10 +253,10 @@ export function useAiPlayback(
   }, [clearTimer, startInterval]);
 
   // Retry from scratch using the stored initial game state
-  const retry = useCallback(() => {
+  const retry = useCallback((model?: AiModelId) => {
     const gameState = initialGameStateRef.current;
     if (!gameState) return;
-    void startSolving(gameState);
+    void startSolving(gameState, undefined, model);
   }, [startSolving]);
 
   // Retry with user feedback — resets board and sends conversation context to Claude

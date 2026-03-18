@@ -8,15 +8,24 @@ export interface RetryContext {
   userFeedback: string;
 }
 
+export const AI_MODELS = [
+  { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5', note: 'Fast' },
+  { id: 'claude-sonnet-4-6',         label: 'Sonnet 4.6', note: 'Balanced' },
+  { id: 'claude-opus-4-6',           label: 'Opus 4.6',   note: 'Smart' },
+] as const;
+
+export type AiModelId = typeof AI_MODELS[number]['id'];
+
 export async function solveLevel(
   dsl: string,
   retryContext?: RetryContext,
+  model?: AiModelId,
 ): Promise<{ moves: AiMove[]; error?: string }> {
   try {
     const res = await fetch('/api/solve-level', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dsl, retryContext }),
+      body: JSON.stringify({ dsl, retryContext, model }),
     });
     const data = await res.json() as { moves?: AiMove[]; error?: string };
     if (!res.ok || data.error) {

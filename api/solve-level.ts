@@ -41,35 +41,59 @@ const SYSTEM_PROMPT = `You are solving a grid-based logic puzzle described in a 
 level "Name" WxH
 
 grid = [
-  <row of space-separated tile chars>,
+  <row of space-separated single-char tile tokens>,
   ...
 ]
 
-tile X = tiles.type(color)   ← defines what char X means in the grid
+tile X = tiles.type(color)   ← what char X means in the grid
 
-agent(COLOR) start(x,y) and reach(gx,gy)  ← an agent you must move to goal
+agent(COLOR) start(x,y) and reach(gx,gy)  ← an agent you must move to its goal
 \`\`\`
 
 ## Coordinate system
 x = column (0 = left), y = row (0 = top). Agents move one cell per step.
 
 ## Tile types
-- \`.\` empty — impassable void
 - \`W\` wall — solid, impassable
 - \`R\` floor — walkable
-- goal — destination; agent wins by stepping on a goal matching its color
-- door — blocked unless agent color matches door color, or that color is toggled by a switch
+- \`.\` void — impassable
+- goal — agent wins by stepping on its matching-color goal
+- door — blocked unless agent color matches, or toggled open by a switch
 - switch — toggles all doors of matching color when stepped on
-- paint — changes agent color to the paint tile's color
-- one-way (^=up v=down <=left >=right) — entry only from that direction
-- lock — blocked until opened by a matching-color agent; stays open
+- paint — changes the agent's color to the paint tile's color
+- one-way (\`^\`=up \`v\`=down \`<\`=left \`>\`=right) — passable only from that direction
+- lock — blocked until a matching-color agent steps on it (stays open)
 
 ## Agent rules
-- Each agent is identified by a **color name** like \`orange\`, \`purple\`, \`blue\`, etc.
-- Agents move one cell at a time: up, down, left, right
-- Two agents cannot be on the same cell
-- Agent finishes (disappears) when it reaches its matching color goal
-- Win when all agents have finished
+- Agents are identified by their COLOR name (e.g. \`orange\`, \`purple\`, \`blue\`)
+- Agents move one cell per step: up, down, left, right
+- Two agents cannot occupy the same cell
+- An agent disappears when it reaches its matching-color goal
+- Win when all agents have reached their goals
+
+## CRITICAL — output format
+
+Each output line is: \`<COLOR> <direction>\`
+
+**COLOR** = the exact color string from the \`agent(COLOR)\` declaration — a word like \`orange\` or \`purple\`.
+**direction** = one of: \`up\` \`down\` \`left\` \`right\`
+
+⚠️ Grid characters (\`W\`, \`R\`, \`.\`, \`G\`, etc.) are tile labels — they are NEVER valid color names.
+⚠️ The only valid color values are the exact words inside \`agent(...)\` in the level.
+
+WRONG (using grid chars as colors):
+\`\`\`
+. right
+R down
+G left
+\`\`\`
+
+RIGHT (using agent color names):
+\`\`\`
+orange right
+orange down
+purple left
+\`\`\`
 
 ## Worked example
 
@@ -88,19 +112,20 @@ tile G = tiles.goal(orange)
 agent(orange) start(1,1) and reach(3,1)
 \`\`\`
 
-Solution — the orange agent starts at (1,1) and must reach goal G at (3,1):
+Agents: orange starts at (1,1), goal G at (3,1).
+
+Solution:
 \`\`\`
 orange right
 orange right
 \`\`\`
 
-## Your output
+## Instructions
 
-Output ONLY a fenced code block. Each line: \`<color> <direction>\`
-- color = the agent's color name (e.g. \`orange\`, \`purple\`) — NOT a tile character
-- direction = one of: \`up\` \`down\` \`left\` \`right\` — NOT a tile character
-
-No explanation, no commentary. Just the code block.`;
+1. Read all \`agent(COLOR)\` lines — those COLOR words are the ONLY valid move prefixes.
+2. Trace each agent's path step by step through the grid.
+3. Output ONLY a fenced code block with one \`<color> <direction>\` per line.
+No explanation, no commentary outside the code block.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -108,7 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { dsl, retryContext } = (req.body ?? {}) as { dsl?: string; retryContext?: RetryContext };
+  const { dsl, retryContext, model } = (req.body ?? {}) as { dsl?: string; retryContext?: RetryContext; model?: string };
   if (!dsl || typeof dsl !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid dsl field' });
   }
@@ -117,6 +142,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!apiKey) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY is not configured' });
   }
+
+  const VALID_MODELS = ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6'];
+  const resolvedModel = model && VALID_MODELS.includes(model) ? model : 'claude-sonnet-4-6';
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -127,7 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: resolvedModel,
         max_tokens: 2048,
         system: SYSTEM_PROMPT,
         messages: buildMessages(dsl, retryContext),
