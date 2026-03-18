@@ -16,6 +16,7 @@ export function useAiPlayback(
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [totalMoves, setTotalMoves] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [solved, setSolved] = useState(false);
 
   // Mutable playback state accessible from interval without stale closures
   const movesRef = useRef<AiMove[]>([]);
@@ -42,6 +43,7 @@ export function useAiPlayback(
     clearTimer();
     setStatus('idle');
     setError(null);
+    setSolved(false);
     setCurrentMoveIndex(0);
     setTotalMoves(0);
     movesRef.current = [];
@@ -62,6 +64,7 @@ export function useAiPlayback(
 
     if (!currentState || index >= moves.length) {
       clearTimer();
+      setSolved(currentState?.status === 'won');
       setStatus('done');
       return;
     }
@@ -94,25 +97,24 @@ export function useAiPlayback(
     const stateForMove: GameState = { ...currentState, selectedEntityId: entity.id };
     const newState = executeMove(currentLevel, stateForMove, delta.dx, delta.dy);
 
+    // Skip invalid moves (wall collision, out of bounds) — don't stop playback
     if (!newState) {
-      clearTimer();
-      setError(`Invalid move at step ${index + 1}: ${move.color} ${move.direction}`);
-      setStatus('error');
+      moveIndexRef.current = index + 1;
+      setCurrentMoveIndex(index + 1);
       return;
     }
 
-    // Detect blocked move — entity position unchanged and not finished
+    // Detect blocked move — entity position unchanged (door/one-way/lock)
     const entityBefore = currentState.entities.find(e => e.id === entity.id)!;
     const entityAfter = newState.entities.find(e => e.id === entity.id);
     const didMove = entityAfter
       ? entityAfter.position.x !== entityBefore.position.x || entityAfter.position.y !== entityBefore.position.y
       : true; // entity disappeared (reached goal) — valid
 
+    // Skip blocked moves too — let Claude's path continue
     if (!didMove) {
-      clearTimer();
-      const reason = newState.message ? ` — ${newState.message}` : '';
-      setError(`Blocked at step ${index + 1}: ${move.color} ${move.direction}${reason}`);
-      setStatus('error');
+      moveIndexRef.current = index + 1;
+      setCurrentMoveIndex(index + 1);
       return;
     }
 
@@ -123,6 +125,7 @@ export function useAiPlayback(
 
     if (newState.status === 'won') {
       clearTimer();
+      setSolved(true);
       setStatus('done');
     }
   }, [clearTimer]);
@@ -162,5 +165,5 @@ export function useAiPlayback(
     startInterval();
   }, [clearTimer, startInterval]);
 
-  return { status, currentMoveIndex, totalMoves, error, startSolving, pause, resume, stop };
+  return { status, currentMoveIndex, totalMoves, error, solved, startSolving, pause, resume, stop };
 }

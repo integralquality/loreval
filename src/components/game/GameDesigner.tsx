@@ -757,8 +757,10 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 )}
 
                 {aiPlayback.status === 'done' && (
-                  <div className="text-sm text-emerald-400 font-medium">
-                    ✓ Solved in {aiPlayback.currentMoveIndex} moves!
+                  <div className={`text-sm font-medium ${aiPlayback.solved ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                    {aiPlayback.solved
+                      ? `✓ Solved in ${aiPlayback.currentMoveIndex} moves!`
+                      : `✗ Couldn't solve it (${aiPlayback.currentMoveIndex} moves tried)`}
                   </div>
                 )}
 

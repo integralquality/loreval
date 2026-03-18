@@ -3,36 +3,74 @@
 // For local dev: run `vercel dev` instead of `vite dev`
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const SYSTEM_PROMPT = `You are solving a grid-based logic puzzle. The puzzle is described in a DSL.
+const SYSTEM_PROMPT = `You are solving a grid-based logic puzzle described in a DSL. Output the move sequence to win.
 
-**Coordinate system:** x = column (left→right, 0-indexed), y = row (top→bottom, 0-indexed)
+## DSL format
 
-**Tile types:**
-- empty (.) — void, impassable
-- wall (W) — solid wall, impassable
-- floor/floor-white (R) — walkable
-- goal — destination tile; an agent wins by stepping onto a goal matching its color
-- door — blocks movement unless the agent's color matches the door's color, OR the door's color has been toggled open by a switch
-- switch — when stepped on, toggles all doors of the same color (open↔closed)
-- paint — changes the stepping agent's color to match the paint tile's color
-- one-way (^ up, v down, < left, > right) — can only be entered from the indicated direction
-- lock — blocks unless agent color matches; stays open once unlocked
+\`\`\`
+level "Name" WxH
 
-**Agent rules:**
-- Agents move one cell per turn in a cardinal direction: up, down, left, right
-- Agents cannot occupy the same cell as another active agent
-- When an agent reaches its matching color goal, it finishes and is removed from the board
-- All agents with a reach-goal rule must reach their goals to win
+grid = [
+  <row of space-separated tile chars>,
+  ...
+]
 
-**Response format:** output ONLY a fenced code block with one move per line: \`color direction\`
+tile X = tiles.type(color)   ← defines what char X means in the grid
 
+agent(COLOR) start(x,y) and reach(gx,gy)  ← an agent you must move to goal
+\`\`\`
+
+## Coordinate system
+x = column (0 = left), y = row (0 = top). Agents move one cell per step.
+
+## Tile types
+- \`.\` empty — impassable void
+- \`W\` wall — solid, impassable
+- \`R\` floor — walkable
+- goal — destination; agent wins by stepping on a goal matching its color
+- door — blocked unless agent color matches door color, or that color is toggled by a switch
+- switch — toggles all doors of matching color when stepped on
+- paint — changes agent color to the paint tile's color
+- one-way (^=up v=down <=left >=right) — entry only from that direction
+- lock — blocked until opened by a matching-color agent; stays open
+
+## Agent rules
+- Each agent is identified by a **color name** like \`orange\`, \`purple\`, \`blue\`, etc.
+- Agents move one cell at a time: up, down, left, right
+- Two agents cannot be on the same cell
+- Agent finishes (disappears) when it reaches its matching color goal
+- Win when all agents have finished
+
+## Worked example
+
+Level:
+\`\`\`
+level "Simple" 4x3
+
+grid = [
+  W W W W,
+  W R R G,
+  W W W W,
+]
+
+tile G = tiles.goal(orange)
+
+agent(orange) start(1,1) and reach(3,1)
+\`\`\`
+
+Solution — the orange agent starts at (1,1) and must reach goal G at (3,1):
 \`\`\`
 orange right
-orange down
-purple left
+orange right
 \`\`\`
 
-No explanation. No commentary. Just the code block.`;
+## Your output
+
+Output ONLY a fenced code block. Each line: \`<color> <direction>\`
+- color = the agent's color name (e.g. \`orange\`, \`purple\`) — NOT a tile character
+- direction = one of: \`up\` \`down\` \`left\` \`right\` — NOT a tile character
+
+No explanation, no commentary. Just the code block.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
