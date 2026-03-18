@@ -72,6 +72,36 @@ Output ONLY a fenced code block. Each line: \`<color> <direction>\`
 
 No explanation, no commentary. Just the code block.`;
 
+interface RetryContext {
+  previousMovesText: string;
+  userFeedback: string;
+}
+
+function buildMessages(dsl: string, retryContext?: RetryContext) {
+  const firstUserMsg = `Solve this level:\n\`\`\`\n${dsl}\n\`\`\``;
+  if (!retryContext) {
+    return [{ role: 'user', content: firstUserMsg }];
+  }
+  return [
+    { role: 'user', content: firstUserMsg },
+    { role: 'assistant', content: `\`\`\`\n${retryContext.previousMovesText}\n\`\`\`` },
+    { role: 'user', content: `${retryContext.userFeedback}\n\nPlease try again with a corrected solution.` },
+  ];
+}
+
+function parseMoves(text: string) {
+  const match = text.match(/```[\w]*\n([\s\S]+?)\n```/);
+  if (!match) return null;
+  return match[1].trim().split('\n')
+    .map((line: string) => line.trim())
+    .filter((line: string) => line.length > 0)
+    .map((line: string) => {
+      const parts = line.split(/\s+/);
+      return parts.length >= 2 ? { color: parts[0], direction: parts[1] } : null;
+    })
+    .filter((m): m is { color: string; direction: string } => m !== null);
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -110,8 +140,9 @@ export default defineConfig(({ mode }) => {
             });
 
             let dsl: string;
+            let retryContext: RetryContext | undefined;
             try {
-              ({ dsl } = JSON.parse(rawBody) as { dsl: string });
+              ({ dsl, retryContext } = JSON.parse(rawBody) as { dsl: string; retryContext?: RetryContext });
             } catch {
               res.statusCode = 400;
               res.end(JSON.stringify({ error: 'Invalid JSON body' }));
@@ -130,7 +161,7 @@ export default defineConfig(({ mode }) => {
                   model: 'claude-sonnet-4-20250514',
                   max_tokens: 2048,
                   system: SYSTEM_PROMPT,
-                  messages: [{ role: 'user', content: `Solve this level:\n\`\`\`\n${dsl}\n\`\`\`` }],
+                  messages: buildMessages(dsl, retryContext),
                 }),
               });
 
@@ -145,20 +176,11 @@ export default defineConfig(({ mode }) => {
               const text = data.content?.find(c => c.type === 'text')?.text ?? '';
 
               console.log('[AI solver] Claude response:\n', text);
-              const match = text.match(/```[\w]*\n([\s\S]+?)\n```/);
-              if (!match) {
+              const moves = parseMoves(text);
+              if (!moves) {
                 res.end(JSON.stringify({ moves: [], error: 'No code block in response', raw: text }));
                 return;
               }
-
-              const moves = match[1].trim().split('\n')
-                .map((line: string) => line.trim())
-                .filter((line: string) => line.length > 0)
-                .map((line: string) => {
-                  const parts = line.split(/\s+/);
-                  return parts.length >= 2 ? { color: parts[0], direction: parts[1] } : null;
-                })
-                .filter((m): m is { color: string; direction: string } => m !== null);
 
               res.end(JSON.stringify({ moves }));
             } catch (err: unknown) {

@@ -3,12 +3,20 @@ export interface AiMove {
   direction: string;
 }
 
-export async function solveLevel(dsl: string): Promise<{ moves: AiMove[]; error?: string }> {
+export interface RetryContext {
+  previousMovesText: string;
+  userFeedback: string;
+}
+
+export async function solveLevel(
+  dsl: string,
+  retryContext?: RetryContext,
+): Promise<{ moves: AiMove[]; error?: string }> {
   try {
     const res = await fetch('/api/solve-level', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dsl }),
+      body: JSON.stringify({ dsl, retryContext }),
     });
     const data = await res.json() as { moves?: AiMove[]; error?: string };
     if (!res.ok || data.error) {

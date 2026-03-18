@@ -3,6 +3,36 @@
 // For local dev: run `vercel dev` instead of `vite dev`
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
+interface RetryContext {
+  previousMovesText: string;
+  userFeedback: string;
+}
+
+function buildMessages(dsl: string, retryContext?: RetryContext) {
+  const firstUserMsg = `Solve this level:\n\`\`\`\n${dsl}\n\`\`\``;
+  if (!retryContext) {
+    return [{ role: 'user', content: firstUserMsg }];
+  }
+  return [
+    { role: 'user', content: firstUserMsg },
+    { role: 'assistant', content: `\`\`\`\n${retryContext.previousMovesText}\n\`\`\`` },
+    { role: 'user', content: `${retryContext.userFeedback}\n\nPlease try again with a corrected solution.` },
+  ];
+}
+
+function parseMoves(text: string) {
+  const match = text.match(/```[\w]*\n([\s\S]+?)\n```/);
+  if (!match) return null;
+  return match[1].trim().split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => {
+      const parts = line.split(/\s+/);
+      return parts.length >= 2 ? { color: parts[0], direction: parts[1] } : null;
+    })
+    .filter((m): m is { color: string; direction: string } => m !== null);
+}
+
 const SYSTEM_PROMPT = `You are solving a grid-based logic puzzle described in a DSL. Output the move sequence to win.
 
 ## DSL format
@@ -78,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { dsl } = (req.body ?? {}) as { dsl?: string };
+  const { dsl, retryContext } = (req.body ?? {}) as { dsl?: string; retryContext?: RetryContext };
   if (!dsl || typeof dsl !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid dsl field' });
   }
@@ -100,12 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2048,
         system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: 'user',
-            content: `Solve this level:\n\`\`\`\n${dsl}\n\`\`\``,
-          },
-        ],
+        messages: buildMessages(dsl, retryContext),
       }),
     });
 
@@ -119,24 +144,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     const text = data.content?.find(c => c.type === 'text')?.text ?? '';
-
-    // Extract the first fenced code block
-    const match = text.match(/```[\w]*\n([\s\S]+?)\n```/);
-    if (!match) {
+    const moves = parseMoves(text);
+    if (!moves) {
       return res.status(200).json({ moves: [], error: 'No code block found in response', raw: text });
     }
-
-    const moves = match[1]
-      .trim()
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => {
-        const parts = line.split(/\s+/);
-        if (parts.length >= 2) return { color: parts[0], direction: parts[1] };
-        return null;
-      })
-      .filter((m): m is { color: string; direction: string } => m !== null);
 
     return res.status(200).json({ moves });
   } catch (err: unknown) {

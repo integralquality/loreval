@@ -86,6 +86,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
     openedLocks: []
   });
   const [playMode, setPlayMode] = useState<'human' | 'ai'>('human');
+  const [aiSpeed, setAiSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
+  const [aiFeedback, setAiFeedback] = useState('');
   const aiPlayback = useAiPlayback(level, setGameState);
 
   // Delay hiding finished entities so the move animation plays first
@@ -696,6 +698,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             {/* AI playback status */}
             {playMode === 'ai' && (
               <div className="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700 space-y-2">
+
+                {/* Idle — show Play */}
                 {aiPlayback.status === 'idle' && (
                   <button
                     onClick={() => void aiPlayback.startSolving(gameState)}
@@ -705,6 +709,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                   </button>
                 )}
 
+                {/* Solving */}
                 {aiPlayback.status === 'solving' && (
                   <div className="flex items-center gap-2 text-sm text-purple-300">
                     <Loader2 size={14} className="animate-spin" />
@@ -712,69 +717,141 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                   </div>
                 )}
 
-                {aiPlayback.status === 'playing' && (
+                {/* Playing or Paused — progress + speed + controls */}
+                {(aiPlayback.status === 'playing' || aiPlayback.status === 'paused') && (
                   <>
-                    <div className="text-sm text-zinc-300">
-                      Move {aiPlayback.currentMoveIndex} / {aiPlayback.totalMoves}
+                    {/* Progress bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-zinc-400">
+                        <span>{aiPlayback.status === 'paused' ? 'Paused' : 'Playing'}</span>
+                        <span>{aiPlayback.currentMoveIndex} / {aiPlayback.totalMoves}</span>
+                      </div>
+                      <div className="h-1 bg-zinc-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-purple-500 rounded-full transition-all"
+                          style={{ width: `${aiPlayback.totalMoves ? (aiPlayback.currentMoveIndex / aiPlayback.totalMoves) * 100 : 0}%` }}
+                        />
+                      </div>
                     </div>
+
+                    {/* Speed */}
+                    <div className="flex gap-1">
+                      {(['slow', 'normal', 'fast'] as const).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => {
+                            setAiSpeed(s);
+                            aiPlayback.changeSpeed(s === 'slow' ? 800 : s === 'fast' ? 120 : 400);
+                          }}
+                          className={`flex-1 py-1 rounded text-xs transition-colors ${
+                            aiSpeed === s ? 'bg-zinc-600 text-white' : 'bg-zinc-800 text-zinc-500 hover:text-zinc-300'
+                          }`}
+                        >
+                          {s === 'slow' ? '0.5×' : s === 'fast' ? '2×' : '1×'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Pause / Step / Resume / Stop */}
+                    <div className="flex gap-2">
+                      {aiPlayback.status === 'playing' ? (
+                        <button
+                          onClick={aiPlayback.pause}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                        >
+                          <Pause size={12} /> Pause
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={aiPlayback.resume}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs transition-colors hover:bg-purple-500"
+                          >
+                            <Play size={12} /> Resume
+                          </button>
+                          <button
+                            onClick={aiPlayback.step}
+                            className="flex-1 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                          >
+                            Step
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={aiPlayback.stop}
+                        className="px-3 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                      >
+                        Stop
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* Done */}
+                {aiPlayback.status === 'done' && (
+                  <>
+                    <div className={`text-sm font-medium ${aiPlayback.solved ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                      {aiPlayback.solved
+                        ? `✓ Solved in ${aiPlayback.currentMoveIndex} moves!`
+                        : `✗ Couldn't solve it (${aiPlayback.currentMoveIndex} moves tried)`}
+                    </div>
+                    {!aiPlayback.solved && (
+                      <textarea
+                        value={aiFeedback}
+                        onChange={e => setAiFeedback(e.target.value)}
+                        placeholder="Tell Claude what went wrong... (optional)"
+                        rows={2}
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-purple-500"
+                      />
+                    )}
                     <div className="flex gap-2">
                       <button
-                        onClick={aiPlayback.pause}
+                        onClick={() => { setAiFeedback(''); void aiPlayback.startSolving(gameState); }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
                       >
-                        <Pause size={12} /> Pause
+                        <RotateCcw size={12} /> Retry
                       </button>
-                      <button
-                        onClick={aiPlayback.stop}
-                        className="flex-1 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
-                      >
-                        Stop
-                      </button>
+                      {!aiPlayback.solved && aiFeedback.trim() && (
+                        <button
+                          onClick={() => { aiPlayback.retryWithFeedback(aiFeedback); setAiFeedback(''); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs transition-colors"
+                        >
+                          <Sparkles size={12} /> Send
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
 
-                {aiPlayback.status === 'paused' && (
-                  <>
-                    <div className="text-sm text-zinc-300">
-                      Paused ({aiPlayback.currentMoveIndex}/{aiPlayback.totalMoves})
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={aiPlayback.resume}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs transition-colors hover:bg-purple-500"
-                      >
-                        <Play size={12} /> Resume
-                      </button>
-                      <button
-                        onClick={aiPlayback.stop}
-                        className="flex-1 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
-                      >
-                        Stop
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {aiPlayback.status === 'done' && (
-                  <div className={`text-sm font-medium ${aiPlayback.solved ? 'text-emerald-400' : 'text-zinc-400'}`}>
-                    {aiPlayback.solved
-                      ? `✓ Solved in ${aiPlayback.currentMoveIndex} moves!`
-                      : `✗ Couldn't solve it (${aiPlayback.currentMoveIndex} moves tried)`}
-                  </div>
-                )}
-
+                {/* Error */}
                 {aiPlayback.status === 'error' && (
                   <>
                     <div className="text-xs text-red-400 leading-relaxed">
                       {aiPlayback.error}
                     </div>
-                    <button
-                      onClick={() => void aiPlayback.startSolving(gameState)}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
-                    >
-                      <RotateCcw size={12} /> Retry
-                    </button>
+                    <textarea
+                      value={aiFeedback}
+                      onChange={e => setAiFeedback(e.target.value)}
+                      placeholder="Tell Claude what went wrong... (optional)"
+                      rows={2}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-purple-500"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setAiFeedback(''); void aiPlayback.startSolving(gameState); }}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                      >
+                        <RotateCcw size={12} /> Retry
+                      </button>
+                      {aiFeedback.trim() && (
+                        <button
+                          onClick={() => { aiPlayback.retryWithFeedback(aiFeedback); setAiFeedback(''); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs transition-colors"
+                        >
+                          <Sparkles size={12} /> Send
+                        </button>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
