@@ -429,6 +429,18 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
     }
   }, [mode, gameState, level]);
 
+  // Keyboard scrubbing for AI playback (paused or done)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (mode !== 'play' || playMode !== 'ai') return;
+      if (aiPlayback.status !== 'paused' && aiPlayback.status !== 'done') return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); aiPlayback.step(); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); aiPlayback.stepBack(); }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mode, playMode, aiPlayback.status, aiPlayback.step, aiPlayback.stepBack]);
+
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -764,6 +776,14 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       ) : (
                         <>
                           <button
+                            onClick={aiPlayback.stepBack}
+                            disabled={aiPlayback.currentMoveIndex === 0}
+                            className="px-3 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors disabled:opacity-30"
+                            title="Step back (←)"
+                          >
+                            ←
+                          </button>
+                          <button
                             onClick={aiPlayback.resume}
                             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs transition-colors hover:bg-purple-500"
                           >
@@ -771,9 +791,11 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                           </button>
                           <button
                             onClick={aiPlayback.step}
-                            className="flex-1 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                            disabled={aiPlayback.currentMoveIndex >= aiPlayback.totalMoves}
+                            className="px-3 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors disabled:opacity-30"
+                            title="Step forward (→)"
                           >
-                            Step
+                            →
                           </button>
                         </>
                       )}
@@ -792,9 +814,15 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                   <>
                     <div className={`text-sm font-medium ${aiPlayback.solved ? 'text-emerald-400' : 'text-zinc-400'}`}>
                       {aiPlayback.solved
-                        ? `✓ Solved in ${aiPlayback.currentMoveIndex} moves!`
-                        : `✗ Couldn't solve it (${aiPlayback.currentMoveIndex} moves tried)`}
+                        ? `✓ Solved in ${aiPlayback.totalMoves} moves!`
+                        : `✗ Couldn't solve it (${aiPlayback.totalMoves} moves tried)`}
                     </div>
+                    <button
+                      onClick={aiPlayback.rewind}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                    >
+                      ↩ Watch again  <span className="text-zinc-500 ml-1">← → to scrub</span>
+                    </button>
                     {!aiPlayback.solved && (
                       <textarea
                         value={aiFeedback}
@@ -806,7 +834,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     )}
                     <div className="flex gap-2">
                       <button
-                        onClick={() => { setAiFeedback(''); void aiPlayback.startSolving(gameState); }}
+                        onClick={resetPlayState}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                      >
+                        <Play size={12} /> Play myself
+                      </button>
+                      <button
+                        onClick={() => { setAiFeedback(''); aiPlayback.retry(); }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
                       >
                         <RotateCcw size={12} /> Retry
@@ -838,7 +872,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     />
                     <div className="flex gap-2">
                       <button
-                        onClick={() => { setAiFeedback(''); void aiPlayback.startSolving(gameState); }}
+                        onClick={resetPlayState}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
+                      >
+                        <Play size={12} /> Play myself
+                      </button>
+                      <button
+                        onClick={() => { setAiFeedback(''); aiPlayback.retry(); }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-zinc-700 text-zinc-300 hover:text-white text-xs transition-colors"
                       >
                         <RotateCcw size={12} /> Retry

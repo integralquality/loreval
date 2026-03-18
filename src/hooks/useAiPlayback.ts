@@ -145,6 +145,57 @@ export function useAiPlayback(
     tick();
   }, [tick]);
 
+  // Step back one move by replaying from initial state
+  const stepBack = useCallback(() => {
+    const targetIndex = moveIndexRef.current - 1;
+    if (targetIndex < 0) return;
+
+    const initialState = initialGameStateRef.current;
+    if (!initialState) return;
+
+    const moves = movesRef.current;
+    const currentLevel = levelRef.current;
+
+    let state = initialState;
+    for (let i = 0; i < targetIndex; i++) {
+      if (i >= moves.length) break;
+      const move = moves[i];
+      const entity = currentLevel.entities.find(e => e.color === move.color);
+      if (!entity) continue;
+      if (state.finishedEntityIds.includes(entity.id)) continue;
+      const delta = directionToDelta(move.direction);
+      if (!delta) continue;
+      const stateForMove: GameState = { ...state, selectedEntityId: entity.id };
+      const newState = executeMove(currentLevel, stateForMove, delta.dx, delta.dy);
+      if (!newState) continue;
+      const entityBefore = state.entities.find(e => e.id === entity.id)!;
+      const entityAfter = newState.entities.find(e => e.id === entity.id);
+      const didMove = entityAfter
+        ? entityAfter.position.x !== entityBefore.position.x || entityAfter.position.y !== entityBefore.position.y
+        : true;
+      if (!didMove) continue;
+      state = newState;
+    }
+
+    liveStateRef.current = state;
+    onStateChangeRef.current(state);
+    moveIndexRef.current = targetIndex;
+    setCurrentMoveIndex(targetIndex);
+    setStatus('paused');
+  }, []);
+
+  // Rewind to start and enter paused mode for manual scrubbing
+  const rewind = useCallback(() => {
+    clearTimer();
+    const initialState = initialGameStateRef.current;
+    if (!initialState) return;
+    liveStateRef.current = initialState;
+    onStateChangeRef.current(initialState);
+    moveIndexRef.current = 0;
+    setCurrentMoveIndex(0);
+    setStatus('paused');
+  }, [clearTimer]);
+
   const changeSpeed = useCallback((newDelay: number) => {
     stepDelayRef.current = newDelay;
     if (timerRef.current !== null) {
@@ -164,6 +215,7 @@ export function useAiPlayback(
     moveIndexRef.current = 0;
     liveStateRef.current = gameState;
     initialGameStateRef.current = gameState;
+    onStateChangeRef.current(gameState);
 
     const dsl = serializeDSL(levelRef.current);
     const result = await solveLevel(dsl, retryContext);
@@ -179,6 +231,13 @@ export function useAiPlayback(
     setStatus('playing');
     startInterval();
   }, [clearTimer, startInterval]);
+
+  // Retry from scratch using the stored initial game state
+  const retry = useCallback(() => {
+    const gameState = initialGameStateRef.current;
+    if (!gameState) return;
+    void startSolving(gameState);
+  }, [startSolving]);
 
   // Retry with user feedback — resets board and sends conversation context to Claude
   const retryWithFeedback = useCallback((feedback: string) => {
@@ -196,6 +255,6 @@ export function useAiPlayback(
 
   return {
     status, currentMoveIndex, totalMoves, error, solved,
-    startSolving, pause, resume, step, stop, changeSpeed, retryWithFeedback,
+    startSolving, retry, pause, resume, step, stepBack, rewind, stop, changeSpeed, retryWithFeedback,
   };
 }
