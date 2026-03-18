@@ -89,6 +89,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   const [aiSpeed, setAiSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
   const [aiFeedback, setAiFeedback] = useState('');
   const aiPlayback = useAiPlayback(level, setGameState);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Delay hiding finished entities so the move animation plays first
   useEffect(() => {
@@ -100,6 +101,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       return () => clearTimeout(timer);
     }
   }, [gameState.finishedEntityIds]);
+
+  // Auto-scroll chat to bottom on new messages
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [aiPlayback.chatHistory]);
 
   // Load level from cloud if editing existing
   useEffect(() => {
@@ -823,15 +831,6 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     >
                       ↩ Watch again  <span className="text-zinc-500 ml-1">← → to scrub</span>
                     </button>
-                    {!aiPlayback.solved && (
-                      <textarea
-                        value={aiFeedback}
-                        onChange={e => setAiFeedback(e.target.value)}
-                        placeholder="Tell Claude what went wrong... (optional)"
-                        rows={2}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-purple-500"
-                      />
-                    )}
                     <div className="flex gap-2">
                       <button
                         onClick={resetPlayState}
@@ -845,14 +844,6 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       >
                         <RotateCcw size={12} /> Retry
                       </button>
-                      {!aiPlayback.solved && aiFeedback.trim() && (
-                        <button
-                          onClick={() => { aiPlayback.retryWithFeedback(aiFeedback); setAiFeedback(''); }}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs transition-colors"
-                        >
-                          <Sparkles size={12} /> Send
-                        </button>
-                      )}
                     </div>
                   </>
                 )}
@@ -863,13 +854,6 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     <div className="text-xs text-red-400 leading-relaxed">
                       {aiPlayback.error}
                     </div>
-                    <textarea
-                      value={aiFeedback}
-                      onChange={e => setAiFeedback(e.target.value)}
-                      placeholder="Tell Claude what went wrong... (optional)"
-                      rows={2}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-purple-500"
-                    />
                     <div className="flex gap-2">
                       <button
                         onClick={resetPlayState}
@@ -883,17 +867,10 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       >
                         <RotateCcw size={12} /> Retry
                       </button>
-                      {aiFeedback.trim() && (
-                        <button
-                          onClick={() => { aiPlayback.retryWithFeedback(aiFeedback); setAiFeedback(''); }}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs transition-colors"
-                        >
-                          <Sparkles size={12} /> Send
-                        </button>
-                      )}
                     </div>
                   </>
                 )}
+
               </div>
             )}
 
@@ -1074,7 +1051,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
         {/* Grid Canvas */}
         {mode !== 'code' && (
-          <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center">
+          <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center gap-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 to-zinc-950 -z-10" />
 
             {/* Grid Container */}
@@ -1164,6 +1141,65 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 </div>
               </div>
             </div>
+
+            {/* AI Chat — vertical panel beside the grid */}
+            {mode === 'play' && playMode === 'ai' && aiPlayback.status !== 'idle' && (
+              <div className="w-56 self-stretch flex flex-col border-l border-zinc-800/50">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-3 pb-1 shrink-0">
+                  Conversation
+                </p>
+
+                {/* Scrollable messages */}
+                <div
+                  ref={chatScrollRef}
+                  className="flex-1 overflow-y-scroll px-3 pb-2 flex flex-col gap-2"
+                  style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 transparent' }}
+                >
+                  {aiPlayback.status === 'solving' && aiPlayback.chatHistory.length === 0 && (
+                    <p className="text-[11px] text-zinc-600 text-center mt-4">Waiting for Claude...</p>
+                  )}
+                  {aiPlayback.chatHistory.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[92%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
+                        msg.role === 'user'
+                          ? 'bg-purple-700/60 text-purple-100'
+                          : 'bg-zinc-800 text-zinc-300 font-mono'
+                      }`}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Input area */}
+                {(aiPlayback.status === 'done' || aiPlayback.status === 'error') && (
+                  <div className="shrink-0 p-3 border-t border-zinc-800/50 space-y-2">
+                    <textarea
+                      value={aiFeedback}
+                      onChange={e => setAiFeedback(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey && aiFeedback.trim()) {
+                          e.preventDefault();
+                          aiPlayback.retryWithFeedback(aiFeedback);
+                          setAiFeedback('');
+                        }
+                      }}
+                      placeholder="Tell Claude what went wrong... (Enter to send)"
+                      rows={6}
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-purple-500"
+                    />
+                    {aiFeedback.trim() && (
+                      <button
+                        onClick={() => { aiPlayback.retryWithFeedback(aiFeedback); setAiFeedback(''); }}
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs transition-colors"
+                      >
+                        <Sparkles size={12} /> Send
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -7,6 +7,11 @@ import type { AiMove, RetryContext } from '../lib/ai-solver';
 
 export type AiStatus = 'idle' | 'solving' | 'playing' | 'paused' | 'done' | 'error';
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export function useAiPlayback(
   level: Level,
   onStateChange: (state: GameState) => void,
@@ -17,6 +22,7 @@ export function useAiPlayback(
   const [totalMoves, setTotalMoves] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [solved, setSolved] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   // Mutable playback state accessible from interval without stale closures
   const movesRef = useRef<AiMove[]>([]);
@@ -50,6 +56,7 @@ export function useAiPlayback(
     movesRef.current = [];
     moveIndexRef.current = 0;
     liveStateRef.current = null;
+    setChatHistory([]);
   }, [clearTimer]);
 
   const pause = useCallback(() => {
@@ -217,14 +224,25 @@ export function useAiPlayback(
     initialGameStateRef.current = gameState;
     onStateChangeRef.current(gameState);
 
+    if (!retryContext) setChatHistory([]);
+    if (retryContext?.userFeedback) {
+      setChatHistory(h => [...h, { role: 'user', content: retryContext.userFeedback }]);
+    }
+
     const dsl = serializeDSL(levelRef.current);
     const result = await solveLevel(dsl, retryContext);
 
     if (result.error || result.moves.length === 0) {
       setStatus('error');
       setError(result.error ?? 'Claude returned no moves');
+      if (result.error) {
+        setChatHistory(h => [...h, { role: 'assistant', content: `Error: ${result.error}` }]);
+      }
       return;
     }
+
+    const moveSummary = result.moves.map(m => `${m.color} ${m.direction}`).join('\n');
+    setChatHistory(h => [...h, { role: 'assistant', content: moveSummary }]);
 
     movesRef.current = result.moves;
     setTotalMoves(result.moves.length);
@@ -254,7 +272,7 @@ export function useAiPlayback(
   }, [startSolving]);
 
   return {
-    status, currentMoveIndex, totalMoves, error, solved,
+    status, currentMoveIndex, totalMoves, error, solved, chatHistory,
     startSolving, retry, pause, resume, step, stepBack, rewind, stop, changeSpeed, retryWithFeedback,
   };
 }
