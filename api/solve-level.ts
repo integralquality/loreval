@@ -1,6 +1,5 @@
 // Vercel serverless function
-// POST /api/solve-level { dsl: string } → { moves: Array<{color, direction}> } | { error: string }
-// For local dev: run `vercel dev` instead of `vite dev`
+// POST /api/solve-level { dsl: string } → { moves: Array<{x, y, direction}> } | { error: string }
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 interface RetryContext {
@@ -21,16 +20,25 @@ function buildMessages(dsl: string, retryContext?: RetryContext) {
 }
 
 function parseMoves(text: string) {
-  const match = text.match(/```[\w]*\n([\s\S]+?)\n```/);
-  if (!match) return null;
-  return match[1].trim().split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-    .map(line => {
-      const parts = line.split(/\s+/);
-      return parts.length >= 2 ? { color: parts[0], direction: parts[1] } : null;
-    })
-    .filter((m): m is { color: string; direction: string } => m !== null);
+  const codeBlockRegex = /```[\w]*\r?\n([\s\S]+?)\r?\n```/g;
+  const VALID_DIRS = new Set(['up', 'down', 'left', 'right']);
+  let lastValidMoves: { x: number; y: number; direction: string }[] | null = null;
+  let match;
+  while ((match = codeBlockRegex.exec(text)) !== null) {
+    const moves = match[1].trim().split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => {
+        const m = line.match(/^\((\d+),(\d+)\)\s+(up|down|left|right)$/);
+        if (!m) return null;
+        const dir = m[3];
+        if (!VALID_DIRS.has(dir)) return null;
+        return { x: parseInt(m[1], 10), y: parseInt(m[2], 10), direction: dir };
+      })
+      .filter((m): m is { x: number; y: number; direction: string } => m !== null);
+    if (moves.length > 0) lastValidMoves = moves;
+  }
+  return lastValidMoves;
 }
 
 const SYSTEM_PROMPT = `You are solving a grid-based logic puzzle described in a DSL. Output the move sequence to win.
@@ -47,7 +55,7 @@ grid = [
 
 tile X = tiles.type(color)   ← what char X means in the grid
 
-agent(COLOR) start(x,y) and reach(gx,gy)  ← an agent you must move to its goal
+agent(COLOR) start(x,y) and reach(gx,gy)  ← an agent starting at (x,y) that must reach (gx,gy)
 \`\`\`
 
 ## Coordinate system
@@ -65,67 +73,49 @@ x = column (0 = left), y = row (0 = top). Agents move one cell per step.
 - lock — blocked until a matching-color agent steps on it (stays open)
 
 ## Agent rules
-- Agents are identified by their COLOR name (e.g. \`orange\`, \`purple\`, \`blue\`)
 - Agents move one cell per step: up, down, left, right
 - Two agents cannot occupy the same cell
 - An agent disappears when it reaches its matching-color goal
 - Win when all agents have reached their goals
 
-## CRITICAL — output format
+## Output format
 
-Each output line is: \`<COLOR> <direction>\`
+Each line: \`(x,y) direction\`
+- \`(x,y)\` = the agent's **current position** before this move
+- \`direction\` = one of: \`up\` \`down\` \`left\` \`right\`
 
-**COLOR** = the exact color string from the \`agent(COLOR)\` declaration — a word like \`orange\` or \`purple\`.
-**direction** = one of: \`up\` \`down\` \`left\` \`right\`
-
-⚠️ Grid characters (\`W\`, \`R\`, \`.\`, \`G\`, etc.) are tile labels — they are NEVER valid color names.
-⚠️ The only valid color values are the exact words inside \`agent(...)\` in the level.
-
-WRONG (using grid chars as colors):
-\`\`\`
-. right
-R down
-G left
-\`\`\`
-
-RIGHT (using agent color names):
-\`\`\`
-orange right
-orange down
-purple left
-\`\`\`
+Output ONLY a fenced code block. No explanation outside it.
 
 ## Worked example
 
 Level:
 \`\`\`
-level "Simple" 4x3
+level "Simple" 5x3
 
 grid = [
-  W W W W,
-  W R R G,
-  W W W W,
+  W W W W W,
+  W R R R G,
+  W W W W W,
 ]
 
 tile G = tiles.goal(orange)
 
-agent(orange) start(1,1) and reach(3,1)
+agent(orange) start(1,1) and reach(4,1)
 \`\`\`
 
-Agents: orange starts at (1,1), goal G at (3,1).
+The orange agent starts at (1,1) and must reach (4,1).
 
-Solution:
 \`\`\`
-orange right
-orange right
+(1,1) right
+(2,1) right
+(3,1) right
 \`\`\`
 
 ## Instructions
 
-1. Read all \`agent(COLOR)\` lines — those COLOR words are the ONLY valid move prefixes.
-2. Trace each agent's path step by step through the grid.
-3. Output ONLY a fenced code block with one \`<color> <direction>\` per line.
-No explanation, no commentary outside the code block.`;
+1. Read each \`agent(...) start(x,y)\` to know where agents begin.
+2. Trace moves step by step, updating each agent's position after every move.
+3. Output one \`(x,y) direction\` line per move using the agent's position BEFORE that move.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -174,7 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const text = data.content?.find(c => c.type === 'text')?.text ?? '';
     const moves = parseMoves(text);
     if (!moves) {
-      return res.status(200).json({ moves: [], error: 'No code block found in response', raw: text });
+      return res.status(200).json({ moves: [], error: 'No valid moves found in response', raw: text });
     }
 
     return res.status(200).json({ moves });

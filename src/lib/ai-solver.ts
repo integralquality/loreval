@@ -1,5 +1,6 @@
 export interface AiMove {
-  color: string;
+  x: number;
+  y: number;
   direction: string;
 }
 

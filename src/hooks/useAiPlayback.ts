@@ -79,17 +79,15 @@ export function useAiPlayback(
     }
 
     const move = moves[index];
-    const entity = currentLevel.entities.find(e => e.color === move.color);
+
+    // Find the active entity currently at (move.x, move.y)
+    const entity = currentState.entities.find(e =>
+      e.position.x === move.x && e.position.y === move.y &&
+      !currentState.finishedEntityIds.includes(e.id)
+    );
 
     if (!entity) {
-      clearTimer();
-      setError(`Unknown agent color "${move.color}" at move ${index + 1}`);
-      setStatus('error');
-      return;
-    }
-
-    // Skip moves for entities that already finished
-    if (currentState.finishedEntityIds.includes(entity.id)) {
+      // No agent at expected position — skip (position may be stale from a previous skip)
       moveIndexRef.current = index + 1;
       setCurrentMoveIndex(index + 1);
       return;
@@ -168,9 +166,11 @@ export function useAiPlayback(
     for (let i = 0; i < targetIndex; i++) {
       if (i >= moves.length) break;
       const move = moves[i];
-      const entity = currentLevel.entities.find(e => e.color === move.color);
+      const entity = state.entities.find(e =>
+        e.position.x === move.x && e.position.y === move.y &&
+        !state.finishedEntityIds.includes(e.id)
+      );
       if (!entity) continue;
-      if (state.finishedEntityIds.includes(entity.id)) continue;
       const delta = directionToDelta(move.direction);
       if (!delta) continue;
       const stateForMove: GameState = { ...state, selectedEntityId: entity.id };
@@ -266,7 +266,7 @@ export function useAiPlayback(
     if (!gameState) return;
 
     const retryContext: RetryContext = {
-      previousMovesText: previousMoves.map(m => `${m.color} ${m.direction}`).join('\n'),
+      previousMovesText: previousMoves.map(m => `(${m.x},${m.y}) ${m.direction}`).join('\n'),
       userFeedback: feedback,
     };
 
