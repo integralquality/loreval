@@ -78,13 +78,20 @@ export function useAiGeneration(onLevel: (level: Level, dsl: string) => void) {
     [onLevel],
   );
 
-  /** Start a fresh generation from the form. */
+  /**
+   * Start a generation from the form.
+   * Pass `baseDsl` to update an existing level instead of generating from scratch.
+   */
   const generate = useCallback(
-    async (opts: Omit<GenerateOptions, 'retryContext'>) => {
+    async (opts: Omit<GenerateOptions, 'retryContext'>, baseDsl?: string) => {
       baseOptsRef.current = opts;
       currentDslRef.current = null;
-      setChatHistory([{ role: 'user', content: opts.prompt }]);
-      await runLoop(opts);
+      const label = baseDsl ? `Update: ${opts.prompt}` : opts.prompt;
+      setChatHistory([{ role: 'user', content: label }]);
+      const initialContext = baseDsl
+        ? { previousDsl: baseDsl, userFeedback: opts.prompt }
+        : undefined;
+      await runLoop(opts, initialContext);
     },
     [runLoop],
   );
