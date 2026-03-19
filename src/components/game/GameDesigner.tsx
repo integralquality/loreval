@@ -62,7 +62,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   const { user } = useAuth();
   const navigate = useNavigate();
   const [level, setLevel] = useState<Level>(initialLevel || INITIAL_LEVEL);
-  const [mode, setMode] = useState<'edit' | 'code' | 'play'>(playOnly ? 'play' : 'edit');
+  const [mode, setMode] = useState<'design' | 'play'>(playOnly ? 'play' : 'design');
+  const [designTab, setDesignTab] = useState<'visual' | 'code'>('visual');
   const [dslCode, setDslCode] = useState<string>('');
   const [selectedTool, setSelectedTool] = useState<TileType | 'robot' | 'erase' | 'goal-universal' | 'switch-universal'>('wall');
 
@@ -309,7 +310,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   };
 
   const handleTileClick = (x: number, y: number) => {
-    if (mode !== 'edit') return;
+    if (mode !== 'design' || designTab !== 'visual') return;
 
     const clickedEntity = level.entities.find(e => e.position.x === x && e.position.y === y);
     if (clickedEntity && selectedTool !== 'erase') {
@@ -519,8 +520,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
           </div>
         </div>
 
-        {/* Save/Share/Load/Clear (edit mode only) */}
-        {!playOnly && mode === 'edit' && (
+        {/* Save/Share/Load/Clear (design/visual only) */}
+        {!playOnly && mode === 'design' && designTab === 'visual' && (
           <div className="p-4 space-y-2">
             <div className="flex gap-2">
               <button onClick={handleSave} disabled={saveStatus === 'saving'} className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
@@ -551,7 +552,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         )}
 
         {/* Editor Tools */}
-        {mode === 'edit' && (
+        {mode === 'design' && designTab === 'visual' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             <div className="grid grid-cols-4 gap-2">
               <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23351008'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%239b3a10' rx='1'/%3E%3C/svg%3E")`, backgroundSize: '14px 14px' }} />} label="Brick" tooltip="Solid brick wall — nothing can pass through" />
@@ -986,7 +987,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         )}
 
         {/* Code Mode Sidebar */}
-        {mode === 'code' && (
+        {mode === 'design' && designTab === 'code' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="bg-zinc-900/50 p-4 rounded-xl border border-zinc-800">
               <h3 className="text-xs font-bold text-zinc-500 uppercase mb-2">DSL Syntax</h3>
@@ -1052,38 +1053,46 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Mode Toggle Tabs */}
         {!playOnly && (
-          <div className="flex items-center justify-center px-4 py-3 bg-zinc-950 border-b border-zinc-800 shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-zinc-950 border-b border-zinc-800 shrink-0">
             <div className="flex bg-zinc-800 p-1 rounded-lg">
               <button
-                onClick={() => setMode('edit')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'edit' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
+                onClick={() => setMode('design')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'design' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'}`}
               >
-                <Grid3X3 size={15} /> Visual
-              </button>
-              <button
-                onClick={() => {
-                  setDslCode(serializeDSL(level));
-                  setMode('code');
-                }}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'code' ? 'bg-blue-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-              >
-                <Code2 size={15} /> Code
+                <Grid3X3 size={15} /> Design
               </button>
               <button
                 onClick={() => setMode('play')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'}`}
               >
                 <Play size={15} /> Play
               </button>
             </div>
+
+            {mode === 'design' && (
+              <div className="flex bg-zinc-800 p-1 rounded-lg">
+                <button
+                  onClick={() => setDesignTab('visual')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all text-sm ${designTab === 'visual' ? 'bg-zinc-600 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'}`}
+                >
+                  <Grid3X3 size={13} /> Visual
+                </button>
+                <button
+                  onClick={() => {
+                    setDslCode(serializeDSL(level));
+                    setDesignTab('code');
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all text-sm ${designTab === 'code' ? 'bg-zinc-600 text-white shadow' : 'text-zinc-400 hover:text-zinc-200'}`}
+                >
+                  <Code2 size={13} /> Code
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         {/* Code Editor */}
-        {mode === 'code' && (
+        {mode === 'design' && designTab === 'code' && (
           <div className="flex-1 min-h-0">
             <CodeEditorPanel
               initialCode={dslCode}
@@ -1094,7 +1103,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         )}
 
         {/* Grid Canvas */}
-        {mode !== 'code' && (
+        {(mode === 'play' || designTab === 'visual') && (
           <div className="flex-1 bg-zinc-950 relative overflow-hidden flex items-center justify-center gap-6">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 to-zinc-950 -z-10" />
 
