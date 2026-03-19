@@ -288,6 +288,11 @@ orange, blue, green, red, purple, yellow
 
 **Solvability (critical):** Every agent must have a valid path from start to goal. Mentally trace the path before outputting. If you use doors and switches, confirm the agent can reach the switch before needing the door.
 
+**Agent placement (critical):**
+- Agent start positions MUST be plain floor tiles (`R`) — never place a start on a goal, door, paint, switch, one-way, or lock tile
+- No agent's start position may coincide with another agent's goal tile — this causes permanent blocking
+- Each agent's goal tile must be reachable and not occupied by another agent's start
+
 **Difficulty guidelines:**
 - easy: 5–12 total moves, 1 mechanic, clear single path
 - medium: 12–25 moves, 2 interacting mechanics, requires planning ahead
