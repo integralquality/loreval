@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage';
 import MyLevelsPage from './pages/MyLevelsPage';
 import BrowsePage from './pages/BrowsePage';
 import PrivacyPage from './pages/PrivacyPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="browse" element={<BrowsePage />} />
             <Route path="account" element={<AccountPage />} />
             <Route path="privacy" element={<PrivacyPage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
           </Route>
           <Route path="play/:levelId" element={<PlayLevelPage />} />
           <Route path="play/s/:shortId" element={<SharedLevelPage />} />
