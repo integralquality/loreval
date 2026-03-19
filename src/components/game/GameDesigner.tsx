@@ -96,6 +96,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
   // Delay hiding finished entities so the move animation plays first
   useEffect(() => {
+    // Unhide immediately if entity is no longer finished (step back / rewind)
+    setHiddenEntityIds(prev => prev.filter(id => gameState.finishedEntityIds.includes(id)));
+
     const newlyFinished = gameState.finishedEntityIds.filter(id => !hiddenEntityIds.includes(id));
     if (newlyFinished.length > 0) {
       const timer = setTimeout(() => {
@@ -103,7 +106,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [gameState.finishedEntityIds]);
+  }, [gameState.finishedEntityIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear hidden entities whenever a new AI solve starts
   useEffect(() => {
