@@ -26,11 +26,20 @@ import {
   Pause,
   RotateCcw,
   GitFork,
+  Wand2,
+  X,
 } from 'lucide-react';
 import type { Level, Tile, TileType, Entity, RuleType, Direction, GameState } from '../../types';
 import { useAiPlayback } from '../../hooks/useAiPlayback';
+import { useAiGeneration } from '../../hooks/useAiGeneration';
 import { AI_MODELS } from '../../lib/ai-solver';
 import type { AiModelId } from '../../lib/ai-solver';
+import {
+  DIFFICULTIES,
+  FEATURES,
+  PRESET_SIZES,
+} from '../../lib/ai-generator';
+import type { Difficulty, LevelFeature } from '../../lib/ai-generator';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
 import { executeMove } from '../../gameLogic';
@@ -96,6 +105,20 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   const [aiFeedback, setAiFeedback] = useState('');
   const aiPlayback = useAiPlayback(level, setGameState);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Generation state
+  const [showGenerate, setShowGenerate] = useState(false);
+  const [genPrompt, setGenPrompt] = useState('');
+  const [genSize, setGenSize] = useState<{ width: number; height: number }>({ width: 8, height: 8 });
+  const [genDifficulty, setGenDifficulty] = useState<Difficulty>('medium');
+  const [genFeatures, setGenFeatures] = useState<LevelFeature[]>([]);
+  const [genModel, setGenModel] = useState<AiModelId>('claude-sonnet-4-6');
+  const aiGeneration = useAiGeneration((generatedLevel, generatedDsl) => {
+    setLevel(generatedLevel);
+    setDslCode(generatedDsl);
+    setDesignTab('visual');
+    setShowGenerate(false);
+  });
 
   // Delay hiding finished entities so the move animation plays first
   useEffect(() => {
@@ -1050,7 +1073,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
         {/* Mode Toggle Tabs */}
         {!playOnly && (
           <div className="flex items-center justify-between px-4 py-3 bg-zinc-950 border-b border-zinc-800 shrink-0">
@@ -1088,6 +1111,178 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 </button>
               </div>
             )}
+
+            {mode === 'design' && (
+              <button
+                onClick={() => setShowGenerate(!showGenerate)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${
+                  showGenerate
+                    ? 'bg-purple-600 text-white shadow-lg'
+                    : 'bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700'
+                }`}
+              >
+                <Wand2 size={14} /> Generate
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Generate panel — overlay on the main content area */}
+        {mode === 'design' && showGenerate && (
+          <div className="absolute inset-0 z-30 bg-zinc-950/80 backdrop-blur-sm flex items-start justify-center pt-6 px-6 overflow-auto">
+            <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-md">
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+                <span className="font-semibold text-white flex items-center gap-2">
+                  <Wand2 size={16} className="text-purple-400" /> Generate level with AI
+                </span>
+                <button
+                  onClick={() => { setShowGenerate(false); aiGeneration.reset(); }}
+                  className="text-zinc-500 hover:text-white transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Prompt */}
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+                    Describe your level
+                  </label>
+                  <textarea
+                    value={genPrompt}
+                    onChange={(e) => setGenPrompt(e.target.value)}
+                    placeholder="e.g. Two agents must help each other open doors to reach their goals…"
+                    rows={3}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
+                  />
+                </div>
+
+                {/* Size */}
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Size</label>
+                  <div className="flex gap-2">
+                    {PRESET_SIZES.map((s) => (
+                      <button
+                        key={s.label}
+                        onClick={() => setGenSize({ width: s.width, height: s.height })}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          genSize.width === s.width && genSize.height === s.height
+                            ? 'bg-zinc-600 text-white'
+                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Difficulty */}
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Difficulty</label>
+                  <div className="flex gap-2">
+                    {DIFFICULTIES.map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => setGenDifficulty(d)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
+                          genDifficulty === d
+                            ? 'bg-zinc-600 text-white'
+                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Features */}
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">
+                    Features <span className="text-zinc-600">(optional)</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {FEATURES.map((f) => {
+                      const active = genFeatures.includes(f.id);
+                      return (
+                        <button
+                          key={f.id}
+                          onClick={() =>
+                            setGenFeatures((prev) =>
+                              active ? prev.filter((x) => x !== f.id) : [...prev, f.id],
+                            )
+                          }
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                            active
+                              ? 'bg-purple-600/30 text-purple-300 border border-purple-600/50'
+                              : 'bg-zinc-800 text-zinc-400 hover:text-white border border-transparent'
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Model */}
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Model</label>
+                  <div className="flex gap-2">
+                    {AI_MODELS.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => setGenModel(m.id)}
+                        className={`flex-1 py-1.5 rounded-lg text-xs transition-colors ${
+                          genModel === m.id
+                            ? 'bg-zinc-600 text-white'
+                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Error */}
+                {aiGeneration.status === 'error' && aiGeneration.error && (
+                  <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                    {aiGeneration.error}
+                  </p>
+                )}
+
+                {/* Actions */}
+                <button
+                  onClick={() =>
+                    aiGeneration.generate({
+                      prompt: genPrompt,
+                      width: genSize.width,
+                      height: genSize.height,
+                      difficulty: genDifficulty,
+                      features: genFeatures,
+                      model: genModel,
+                    })
+                  }
+                  disabled={aiGeneration.status === 'generating' || !genPrompt.trim()}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  {aiGeneration.status === 'generating' ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Generating{aiGeneration.attempt > 1 ? ` (attempt ${aiGeneration.attempt})` : '…'}
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 size={14} /> Generate level
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
