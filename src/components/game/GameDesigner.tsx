@@ -25,6 +25,7 @@ import {
   Sparkles,
   Pause,
   RotateCcw,
+  GitFork,
 } from 'lucide-react';
 import type { Level, Tile, TileType, Entity, RuleType, Direction, GameState } from '../../types';
 import { useAiPlayback } from '../../hooks/useAiPlayback';
@@ -54,9 +55,10 @@ interface GameDesignerProps {
   initialLevel?: Level;
   playOnly?: boolean;
   levelId?: string;
+  onFork?: () => void;
 }
 
-export default function GameDesigner({ initialLevel, playOnly, levelId: propLevelId }: GameDesignerProps = {}) {
+export default function GameDesigner({ initialLevel, playOnly, levelId: propLevelId, onFork }: GameDesignerProps = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [level, setLevel] = useState<Level>(initialLevel || INITIAL_LEVEL);
@@ -971,6 +973,15 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 <p>1, 2, 3: Select Character</p>
               </div>
             </div>
+
+            {onFork && (
+              <button
+                onClick={onFork}
+                className="w-full flex items-center justify-center gap-2 py-2 bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-sm transition-colors"
+              >
+                <GitFork size={14} /> Edit a copy
+              </button>
+            )}
           </div>
         )}
 

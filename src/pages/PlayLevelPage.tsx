@@ -1,9 +1,11 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { CAMPAIGN_LEVELS } from '../levels';
 import GameDesigner from '../components/game/GameDesigner';
+import type { Level } from '../types';
 
 export default function PlayLevelPage() {
   const { levelId } = useParams<{ levelId: string }>();
+  const navigate = useNavigate();
   const num = Number(levelId);
   const campaign = CAMPAIGN_LEVELS.find(l => l.number === num);
 
@@ -19,5 +21,10 @@ export default function PlayLevelPage() {
     );
   }
 
-  return <GameDesigner initialLevel={campaign.level} playOnly />;
+  const handleFork = () => {
+    const forked: Level = { ...campaign.level, name: `Copy of ${campaign.level.name}` };
+    navigate('/designer', { state: { forkLevel: forked } });
+  };
+
+  return <GameDesigner initialLevel={campaign.level} playOnly onFork={handleFork} />;
 }

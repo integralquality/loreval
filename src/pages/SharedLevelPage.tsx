@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Heart, User, Play } from 'lucide-react';
+import type { Level } from '../types';
 import { getLevelByShortId, parseLevelDSL, toggleLike } from '../lib/levels-api';
 import type { LevelWithMeta } from '../lib/levels-api';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +10,7 @@ import GameDesigner from '../components/game/GameDesigner';
 export default function SharedLevelPage() {
   const { shortId } = useParams<{ shortId: string }>();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [levelData, setLevelData] = useState<LevelWithMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
@@ -64,9 +66,14 @@ export default function SharedLevelPage() {
     );
   }
 
+  const handleFork = () => {
+    const forked: Level = { ...parsed, name: `Copy of ${parsed.name}` };
+    navigate('/designer', { state: { forkLevel: forked } });
+  };
+
   return (
     <div className="relative">
-      <GameDesigner initialLevel={parsed} playOnly />
+      <GameDesigner initialLevel={parsed} playOnly onFork={handleFork} />
 
       {/* Floating info bar */}
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-5 py-2.5 bg-zinc-900/90 backdrop-blur border border-zinc-700/50 rounded-full shadow-2xl">
