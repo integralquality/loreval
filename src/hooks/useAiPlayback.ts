@@ -243,7 +243,7 @@ export function useAiPlayback(
       return;
     }
 
-    const moveSummary = result.moves.map(m => `${m.color} ${m.direction}`).join('\n');
+    const moveSummary = result.moves.map(m => `(${m.x},${m.y}) ${m.direction}`).join('\n');
     setChatHistory(h => [...h, { role: 'assistant', content: moveSummary }]);
 
     movesRef.current = result.moves;
