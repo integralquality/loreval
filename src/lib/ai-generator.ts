@@ -32,8 +32,8 @@ export interface GenerateOptions {
   difficulty?: Difficulty;
   features?: LevelFeature[];
   model?: AiModelId;
-  /** Internal: passed automatically by useAiGeneration on retry. */
-  retryContext?: { previousDsl: string; error: string };
+  /** Passed automatically by useAiGeneration on retry. */
+  retryContext?: { previousDsl: string; error?: string; userFeedback?: string };
 }
 
 export type GenerateSuccess = { ok: true; level: Level; dsl: string };

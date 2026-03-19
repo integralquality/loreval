@@ -56,16 +56,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   };
 
   // Optional retry context (truncated to prevent prompt injection / token abuse)
+  const rc = raw.retryContext as Record<string, unknown> | undefined;
   const retryContext: GenerateRetryContext | undefined =
-    raw.retryContext != null &&
-    typeof (raw.retryContext as Record<string, unknown>).previousDsl === 'string' &&
-    typeof (raw.retryContext as Record<string, unknown>).error === 'string'
+    rc != null && typeof rc.previousDsl === 'string'
       ? {
-          previousDsl: String((raw.retryContext as Record<string, unknown>).previousDsl).slice(
-            0,
-            5000,
-          ),
-          error: String((raw.retryContext as Record<string, unknown>).error).slice(0, 500),
+          previousDsl: String(rc.previousDsl).slice(0, 5000),
+          error: typeof rc.error === 'string' ? String(rc.error).slice(0, 500) : undefined,
+          userFeedback:
+            typeof rc.userFeedback === 'string'
+              ? String(rc.userFeedback).slice(0, 500)
+              : undefined,
         }
       : undefined;
 

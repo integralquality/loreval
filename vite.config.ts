@@ -131,8 +131,12 @@ export default defineConfig(({ mode }) => {
 
             const rc = body.retryContext as Record<string, unknown> | undefined;
             const retryContext: GenerateRetryContext | undefined =
-              rc && typeof rc.previousDsl === 'string' && typeof rc.error === 'string'
-                ? { previousDsl: String(rc.previousDsl).slice(0, 5000), error: String(rc.error).slice(0, 500) }
+              rc && typeof rc.previousDsl === 'string'
+                ? {
+                    previousDsl: String(rc.previousDsl).slice(0, 5000),
+                    error: typeof rc.error === 'string' ? String(rc.error).slice(0, 500) : undefined,
+                    userFeedback: typeof rc.userFeedback === 'string' ? String(rc.userFeedback).slice(0, 500) : undefined,
+                  }
                 : undefined;
 
             const result = await callAnthropic({

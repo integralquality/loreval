@@ -108,16 +108,19 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
   // Generation state
   const [showGenerate, setShowGenerate] = useState(false);
+  const [genSettingsOpen, setGenSettingsOpen] = useState(true);
   const [genPrompt, setGenPrompt] = useState('');
   const [genSize, setGenSize] = useState<{ width: number; height: number }>({ width: 8, height: 8 });
   const [genDifficulty, setGenDifficulty] = useState<Difficulty>('medium');
   const [genFeatures, setGenFeatures] = useState<LevelFeature[]>([]);
   const [genModel, setGenModel] = useState<AiModelId>('claude-sonnet-4-6');
+  const [genFeedback, setGenFeedback] = useState('');
+  const genChatScrollRef = useRef<HTMLDivElement>(null);
   const aiGeneration = useAiGeneration((generatedLevel, generatedDsl) => {
     setLevel(generatedLevel);
     setDslCode(generatedDsl);
     setDesignTab('visual');
-    setShowGenerate(false);
+    setGenSettingsOpen(false);
   });
 
   // Delay hiding finished entities so the move animation plays first
@@ -141,12 +144,19 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
     }
   }, [aiPlayback.status]);
 
-  // Auto-scroll chat to bottom on new messages
+  // Auto-scroll solver chat
   useEffect(() => {
     if (chatScrollRef.current) {
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [aiPlayback.chatHistory]);
+
+  // Auto-scroll generate chat
+  useEffect(() => {
+    if (genChatScrollRef.current) {
+      genChatScrollRef.current.scrollTop = genChatScrollRef.current.scrollHeight;
+    }
+  }, [aiGeneration.chatHistory]);
 
   // Load level from cloud if editing existing
   useEffect(() => {
@@ -1073,7 +1083,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Mode Toggle Tabs */}
         {!playOnly && (
           <div className="flex items-center justify-between px-4 py-3 bg-zinc-950 border-b border-zinc-800 shrink-0">
@@ -1124,165 +1134,6 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 <Wand2 size={14} /> Generate
               </button>
             )}
-          </div>
-        )}
-
-        {/* Generate panel — overlay on the main content area */}
-        {mode === 'design' && showGenerate && (
-          <div className="absolute inset-0 z-30 bg-zinc-950/80 backdrop-blur-sm flex items-start justify-center pt-6 px-6 overflow-auto">
-            <div className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl w-full max-w-md">
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-                <span className="font-semibold text-white flex items-center gap-2">
-                  <Wand2 size={16} className="text-purple-400" /> Generate level with AI
-                </span>
-                <button
-                  onClick={() => { setShowGenerate(false); aiGeneration.reset(); }}
-                  className="text-zinc-500 hover:text-white transition-colors"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="p-5 space-y-4">
-                {/* Prompt */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                    Describe your level
-                  </label>
-                  <textarea
-                    value={genPrompt}
-                    onChange={(e) => setGenPrompt(e.target.value)}
-                    placeholder="e.g. Two agents must help each other open doors to reach their goals…"
-                    rows={3}
-                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
-                  />
-                </div>
-
-                {/* Size */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Size</label>
-                  <div className="flex gap-2">
-                    {PRESET_SIZES.map((s) => (
-                      <button
-                        key={s.label}
-                        onClick={() => setGenSize({ width: s.width, height: s.height })}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                          genSize.width === s.width && genSize.height === s.height
-                            ? 'bg-zinc-600 text-white'
-                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
-                        }`}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Difficulty */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Difficulty</label>
-                  <div className="flex gap-2">
-                    {DIFFICULTIES.map((d) => (
-                      <button
-                        key={d}
-                        onClick={() => setGenDifficulty(d)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-medium capitalize transition-colors ${
-                          genDifficulty === d
-                            ? 'bg-zinc-600 text-white'
-                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
-                        }`}
-                      >
-                        {d}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">
-                    Features <span className="text-zinc-600">(optional)</span>
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {FEATURES.map((f) => {
-                      const active = genFeatures.includes(f.id);
-                      return (
-                        <button
-                          key={f.id}
-                          onClick={() =>
-                            setGenFeatures((prev) =>
-                              active ? prev.filter((x) => x !== f.id) : [...prev, f.id],
-                            )
-                          }
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                            active
-                              ? 'bg-purple-600/30 text-purple-300 border border-purple-600/50'
-                              : 'bg-zinc-800 text-zinc-400 hover:text-white border border-transparent'
-                          }`}
-                        >
-                          {f.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Model */}
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400 mb-1.5">Model</label>
-                  <div className="flex gap-2">
-                    {AI_MODELS.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => setGenModel(m.id)}
-                        className={`flex-1 py-1.5 rounded-lg text-xs transition-colors ${
-                          genModel === m.id
-                            ? 'bg-zinc-600 text-white'
-                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
-                        }`}
-                      >
-                        {m.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Error */}
-                {aiGeneration.status === 'error' && aiGeneration.error && (
-                  <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-                    {aiGeneration.error}
-                  </p>
-                )}
-
-                {/* Actions */}
-                <button
-                  onClick={() =>
-                    aiGeneration.generate({
-                      prompt: genPrompt,
-                      width: genSize.width,
-                      height: genSize.height,
-                      difficulty: genDifficulty,
-                      features: genFeatures,
-                      model: genModel,
-                    })
-                  }
-                  disabled={aiGeneration.status === 'generating' || !genPrompt.trim()}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  {aiGeneration.status === 'generating' ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Generating{aiGeneration.attempt > 1 ? ` (attempt ${aiGeneration.attempt})` : '…'}
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 size={14} /> Generate level
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
           </div>
         )}
 
@@ -1389,6 +1240,168 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 </div>
               </div>
             </div>
+
+            {/* Generate panel — vertical panel beside the grid */}
+            {mode === 'design' && showGenerate && (
+              <div className="w-72 self-stretch flex flex-col border-l border-zinc-800/50 bg-zinc-900/30 overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800 shrink-0">
+                  <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                    <Wand2 size={13} className="text-purple-400" /> Generate
+                  </span>
+                  <button
+                    onClick={() => { setShowGenerate(false); aiGeneration.reset(); setGenSettingsOpen(true); }}
+                    className="text-zinc-500 hover:text-white transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                {/* Settings — collapsible */}
+                <div className="shrink-0 border-b border-zinc-800/60">
+                  <button
+                    onClick={() => setGenSettingsOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs text-zinc-400 hover:text-white transition-colors"
+                  >
+                    <span className="font-medium">Settings</span>
+                    <span className="text-zinc-600">{genSettingsOpen ? '▲' : '▼'}</span>
+                  </button>
+
+                  {genSettingsOpen && (
+                    <div className="px-3 pb-3 space-y-3">
+                      {/* Prompt */}
+                      <textarea
+                        value={genPrompt}
+                        onChange={(e) => setGenPrompt(e.target.value)}
+                        placeholder="Describe your level…"
+                        rows={3}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
+                      />
+
+                      {/* Size */}
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-1.5">Size</p>
+                        <div className="grid grid-cols-4 gap-1">
+                          {PRESET_SIZES.map((s) => (
+                            <button key={s.label} onClick={() => setGenSize({ width: s.width, height: s.height })}
+                              className={`py-1 rounded text-[11px] font-medium transition-colors ${genSize.width === s.width ? 'bg-zinc-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}>
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Difficulty */}
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-1.5">Difficulty</p>
+                        <div className="grid grid-cols-3 gap-1">
+                          {DIFFICULTIES.map((d) => (
+                            <button key={d} onClick={() => setGenDifficulty(d)}
+                              className={`py-1 rounded text-[11px] capitalize transition-colors ${genDifficulty === d ? 'bg-zinc-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}>
+                              {d}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Features */}
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-1.5">Features</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {FEATURES.map((f) => {
+                            const active = genFeatures.includes(f.id);
+                            return (
+                              <button key={f.id}
+                                onClick={() => setGenFeatures((prev) => active ? prev.filter((x) => x !== f.id) : [...prev, f.id])}
+                                className={`px-2 py-0.5 rounded-full text-[11px] transition-colors border ${active ? 'bg-purple-600/30 text-purple-300 border-purple-600/50' : 'bg-zinc-800 text-zinc-400 hover:text-white border-transparent'}`}>
+                                {f.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Model */}
+                      <div>
+                        <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-1.5">Model</p>
+                        <div className="grid grid-cols-3 gap-1">
+                          {AI_MODELS.map((m) => (
+                            <button key={m.id} onClick={() => setGenModel(m.id)}
+                              className={`py-1 rounded text-[11px] transition-colors ${genModel === m.id ? 'bg-zinc-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}>
+                              {m.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => aiGeneration.generate({ prompt: genPrompt, width: genSize.width, height: genSize.height, difficulty: genDifficulty, features: genFeatures, model: genModel })}
+                        disabled={aiGeneration.status === 'generating' || !genPrompt.trim()}
+                        className="w-full flex items-center justify-center gap-1.5 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors"
+                      >
+                        {aiGeneration.status === 'generating' && !aiGeneration.chatHistory.some(m => m.role === 'assistant') ? (
+                          <><Loader2 size={12} className="animate-spin" /> Generating{aiGeneration.attempt > 1 ? ` (${aiGeneration.attempt})` : '…'}</>
+                        ) : (
+                          <><Wand2 size={12} /> Generate</>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Chat history */}
+                {aiGeneration.chatHistory.length > 0 && (
+                  <>
+                    <div
+                      ref={genChatScrollRef}
+                      className="flex-1 overflow-y-scroll px-3 py-2 flex flex-col gap-2 min-h-0"
+                      style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 transparent' }}
+                    >
+                      {aiGeneration.chatHistory.map((msg, i) => (
+                        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[92%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
+                            msg.role === 'user' ? 'bg-purple-700/60 text-purple-100' : 'bg-zinc-800 text-zinc-300'
+                          }`}>
+                            {aiGeneration.status === 'generating' && i === aiGeneration.chatHistory.length - 1 && msg.role === 'user'
+                              ? <span className="flex items-center gap-1.5"><Loader2 size={10} className="animate-spin shrink-0" />{msg.content}</span>
+                              : msg.content
+                            }
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Feedback input */}
+                    {(aiGeneration.status === 'ready' || aiGeneration.status === 'error') && (
+                      <div className="shrink-0 p-3 border-t border-zinc-800/50 space-y-2">
+                        <textarea
+                          value={genFeedback}
+                          onChange={(e) => setGenFeedback(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey && genFeedback.trim()) {
+                              e.preventDefault();
+                              aiGeneration.refine(genFeedback);
+                              setGenFeedback('');
+                            }
+                          }}
+                          placeholder="Make it harder, add switches… (Enter to send)"
+                          rows={3}
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-purple-500"
+                        />
+                        {genFeedback.trim() && (
+                          <button
+                            onClick={() => { aiGeneration.refine(genFeedback); setGenFeedback(''); }}
+                            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs transition-colors"
+                          >
+                            <Sparkles size={11} /> Refine level
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             {/* AI Chat — vertical panel beside the grid */}
             {mode === 'play' && playMode === 'ai' && aiPlayback.status !== 'idle' && (

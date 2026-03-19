@@ -239,7 +239,10 @@ export interface GenerateRequest {
 
 export interface GenerateRetryContext {
   previousDsl: string;
-  error: string;
+  /** Validation/parse errors — used for automatic silent retry. */
+  error?: string;
+  /** User-written feedback — used for intentional refinement. */
+  userFeedback?: string;
 }
 
 export const GENERATE_SYSTEM_PROMPT = `You are a puzzle designer creating grid-based logic puzzles in a specific DSL. Your goal is to produce an interesting, solvable puzzle that matches the given specifications.
@@ -320,13 +323,14 @@ export function buildGenerateMessages(
     return [{ role: 'user', content: userMsg }];
   }
 
+  const followUp = retryContext.userFeedback
+    ? `${retryContext.userFeedback}\n\nPlease update the level accordingly and output the revised DSL.`
+    : `That level has errors: ${retryContext.error ?? 'unknown'}\n\nPlease fix it and output the corrected DSL.`;
+
   return [
     { role: 'user', content: userMsg },
     { role: 'assistant', content: `\`\`\`\n${retryContext.previousDsl}\n\`\`\`` },
-    {
-      role: 'user',
-      content: `That level has errors: ${retryContext.error}\n\nPlease fix it and output the corrected DSL.`,
-    },
+    { role: 'user', content: followUp },
   ];
 }
 
