@@ -43,7 +43,7 @@ export function LevelPreview({ level, maxWidth = 400 }: { level: Level; maxWidth
         >
           {level.tiles.flat().map((tile) => (
             <div key={`${tile.x}-${tile.y}`} style={{ width: TILE_SIZE, height: TILE_SIZE }}>
-              <TileIcon type={tile.type} color={tile.color} meta={tile.meta} />
+              <TileIcon type={tile.type} color={tile.color} meta={tile.meta} theme={level.theme} />
             </div>
           ))}
         </div>

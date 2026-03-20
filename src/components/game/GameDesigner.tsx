@@ -39,6 +39,7 @@ import {
   FEATURES,
   PRESET_SIZES,
 } from '../../lib/ai-generator';
+import { THEMES } from '../../lib/themes';
 import type { Difficulty, LevelFeature } from '../../lib/ai-generator';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
@@ -602,6 +603,30 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
               <ToolButton active={selectedTool === 'erase'} onClick={() => setSelectedTool('erase')} icon={<Trash2 className="text-red-400" />} label="Erase" tooltip="Remove a tile or character from the grid" />
             </div>
 
+            {/* Theme Picker */}
+            <div>
+              <p className="text-xs text-zinc-500 uppercase font-bold mb-2">Theme</p>
+              <div className="flex gap-2 flex-wrap">
+                {THEMES.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setLevel(prev => ({ ...prev, theme: t.id }))}
+                    title={t.label}
+                    className={`group relative flex flex-col items-center gap-1.5 transition-all`}
+                  >
+                    <div
+                      className={`w-9 h-9 rounded-lg border-2 transition-all ${
+                        (level.theme ?? 'dungeon') === t.id
+                          ? 'border-purple-400 scale-110 shadow-lg shadow-purple-500/30'
+                          : 'border-zinc-700 hover:border-zinc-500'
+                      }`}
+                      style={{ backgroundColor: t.wallPreview }}
+                    />
+                    <span className="text-[9px] text-zinc-500 group-hover:text-zinc-300 transition-colors">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Entity Properties Panel */}
             {selectedEntityId && (
@@ -1182,6 +1207,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                           type={tile.type}
                           color={tile.color}
                           meta={tile.meta}
+                          theme={level.theme}
                           isOpen={
                             mode === 'play' && (
                               (tile.type === 'door' && tile.color != null && gameState.toggledColors.includes(tile.color)) ||

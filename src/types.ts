@@ -59,6 +59,7 @@ export interface Level {
   height: number;
   tiles: Tile[][];
   entities: Entity[];
+  theme?: string;
 }
 
 export interface GameState {

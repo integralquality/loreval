@@ -19,7 +19,8 @@
       "WebSearch",
       "WebFetch(domain:www.creem.io)",
       "Bash(npm install:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

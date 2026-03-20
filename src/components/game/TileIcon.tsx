@@ -1,5 +1,6 @@
 import { LogOut, DoorOpen, PaintBucket, ToggleLeft, ArrowUp, Lock, LockOpen } from 'lucide-react';
 import type { TileType, TileMeta } from '../../types';
+import { getTheme } from '../../lib/themes';
 
 const COLOR_MAP: Record<string, string> = {
   orange: '#fb923c',
@@ -14,37 +15,35 @@ function colorVal(name?: string) {
   return name ? COLOR_MAP[name] || name : undefined;
 }
 
-export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
+export const TileIcon = ({ type, color, meta, isOpen, theme: themeId, className = '' }: {
   type: TileType;
   color?: string;
   meta?: TileMeta;
   isOpen?: boolean;
+  theme?: string;
   className?: string;
 }) => {
   const c = colorVal(color);
+  const theme = getTheme(themeId);
 
   switch (type) {
-    case 'wall': {
-      const brickSvg = `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23351008'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='0' width='26' height='2' fill='%23c45a30' rx='1' opacity='0.4'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='14' width='12' height='2' fill='%23c45a30' rx='1' opacity='0.4'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='14' y='14' width='14' height='2' fill='%23c45a30' rx='1' opacity='0.4'/%3E%3C/svg%3E")`;
+    case 'wall':
       return (
         <div
           className={`w-full h-full rounded-sm ${className}`}
-          style={{ backgroundImage: brickSvg, backgroundSize: '28px 28px' }}
+          style={theme.wall}
         />
       );
-    }
+
     case 'floor':
     case 'floor-white':
       return (
         <div
           className={`w-full h-full rounded-sm ${className}`}
-          style={{
-            backgroundColor: 'rgba(220,200,130,0.25)',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='24' height='24' fill='%23d0c080' fill-opacity='0.1'/%3E%3Ccircle cx='3' cy='7' r='0.7' fill='%23c0b070' fill-opacity='0.2'/%3E%3Ccircle cx='14' cy='3' r='0.5' fill='%23b8a868' fill-opacity='0.18'/%3E%3Ccircle cx='8' cy='18' r='0.6' fill='%23c8b878' fill-opacity='0.2'/%3E%3Ccircle cx='20' cy='11' r='0.8' fill='%23b8a868' fill-opacity='0.15'/%3E%3Ccircle cx='11' cy='10' r='0.4' fill='%23c0b070' fill-opacity='0.18'/%3E%3Ccircle cx='18' cy='21' r='0.6' fill='%23c8b878' fill-opacity='0.15'/%3E%3Ccircle cx='5' cy='14' r='0.5' fill='%23b8a868' fill-opacity='0.2'/%3E%3Ccircle cx='22' cy='5' r='0.4' fill='%23c0b070' fill-opacity='0.18'/%3E%3C/svg%3E")`,
-            backgroundSize: '24px 24px',
-          }}
+          style={theme.floor}
         />
       );
+
     case 'goal':
       return (
         <div className={`w-full h-full bg-zinc-800/20 rounded-sm flex items-center justify-center ${className}`}>
@@ -63,10 +62,7 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
       if (isOpen) {
         return (
           <div className={`w-full h-full bg-zinc-800/20 rounded-sm flex items-center justify-center ${className}`}>
-            <DoorOpen
-              size={18}
-              style={{ color: c || '#a1a1aa', opacity: 0.3 }}
-            />
+            <DoorOpen size={18} style={{ color: c || '#a1a1aa', opacity: 0.3 }} />
           </div>
         );
       }
@@ -115,9 +111,7 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
       );
 
     case 'one-way': {
-      const rotation = {
-        up: 0, right: 90, down: 180, left: 270,
-      }[meta?.direction || 'up'];
+      const rotation = { up: 0, right: 90, down: 180, left: 270 }[meta?.direction || 'up'];
       return (
         <div className={`w-full h-full bg-zinc-800/20 rounded-sm flex items-center justify-center ${className}`}>
           <ArrowUp
@@ -137,10 +131,7 @@ export const TileIcon = ({ type, color, meta, isOpen, className = "" }: {
       if (isOpen) {
         return (
           <div className={`w-full h-full bg-zinc-800/20 rounded-sm flex items-center justify-center ${className}`}>
-            <LockOpen
-              size={18}
-              style={{ color: c || '#a1a1aa', opacity: 0.25 }}
-            />
+            <LockOpen size={18} style={{ color: c || '#a1a1aa', opacity: 0.25 }} />
           </div>
         );
       }
