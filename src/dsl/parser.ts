@@ -63,6 +63,8 @@ function parseFuncSpec(
   argsStr: string,
   lineNum: number
 ): { tileType: string; color?: string; meta?: Record<string, string> } | ParseError {
+  // commonGoal() is an alias for goal() with no color
+  if (tileType === 'commonGoal') return { tileType: 'goal' };
   if (!TILE_TYPE_SET.has(tileType as TileType)) {
     return { line: lineNum, message: `Unknown tile type "${tileType}"` };
   }

@@ -7,7 +7,8 @@ import type { AiMove, RetryContext, AiModelId } from '../lib/ai-solver';
 
 export type AiStatus = 'idle' | 'solving' | 'playing' | 'paused' | 'done' | 'error';
 
-/** Build a readable move log by tracking which agent is at each position. */
+/** Build a readable move log by tracking which agent is at each position.
+ *  Simulates agent-blocking so the log stays in sync with what tick actually executes. */
 function annotateMoves(moves: AiMove[], initialState: GameState): string {
   const pos: Record<string, { x: number; y: number }> = {};
   const color: Record<string, string> = {};
@@ -24,6 +25,7 @@ function annotateMoves(moves: AiMove[], initialState: GameState): string {
   };
 
   return moves.map(move => {
+    // Find which active entity is actually at this position
     const entityId = Object.keys(pos).find(
       id => !finished.has(id) && pos[id].x === move.x && pos[id].y === move.y
     );
@@ -33,6 +35,16 @@ function annotateMoves(moves: AiMove[], initialState: GameState): string {
     const tx = move.x + (d?.dx ?? 0);
     const ty = move.y + (d?.dy ?? 0);
     const label = color[entityId];
+
+    // Check if another active agent is blocking the target cell
+    const blockerId = Object.keys(pos).find(
+      id => id !== entityId && !finished.has(id) && pos[id].x === tx && pos[id].y === ty
+    );
+    if (blockerId) {
+      // Don't update position — agent stays put, same as tick behaviour
+      return `⚠ ${label} blocked by ${color[blockerId]} at (${tx},${ty})`;
+    }
+
     pos[entityId] = { x: tx, y: ty };
     return `${label}  (${move.x},${move.y}) → (${tx},${ty})  ${move.direction}`;
   }).join('\n');

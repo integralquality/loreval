@@ -123,7 +123,7 @@ x = column (0 = left), y = row (0 = top). Agents move one cell per step.
 
 **Always passable (agents may freely enter):**
 - \`R\` — floor, walkable
-- goal — walkable; stepping on a matching-color goal removes that agent from the board
+- goal — walkable; an agent that has a matching designation (\`and reach()\` in its declaration) is removed from the board when it steps on its goal. Color matching: if the goal has a color (e.g. \`tiles.goal(orange)\`), only the matching-color agent may claim it; \`tiles.commonGoal()\` is a **universal exit** — any designated agent may claim it.
 - switch — walkable; stepping on it toggles all doors of matching color
 - paint — walkable; stepping on it changes the agent's color to the paint's color
 
@@ -133,8 +133,10 @@ x = column (0 = left), y = row (0 = top). Agents move one cell per step.
 ## Agent rules
 - Agents move one cell per step: up, down, left, right
 - A cell occupied by another active agent is **impassable** — treat it exactly like a wall. You cannot move into it.
-- An agent disappears when it reaches its matching-color goal (it no longer blocks)
-- Win when all agents have reached their goals
+- An agent has a goal only if its declaration includes \`and reach(gx,gy)\`. An agent **without** \`and reach()\` has no designated goal and does not count toward the win condition.
+- An agent disappears when it steps on its designated goal tile (it no longer blocks)
+- Win when **all agents that have \`and reach()\` designations** have reached their respective goals
+- ⚠ If no agents have \`and reach()\`, the level has no win condition and cannot be solved — state this clearly instead of outputting moves.
 
 ## Output format
 
@@ -274,6 +276,7 @@ agent(COLOR) start(x,y) and reach(gx,gy)
 - \`W\` wall — solid barrier
 - \`R\` floor — walkable (no tile declaration needed for W, R, .)
 - \`tiles.goal(COLOR)\` — agent wins by stepping on matching-color goal
+- \`tiles.commonGoal()\` — universal exit; any designated agent may step on it to win
 - \`tiles.door(COLOR)\` — blocked unless agent's current color matches
 - \`tiles.switch(COLOR)\` — toggles all doors of that color when stepped on
 - \`tiles.paint(COLOR)\` — changes the stepping agent's color

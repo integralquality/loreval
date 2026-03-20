@@ -162,6 +162,8 @@ export function serializeDSL(level: Level): string {
         spec = `one-way(${info.direction})`;
       } else if (info.color) {
         spec = `${info.type}(${info.color})`;
+      } else if (info.type === 'goal') {
+        spec = `commonGoal()`;
       } else if (FUNC_TILES.has(info.type)) {
         spec = `${info.type}()`;
       } else {

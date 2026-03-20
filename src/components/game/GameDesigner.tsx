@@ -997,6 +997,41 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
               </div>
             )}
 
+            {/* AI Step List */}
+            {playMode === 'ai' && aiPlayback.moveLog.length > 0 && (
+              <div className="bg-zinc-800/50 rounded-xl border border-zinc-700 overflow-hidden">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-2.5 pb-1.5 border-b border-zinc-700/60">
+                  Steps
+                </p>
+                <div
+                  ref={moveLogRef}
+                  className="overflow-y-scroll max-h-48"
+                  style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 transparent' }}
+                >
+                  {aiPlayback.moveLog.map((line, i) => {
+                    const isActive = i === aiPlayback.currentMoveIndex;
+                    const isDone = i < aiPlayback.currentMoveIndex;
+                    return (
+                      <div
+                        key={i}
+                        data-active={isActive ? 'true' : undefined}
+                        className={`px-3 py-0.5 font-mono text-[11px] leading-5 ${
+                          isActive
+                            ? 'bg-purple-600/30 text-white'
+                            : isDone
+                            ? 'text-zinc-600'
+                            : 'text-zinc-400'
+                        }`}
+                      >
+                        {isActive && <span className="text-purple-400 mr-1">▶</span>}
+                        {line}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700">
               <h3 className="text-sm font-medium text-zinc-300 mb-3">Agents</h3>
               <div className="space-y-2">
@@ -1500,41 +1535,6 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     )}
                   </>
                 )}
-              </div>
-            )}
-
-            {/* AI Move Log — step-by-step panel beside the grid */}
-            {mode === 'play' && playMode === 'ai' && aiPlayback.moveLog.length > 0 && (
-              <div className="w-52 self-stretch flex flex-col border-l border-zinc-800/50 bg-zinc-900/20">
-                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-3 pb-1 shrink-0">
-                  Steps
-                </p>
-                <div
-                  ref={moveLogRef}
-                  className="flex-1 overflow-y-scroll"
-                  style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 transparent' }}
-                >
-                  {aiPlayback.moveLog.map((line, i) => {
-                    const isActive = i === aiPlayback.currentMoveIndex;
-                    const isDone = i < aiPlayback.currentMoveIndex;
-                    return (
-                      <div
-                        key={i}
-                        data-active={isActive ? 'true' : undefined}
-                        className={`px-3 py-0.5 font-mono text-[11px] leading-5 transition-colors ${
-                          isActive
-                            ? 'bg-purple-600/30 text-white'
-                            : isDone
-                            ? 'text-zinc-600'
-                            : 'text-zinc-400'
-                        }`}
-                      >
-                        {isActive && <span className="text-purple-400 mr-1">▶</span>}
-                        {line}
-                      </div>
-                    );
-                  })}
-                </div>
               </div>
             )}
 
