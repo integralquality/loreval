@@ -1257,13 +1257,23 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             {/* Grid Container */}
             <div className="relative">
               <div className="absolute inset-0 blur-3xl opacity-20 bg-purple-500/50 rounded-full scale-90 -z-10" />
-              <div
-                className="relative bg-zinc-800/20 rounded-lg border border-zinc-700/50 p-px"
-                style={{
-                  width: level.width * TILE_SIZE + level.width + 1,
-                  height: level.height * TILE_SIZE + level.height + 1
-                }}
-              >
+
+              <div className="flex items-start" style={{ gap: 4 }}>
+                {/* Row axis labels (left) */}
+                <div className="flex flex-col gap-px shrink-0" style={{ paddingTop: 1, width: 16 }}>
+                  {Array.from({ length: level.height }, (_, y) => (
+                    <div key={y} className="flex items-center justify-end text-[7px] text-zinc-500 select-none" style={{ height: TILE_SIZE }}>{y}</div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col" style={{ gap: 4 }}>
+                  <div
+                    className="relative bg-zinc-800/20 rounded-lg border border-zinc-700/50 p-px"
+                    style={{
+                      width: level.width * TILE_SIZE + level.width + 1,
+                      height: level.height * TILE_SIZE + level.height + 1
+                    }}
+                  >
                 <div
                   className="grid gap-px relative"
                   style={{
@@ -1295,15 +1305,19 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         {/* AI move highlight overlays */}
                         {aiHighlight && aiHighlight.src.x === x && aiHighlight.src.y === y && (
                           <div
-                            className="absolute inset-0 rounded-sm pointer-events-none animate-pulse"
+                            className="absolute inset-0 rounded-sm pointer-events-none animate-pulse flex items-end justify-end"
                             style={{ boxShadow: `inset 0 0 0 2px rgba(${aiHighlight.rgb},0.9)`, background: `rgba(${aiHighlight.rgb},0.15)` }}
-                          />
+                          >
+                            <span className="text-[7px] leading-none px-0.5 pb-0.5 font-mono" style={{ color: `rgba(${aiHighlight.rgb},1)` }}>{x},{y}</span>
+                          </div>
                         )}
                         {aiHighlight && aiHighlight.tgt.x === x && aiHighlight.tgt.y === y && (
                           <div
-                            className="absolute inset-0 rounded-sm pointer-events-none"
+                            className="absolute inset-0 rounded-sm pointer-events-none flex items-end justify-end"
                             style={{ boxShadow: `inset 0 0 0 2px rgba(${aiHighlight.rgb},0.5)`, background: `rgba(${aiHighlight.rgb},0.08)` }}
-                          />
+                          >
+                            <span className="text-[7px] leading-none px-0.5 pb-0.5 font-mono" style={{ color: `rgba(${aiHighlight.rgb},0.7)` }}>{x},{y}</span>
+                          </div>
                         )}
 
                         <span className="absolute top-0.5 left-0.5 text-[8px] text-zinc-700 select-none pointer-events-none opacity-0 hover:opacity-100">
@@ -1354,8 +1368,17 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       })}
                   </AnimatePresence>
                 </div>
-              </div>
-            </div>
+                  </div>{/* close bordered grid */}
+
+                  {/* Column axis labels (bottom) */}
+                  <div className="grid gap-px" style={{ gridTemplateColumns: `repeat(${level.width}, ${TILE_SIZE}px)` }}>
+                    {Array.from({ length: level.width }, (_, x) => (
+                      <div key={x} className="text-center text-[7px] text-zinc-500 leading-none select-none">{x}</div>
+                    ))}
+                  </div>
+                </div>{/* close flex-col (grid + col labels) */}
+              </div>{/* close flex row (row labels + grid col) */}
+            </div>{/* close Grid Container */}
 
             {/* Generate panel — vertical panel beside the grid */}
             {mode === 'design' && showGenerate && (
