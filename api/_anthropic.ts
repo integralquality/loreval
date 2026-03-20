@@ -278,6 +278,7 @@ orange, blue, green, red, purple, yellow
 
 ## Agent rules
 - \`agent(COLOR) start(x,y) and reach(gx,gy)\`
+- **\`and reach(gx,gy)\` is mandatory** — omitting it makes the level invalid and unsolvable
 - x = column (0 = left), y = row (0 = top)
 - Agents move one step at a time: up, down, left, right
 - Two agents cannot occupy the same cell
