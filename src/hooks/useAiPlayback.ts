@@ -54,6 +54,8 @@ export function useAiPlayback(
   const [error, setError] = useState<string | null>(null);
   const [solved, setSolved] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [pendingMove, setPendingMove] = useState<AiMove | null>(null);
+  const [moveLog, setMoveLog] = useState<string[]>([]);
 
   // Mutable playback state accessible from interval without stale closures
   const movesRef = useRef<AiMove[]>([]);
@@ -89,6 +91,8 @@ export function useAiPlayback(
     moveIndexRef.current = 0;
     liveStateRef.current = null;
     setChatHistory([]);
+    setPendingMove(null);
+    setMoveLog([]);
   }, [clearTimer]);
 
   const pause = useCallback(() => {
@@ -106,6 +110,7 @@ export function useAiPlayback(
       clearTimer();
       setSolved(currentState?.status === 'won');
       setStatus('done');
+      setPendingMove(null);
       return;
     }
 
@@ -159,11 +164,13 @@ export function useAiPlayback(
     onStateChangeRef.current(newState);
     moveIndexRef.current = index + 1;
     setCurrentMoveIndex(index + 1);
+    setPendingMove(moves[index + 1] ?? null);
 
     if (newState.status === 'won') {
       clearTimer();
       setSolved(true);
       setStatus('done');
+      setPendingMove(null);
     }
   }, [clearTimer]);
 
@@ -220,6 +227,7 @@ export function useAiPlayback(
     onStateChangeRef.current(state);
     moveIndexRef.current = targetIndex;
     setCurrentMoveIndex(targetIndex);
+    setPendingMove(movesRef.current[targetIndex] ?? null);
     setStatus('paused');
   }, []);
 
@@ -232,6 +240,7 @@ export function useAiPlayback(
     onStateChangeRef.current(initialState);
     moveIndexRef.current = 0;
     setCurrentMoveIndex(0);
+    setPendingMove(movesRef.current[0] ?? null);
     setStatus('paused');
   }, [clearTimer]);
 
@@ -276,9 +285,11 @@ export function useAiPlayback(
 
     const moveSummary = annotateMoves(result.moves, gameState);
     setChatHistory(h => [...h, { role: 'assistant', content: moveSummary }]);
+    setMoveLog(moveSummary.split('\n'));
 
     movesRef.current = result.moves;
     setTotalMoves(result.moves.length);
+    setPendingMove(result.moves[0] ?? null);
     setStatus('playing');
     startInterval();
   }, [clearTimer, startInterval]);
@@ -305,7 +316,7 @@ export function useAiPlayback(
   }, [startSolving]);
 
   return {
-    status, currentMoveIndex, totalMoves, error, solved, chatHistory,
+    status, currentMoveIndex, totalMoves, error, solved, chatHistory, pendingMove, moveLog,
     startSolving, retry, pause, resume, step, stepBack, rewind, stop, changeSpeed, retryWithFeedback,
   };
 }

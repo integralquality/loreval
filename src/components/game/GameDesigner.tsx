@@ -106,6 +106,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   const [aiFeedback, setAiFeedback] = useState('');
   const aiPlayback = useAiPlayback(level, setGameState);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const moveLogRef = useRef<HTMLDivElement>(null);
 
   // Generation state
   const [showGenerate, setShowGenerate] = useState(false);
@@ -152,6 +153,14 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
     }
   }, [aiPlayback.chatHistory]);
+
+  // Auto-scroll move log to keep active step visible
+  useEffect(() => {
+    if (moveLogRef.current) {
+      const active = moveLogRef.current.querySelector('[data-active="true"]');
+      active?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [aiPlayback.currentMoveIndex]);
 
   // Auto-scroll generate chat
   useEffect(() => {
@@ -530,6 +539,25 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       </div>
     );
   }
+
+  // AI move highlight: source cell (agent about to move) and target cell (where it's going)
+  const aiHighlight = (() => {
+    const pm = playMode === 'ai' ? aiPlayback.pendingMove : null;
+    if (!pm || (aiPlayback.status !== 'playing' && aiPlayback.status !== 'paused')) return null;
+    const agent = gameState.entities.find(
+      e => e.position.x === pm.x && e.position.y === pm.y && !gameState.finishedEntityIds.includes(e.id)
+    );
+    const COLOR_RGB: Record<string, string> = {
+      orange: '251,146,60', blue: '96,165,250', green: '110,231,183',
+      red: '248,113,113', purple: '192,132,252', pink: '244,114,182',
+    };
+    const rgb = agent?.color ? (COLOR_RGB[agent.color] ?? '255,255,255') : '255,255,255';
+    const DIR_DELTA: Record<string, [number, number]> = {
+      up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0],
+    };
+    const [dx, dy] = DIR_DELTA[pm.direction] ?? [0, 0];
+    return { src: { x: pm.x, y: pm.y }, tgt: { x: pm.x + dx, y: pm.y + dy }, rgb };
+  })();
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
@@ -1229,6 +1257,20 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                           }
                         />
 
+                        {/* AI move highlight overlays */}
+                        {aiHighlight && aiHighlight.src.x === x && aiHighlight.src.y === y && (
+                          <div
+                            className="absolute inset-0 rounded-sm pointer-events-none animate-pulse"
+                            style={{ boxShadow: `inset 0 0 0 2px rgba(${aiHighlight.rgb},0.9)`, background: `rgba(${aiHighlight.rgb},0.15)` }}
+                          />
+                        )}
+                        {aiHighlight && aiHighlight.tgt.x === x && aiHighlight.tgt.y === y && (
+                          <div
+                            className="absolute inset-0 rounded-sm pointer-events-none"
+                            style={{ boxShadow: `inset 0 0 0 2px rgba(${aiHighlight.rgb},0.5)`, background: `rgba(${aiHighlight.rgb},0.08)` }}
+                          />
+                        )}
+
                         <span className="absolute top-0.5 left-0.5 text-[8px] text-zinc-700 select-none pointer-events-none opacity-0 hover:opacity-100">
                           {x},{y}
                         </span>
@@ -1458,6 +1500,41 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     )}
                   </>
                 )}
+              </div>
+            )}
+
+            {/* AI Move Log — step-by-step panel beside the grid */}
+            {mode === 'play' && playMode === 'ai' && aiPlayback.moveLog.length > 0 && (
+              <div className="w-52 self-stretch flex flex-col border-l border-zinc-800/50 bg-zinc-900/20">
+                <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-3 pb-1 shrink-0">
+                  Steps
+                </p>
+                <div
+                  ref={moveLogRef}
+                  className="flex-1 overflow-y-scroll"
+                  style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 transparent' }}
+                >
+                  {aiPlayback.moveLog.map((line, i) => {
+                    const isActive = i === aiPlayback.currentMoveIndex;
+                    const isDone = i < aiPlayback.currentMoveIndex;
+                    return (
+                      <div
+                        key={i}
+                        data-active={isActive ? 'true' : undefined}
+                        className={`px-3 py-0.5 font-mono text-[11px] leading-5 transition-colors ${
+                          isActive
+                            ? 'bg-purple-600/30 text-white'
+                            : isDone
+                            ? 'text-zinc-600'
+                            : 'text-zinc-400'
+                        }`}
+                      >
+                        {isActive && <span className="text-purple-400 mr-1">▶</span>}
+                        {line}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
