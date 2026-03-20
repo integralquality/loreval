@@ -243,7 +243,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       moves: level.entities.reduce((acc, e) => ({ ...acc, [e.id]: 0 }), {}),
       history: level.entities.reduce((acc, e) => ({ ...acc, [e.id]: [e.position] }), {}),
       status: 'playing',
-      message: 'Select a character to move!',
+      message: 'Select a character to move',
       selectedEntityId: level.entities[0]?.id || null,
       toggledColors: [],
       finishedEntityIds: [],
@@ -1115,7 +1115,6 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
           <div className="flex items-center justify-between px-4 py-3 bg-zinc-950 border-b border-zinc-800 shrink-0">
             {(() => {
               const agentsWithoutGoal = level.entities.filter(e => !e.rules.some(r => r.type === 'reach-goal'));
-              const playBlocked = agentsWithoutGoal.length > 0;
               return (
                 <div className="flex items-center gap-2">
                   <div className="flex bg-zinc-800 p-1 rounded-lg">
@@ -1126,15 +1125,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       <Grid3X3 size={15} /> Design
                     </button>
                     <button
-                      onClick={() => !playBlocked && setMode('play')}
-                      disabled={playBlocked}
-                      title={playBlocked ? `${agentsWithoutGoal.map(e => `${e.color} agent has no goal`).join(', ')}` : undefined}
-                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : playBlocked ? 'text-zinc-600 cursor-not-allowed' : 'text-zinc-400 hover:text-zinc-200'}`}
+                      onClick={() => setMode('play')}
+                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'}`}
                     >
                       <Play size={15} /> Play
                     </button>
                   </div>
-                  {playBlocked && mode === 'design' && (
+                  {agentsWithoutGoal.length > 0 && mode === 'design' && (
                     <span className="text-xs text-amber-400/80">
                       {agentsWithoutGoal.map(e => e.color).join(', ')} agent{agentsWithoutGoal.length > 1 ? 's have' : ' has'} no goal
                     </span>

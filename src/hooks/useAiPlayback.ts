@@ -7,6 +7,37 @@ import type { AiMove, RetryContext, AiModelId } from '../lib/ai-solver';
 
 export type AiStatus = 'idle' | 'solving' | 'playing' | 'paused' | 'done' | 'error';
 
+/** Build a readable move log by tracking which agent is at each position. */
+function annotateMoves(moves: AiMove[], initialState: GameState): string {
+  const pos: Record<string, { x: number; y: number }> = {};
+  const color: Record<string, string> = {};
+  const finished = new Set<string>();
+
+  for (const e of initialState.entities) {
+    pos[e.id] = { ...e.position };
+    color[e.id] = e.color ?? 'agent';
+  }
+
+  const deltas: Record<string, { dx: number; dy: number }> = {
+    up: { dx: 0, dy: -1 }, down: { dx: 0, dy: 1 },
+    left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 },
+  };
+
+  return moves.map(move => {
+    const entityId = Object.keys(pos).find(
+      id => !finished.has(id) && pos[id].x === move.x && pos[id].y === move.y
+    );
+    if (!entityId) return `⚠ no agent at (${move.x},${move.y}) — ${move.direction}`;
+
+    const d = deltas[move.direction];
+    const tx = move.x + (d?.dx ?? 0);
+    const ty = move.y + (d?.dy ?? 0);
+    const label = color[entityId];
+    pos[entityId] = { x: tx, y: ty };
+    return `${label}  (${move.x},${move.y}) → (${tx},${ty})  ${move.direction}`;
+  }).join('\n');
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -243,7 +274,7 @@ export function useAiPlayback(
       return;
     }
 
-    const moveSummary = result.moves.map(m => `(${m.x},${m.y}) ${m.direction}`).join('\n');
+    const moveSummary = annotateMoves(result.moves, gameState);
     setChatHistory(h => [...h, { role: 'assistant', content: moveSummary }]);
 
     movesRef.current = result.moves;

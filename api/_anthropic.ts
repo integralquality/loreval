@@ -113,21 +113,27 @@ agent(COLOR) start(x,y) and reach(gx,gy)  ← an agent starting at (x,y) that mu
 ## Coordinate system
 x = column (0 = left), y = row (0 = top). Agents move one cell per step.
 
-## Tile types
-- \`W\` wall — solid, impassable
-- \`R\` floor — walkable
-- \`.\` void — impassable
-- goal — agent wins by stepping on its matching-color goal
-- door — blocked unless agent color matches, or toggled open by a switch
-- switch — toggles all doors of matching color when stepped on
-- paint — changes the agent's color to the paint tile's color
-- one-way (\`^\`=up \`v\`=down \`<\`=left \`>\`=right) — passable only from that direction
-- lock — blocked until a matching-color agent steps on it (stays open)
+## Tile types — passability is critical
+
+**Always impassable (treat as walls):**
+- \`W\` — wall, solid barrier
+- \`.\` — void, out-of-bounds
+- door — impassable UNLESS the agent's current color matches the door's color, OR a switch of matching color has been stepped on. Never try to walk through a closed door.
+- lock — impassable UNTIL a matching-color agent steps on it (it then stays open permanently). Never try to walk through a locked tile.
+
+**Always passable (agents may freely enter):**
+- \`R\` — floor, walkable
+- goal — walkable; stepping on a matching-color goal removes that agent from the board
+- switch — walkable; stepping on it toggles all doors of matching color
+- paint — walkable; stepping on it changes the agent's color to the paint's color
+
+**Conditionally passable:**
+- one-way (\`^\`=up \`v\`=down \`<\`=left \`>\`=right) — passable ONLY when entering from the indicated direction; impassable from all other directions
 
 ## Agent rules
 - Agents move one cell per step: up, down, left, right
-- Two agents cannot occupy the same cell
-- An agent disappears when it reaches its matching-color goal
+- A cell occupied by another active agent is **impassable** — treat it exactly like a wall. You cannot move into it.
+- An agent disappears when it reaches its matching-color goal (it no longer blocks)
 - Win when all agents have reached their goals
 
 ## Output format
@@ -140,9 +146,10 @@ Put the complete move sequence inside a fenced code block.
 
 ## How to solve
 
-1. **Plan first.** Before writing any moves, describe in plain text the intended path for each agent: which corridors, which switches to hit, which order.
-2. **Track state.** As you plan, note each agent's position after every key step. If multiple agents, note whose turn each move is.
-3. **Output the full sequence.** Write every move until ALL agents have reached their goals. Do not stop early — an incomplete sequence loses the level.
+1. **Plan first.** Describe the intended path for each agent: which corridors, which switches to hit, in what order.
+2. **Track positions explicitly.** After each move in your plan, write the updated position of the agent that just moved. For example: "orange moves right → now at (3,1)". Never assume a position — always derive it from the previous step.
+3. **One move = one line.** Each `(x,y) direction` line must use the agent's position BEFORE that move. If you have 2 agents, alternate lines must reference whichever agent's current tracked position matches.
+4. **Output the full sequence.** Write every move until ALL agents have reached their goals. Do not stop early — an incomplete sequence loses the level.
 
 ## Example
 
