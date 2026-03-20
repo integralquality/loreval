@@ -36,7 +36,7 @@ export interface GenerateOptions {
   retryContext?: { previousDsl: string; error?: string; userFeedback?: string };
 }
 
-export type GenerateSuccess = { ok: true; level: Level; dsl: string };
+export type GenerateSuccess = { ok: true; level: Level; dsl: string; summary?: string };
 export type GenerateFailure = { ok: false; error: string; rawDsl?: string };
 export type GenerateResult = GenerateSuccess | GenerateFailure;
 
@@ -54,7 +54,7 @@ export async function generateLevel(opts: GenerateOptions): Promise<GenerateResu
     return { ok: false, error: err instanceof Error ? err.message : 'Network error' };
   }
 
-  const data = (await res.json()) as { dsl?: string; error?: string };
+  const data = (await res.json()) as { dsl?: string; summary?: string; error?: string };
 
   if (!res.ok || !data.dsl) {
     return { ok: false, error: data.error ?? `Request failed (${res.status})` };
@@ -66,7 +66,7 @@ export async function generateLevel(opts: GenerateOptions): Promise<GenerateResu
     return { ok: false, error: errorMsg, rawDsl: data.dsl };
   }
 
-  return { ok: true, level: parsed.level, dsl: data.dsl };
+  return { ok: true, level: parsed.level, dsl: data.dsl, summary: data.summary };
 }
 
 // Re-export for convenience in the UI layer

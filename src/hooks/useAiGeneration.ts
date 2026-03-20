@@ -49,7 +49,8 @@ export function useAiGeneration(onLevel: (level: Level, dsl: string) => void) {
 
         if (result.ok) {
           currentDslRef.current = result.dsl;
-          setChatHistory((h) => [...h, { role: 'assistant', content: 'Level generated.' }]);
+          const msg = result.summary ?? 'Level generated.';
+          setChatHistory((h) => [...h, { role: 'assistant', content: msg }]);
           setStatus('ready');
           onLevel(result.level, result.dsl);
           return;

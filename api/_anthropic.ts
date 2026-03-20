@@ -306,7 +306,9 @@ orange, blue, green, red, purple, yellow
 
 ## Output format
 
-Output ONLY a single fenced code block containing the complete DSL. No explanation.`;
+First, output a single fenced code block containing the complete DSL.
+
+Then, after the code block, write 2–4 sentences explaining your design thinking: what the core challenge is, why you arranged the mechanics the way you did, and what the intended solution path looks like. Be specific — mention tile positions, color choices, or sequencing decisions that shaped the puzzle.`;
 
 export function buildGenerateMessages(
   req: GenerateRequest,
@@ -328,14 +330,21 @@ export function buildGenerateMessages(
     return [{ role: 'user', content: userMsg }];
   }
 
-  const followUp = retryContext.userFeedback
-    ? `${retryContext.userFeedback}\n\nPlease update the level accordingly and output the revised DSL.`
-    : `That level has errors: ${retryContext.error ?? 'unknown'}\n\nPlease fix it and output the corrected DSL.`;
+  // User-driven update: send as a single clear message, not a fake assistant turn
+  if (retryContext.userFeedback) {
+    const updateMsg =
+      `Update the following level based on this request: ${retryContext.userFeedback}\n\n` +
+      `Current level DSL:\n\`\`\`\n${retryContext.previousDsl}\n\`\`\`\n\n` +
+      `Grid constraints: ${req.width}×${req.height}, ${req.difficulty} difficulty.\n` +
+      `Keep as much of the existing structure as makes sense. Output the revised DSL followed by your design notes.`;
+    return [{ role: 'user', content: updateMsg }];
+  }
 
+  // Silent parse-error retry
   return [
     { role: 'user', content: userMsg },
     { role: 'assistant', content: `\`\`\`\n${retryContext.previousDsl}\n\`\`\`` },
-    { role: 'user', content: followUp },
+    { role: 'user', content: `That level has errors: ${retryContext.error ?? 'unknown'}\n\nPlease fix it and output the corrected DSL.` },
   ];
 }
 
@@ -348,4 +357,12 @@ export function extractDsl(text: string): string | null {
     last = match[1].trim();
   }
   return last;
+}
+
+/** Extract the design summary — text that appears after the last code block. */
+export function extractSummary(text: string): string | null {
+  const lastClose = text.lastIndexOf('```');
+  if (lastClose === -1) return null;
+  const after = text.slice(lastClose + 3).trim();
+  return after.length > 0 ? after : null;
 }

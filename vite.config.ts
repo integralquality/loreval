@@ -11,6 +11,7 @@ import {
   SOLVE_SYSTEM_PROMPT,
   buildGenerateMessages,
   extractDsl,
+  extractSummary,
   GENERATE_SYSTEM_PROMPT,
   VALID_DIFFICULTIES,
   VALID_FEATURES,
@@ -155,7 +156,8 @@ export default defineConfig(({ mode }) => {
               res.end(JSON.stringify({ error: 'Claude did not output a DSL code block', raw: result.text }));
               return;
             }
-            res.end(JSON.stringify({ dsl }));
+            const summary = extractSummary(result.text);
+            res.end(JSON.stringify({ dsl, ...(summary && { summary }) }));
           });
         },
       },

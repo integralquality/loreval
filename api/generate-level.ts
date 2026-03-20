@@ -7,6 +7,7 @@ import {
   resolveModel,
   buildGenerateMessages,
   extractDsl,
+  extractSummary,
   GENERATE_SYSTEM_PROMPT,
   VALID_DIFFICULTIES,
   VALID_FEATURES,
@@ -88,5 +89,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .json({ error: 'Claude did not output a DSL code block', raw: result.text });
   }
 
-  return res.status(200).json({ dsl });
+  const summary = extractSummary(result.text);
+  return res.status(200).json({ dsl, ...(summary && { summary }) });
 }

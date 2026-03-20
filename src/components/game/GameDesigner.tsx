@@ -116,6 +116,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   const [genFeatures, setGenFeatures] = useState<LevelFeature[]>([]);
   const [genModel, setGenModel] = useState<AiModelId>('claude-sonnet-4-6');
   const [genFeedback, setGenFeedback] = useState('');
+  const [genMode, setGenMode] = useState<'update' | 'new' | null>(null);
   const genChatScrollRef = useRef<HTMLDivElement>(null);
   const aiGeneration = useAiGeneration((generatedLevel, generatedDsl) => {
     setLevel(generatedLevel);
@@ -1362,26 +1363,29 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
                       {(() => {
                         const opts = { prompt: genPrompt, width: genSize.width, height: genSize.height, difficulty: genDifficulty, features: genFeatures, model: genModel };
-                        const busy = aiGeneration.status === 'generating' && !aiGeneration.chatHistory.some(m => m.role === 'assistant');
-                        const disabled = aiGeneration.status === 'generating' || !genPrompt.trim();
+                        // In code tab: use the raw dslCode (may have unapplied edits).
+                        // In visual tab: serialize current level state.
+                        const currentDsl = designTab === 'code' && dslCode ? dslCode : serializeDSL(level);
+                        const generating = aiGeneration.status === 'generating';
+                        const disabled = generating || !genPrompt.trim();
                         return (
                           <div className="grid grid-cols-2 gap-1.5">
                             <button
-                              onClick={() => aiGeneration.generate(opts, serializeDSL(level))}
+                              onClick={() => { setGenMode('update'); aiGeneration.generate(opts, currentDsl); }}
                               disabled={disabled}
                               className="flex items-center justify-center gap-1 py-2 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-200 rounded-lg text-[11px] font-medium transition-colors"
                               title="Modify the current level based on your prompt"
                             >
-                              {busy ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
+                              {generating && genMode === 'update' ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
                               Update this
                             </button>
                             <button
-                              onClick={() => aiGeneration.generate(opts)}
+                              onClick={() => { setGenMode('new'); aiGeneration.generate(opts); }}
                               disabled={disabled}
                               className="flex items-center justify-center gap-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-medium transition-colors"
                               title="Generate a brand new level"
                             >
-                              {busy ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
+                              {generating && genMode === 'new' ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
                               Generate new
                             </button>
                           </div>
