@@ -50,8 +50,8 @@ export const TileIcon = ({ type, color, meta, isOpen, theme: themeId, className 
           <LogOut
             size={18}
             style={{
-              color: c || '#6ee7b7',
-              filter: c ? `drop-shadow(0 0 4px ${c}60)` : 'drop-shadow(0 0 4px rgba(110,231,183,0.4))',
+              color: c || '#e4e4e7',
+              filter: c ? `drop-shadow(0 0 4px ${c}60)` : 'none',
               opacity: 0.8,
             }}
           />
