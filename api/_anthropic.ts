@@ -132,13 +132,19 @@ x = column (0 = left), y = row (0 = top). Agents move one cell per step.
 
 ## Output format
 
-Each line: \`(x,y) direction\`
+Each move line: \`(x,y) direction\`
 - \`(x,y)\` = the agent's **current position** before this move
 - \`direction\` = one of: \`up\` \`down\` \`left\` \`right\`
 
-Output ONLY a fenced code block. No explanation outside it.
+Put the complete move sequence inside a fenced code block.
 
-## Worked example
+## How to solve
+
+1. **Plan first.** Before writing any moves, describe in plain text the intended path for each agent: which corridors, which switches to hit, which order.
+2. **Track state.** As you plan, note each agent's position after every key step. If multiple agents, note whose turn each move is.
+3. **Output the full sequence.** Write every move until ALL agents have reached their goals. Do not stop early — an incomplete sequence loses the level.
+
+## Example
 
 Level:
 \`\`\`
@@ -155,19 +161,13 @@ tile G = tiles.goal(orange)
 agent(orange) start(1,1) and reach(4,1)
 \`\`\`
 
-The orange agent starts at (1,1) and must reach (4,1).
+Plan: orange walks right from (1,1) to (4,1) — three steps.
 
 \`\`\`
 (1,1) right
 (2,1) right
 (3,1) right
-\`\`\`
-
-## Instructions
-
-1. Read each \`agent(...) start(x,y)\` to know where agents begin.
-2. Trace moves step by step, updating each agent's position after every move.
-3. Output one \`(x,y) direction\` line per move using the agent's position BEFORE that move.`;
+\`\`\``;
 
 export function buildSolveMessages(
   dsl: string,

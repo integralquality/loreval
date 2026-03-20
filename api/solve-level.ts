@@ -36,6 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     model: resolveModel(model),
     system: SOLVE_SYSTEM_PROMPT,
     messages: buildSolveMessages(dsl, retryContext),
+    maxTokens: 8000,
   });
 
   if (!result.ok) {

@@ -1113,20 +1113,35 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         {/* Mode Toggle Tabs */}
         {!playOnly && (
           <div className="flex items-center justify-between px-4 py-3 bg-zinc-950 border-b border-zinc-800 shrink-0">
-            <div className="flex bg-zinc-800 p-1 rounded-lg">
-              <button
-                onClick={() => setMode('design')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'design' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'}`}
-              >
-                <Grid3X3 size={15} /> Design
-              </button>
-              <button
-                onClick={() => setMode('play')}
-                className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'}`}
-              >
-                <Play size={15} /> Play
-              </button>
-            </div>
+            {(() => {
+              const agentsWithoutGoal = level.entities.filter(e => !e.rules.some(r => r.type === 'reach-goal'));
+              const playBlocked = agentsWithoutGoal.length > 0;
+              return (
+                <div className="flex items-center gap-2">
+                  <div className="flex bg-zinc-800 p-1 rounded-lg">
+                    <button
+                      onClick={() => setMode('design')}
+                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'design' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'}`}
+                    >
+                      <Grid3X3 size={15} /> Design
+                    </button>
+                    <button
+                      onClick={() => !playBlocked && setMode('play')}
+                      disabled={playBlocked}
+                      title={playBlocked ? `${agentsWithoutGoal.map(e => `${e.color} agent has no goal`).join(', ')}` : undefined}
+                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-600 text-white shadow-lg' : playBlocked ? 'text-zinc-600 cursor-not-allowed' : 'text-zinc-400 hover:text-zinc-200'}`}
+                    >
+                      <Play size={15} /> Play
+                    </button>
+                  </div>
+                  {playBlocked && mode === 'design' && (
+                    <span className="text-xs text-amber-400/80">
+                      {agentsWithoutGoal.map(e => e.color).join(', ')} agent{agentsWithoutGoal.length > 1 ? 's have' : ' has'} no goal
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             {mode === 'design' && (
               <div className="flex bg-zinc-800 p-1 rounded-lg">

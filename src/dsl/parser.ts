@@ -326,17 +326,17 @@ function resolveLevel(
       continue;
     }
 
-    // Every agent must have a reach goal — otherwise the level can never be won
+    // Warn if agent has no reach goal — level can be saved but not played
     if (raw.reachX === undefined || raw.reachY === undefined) {
-      errors.push({
+      warnings.push({
         line: raw.line,
         message: `Agent(${raw.color}) has no goal. Add "and reach(x,y)" pointing to a matching goal tile.`,
       });
-      continue;
     }
 
     // Validate reach position is within bounds
-    if (raw.reachX < 0 || raw.reachX >= width || raw.reachY < 0 || raw.reachY >= height) {
+    if (raw.reachX !== undefined && raw.reachY !== undefined &&
+        (raw.reachX < 0 || raw.reachX >= width || raw.reachY < 0 || raw.reachY >= height)) {
       errors.push({
         line: raw.line,
         message: `Agent reach(${raw.reachX},${raw.reachY}) is outside grid bounds (${width}x${height})`,
