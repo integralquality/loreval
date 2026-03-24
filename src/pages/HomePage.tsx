@@ -1,20 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import {
-  Brain,
-  ArrowRight,
-  Share2,
-  Trophy,
-  Bot,
-  Paintbrush,
-  Gamepad2,
-  Wand2
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { TileIcon } from '../components/game/TileIcon';
 import { EntityIcon } from '../components/game/EntityIcon';
 
-// --- Improved Hero Visual: A "Living" Logic Board ---
 const GRID_SIZE = 6;
 const CELL_SIZE = 48;
 
@@ -27,17 +17,16 @@ function HeroGrid() {
   ];
 
   useEffect(() => {
-    const id = setInterval(() => setStep(prev => (prev + 1) % path.length), 1000);
+    const id = setInterval(() => setStep(prev => (prev + 1) % path.length), 900);
     return () => clearInterval(id);
   }, []);
 
   return (
     <div className="relative p-6 border border-white/10 bg-zinc-900/20 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-purple-500/10">
       <div className="absolute top-4 left-6 flex items-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500">System_Status: Logic_Verification</span>
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500">claude-sonnet · solving</span>
       </div>
-
       <div
         className="grid gap-1 bg-zinc-800/10 p-1 rounded-xl"
         style={{
@@ -55,7 +44,6 @@ function HeroGrid() {
             </div>
           );
         })}
-
         <div
           className="absolute"
           style={{
@@ -68,7 +56,6 @@ function HeroGrid() {
         >
           <TileIcon type="goal" color="#a78bfa" className="scale-75" />
         </div>
-
         <motion.div
           className="absolute flex items-center justify-center bg-purple-500/20 rounded-lg border border-purple-400/30"
           style={{ width: CELL_SIZE - 4, height: CELL_SIZE - 4 }}
@@ -81,6 +68,9 @@ function HeroGrid() {
           <EntityIcon type="robot" color="#d8b4fe" className="w-6 h-6 drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]" />
         </motion.div>
       </div>
+      <div className="absolute bottom-4 left-6 right-6 font-mono text-[9px] text-zinc-600">
+        move {step + 1}/{path.length}
+      </div>
     </div>
   );
 }
@@ -89,28 +79,25 @@ export default function HomePage() {
   return (
     <div className="bg-zinc-950 text-zinc-300 font-sans selection:bg-purple-500/30">
 
-      {/* 1. HERO: The Intelligence Hub */}
-      <section className="max-w-6xl mx-auto px-6 pt-32 pb-24">
+      {/* HERO */}
+      <section className="max-w-5xl mx-auto px-6 pt-32 pb-24">
         <div className="flex flex-col lg:flex-row items-center gap-16">
           <div className="flex-[1.4]">
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-              <div className="inline-flex items-center gap-2 px-3 py-1 border border-purple-500/20 bg-purple-500/5 rounded-full mb-8">
-                <Bot size={12} className="text-purple-400" />
-                <span className="font-mono text-[10px] uppercase tracking-widest text-purple-300">The Human-AI Logic Laboratory</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.05] tracking-tight mb-8">
-                Playground<br />
-                <span className="text-purple-300 font-medium">for humans <br />and machines</span>
+              <p className="font-mono text-xs text-zinc-500 uppercase tracking-widest mb-8">AI Evaluation / Logic Puzzles</p>
+              <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight tracking-tight mb-8">
+                Evaluating AI<br />
+                <span className="text-purple-300 font-medium">as solver<br />and designer</span>
               </h1>
-              <p className="text-xl text-zinc-400 max-w-2xl leading-relaxed mb-10">
-                Make your own puzzles.
+              <p className="text-lg text-zinc-400 max-w-xl leading-relaxed mb-10">
+                A tool for testing how language models handle spatial logic puzzles — both solving puzzles they haven't seen before, and generating new ones from a description. Outcomes are discrete and verifiable, making it straightforward to measure and compare model behaviour.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link to="/designer" className="px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-xl shadow-purple-500/20">
-                  Enter the Lab <ArrowRight size={20} />
+                <Link to="/designer" className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
+                  Open the lab <ArrowRight size={16} />
                 </Link>
-                <Link to="/play" className="px-8 py-4 bg-zinc-900 border border-zinc-800 text-zinc-200 font-bold rounded-xl hover:bg-zinc-800 transition-all">
-                  Explore Arena
+                <Link to="/play" className="px-6 py-3 bg-zinc-900 border border-zinc-800 text-zinc-300 font-medium rounded-lg hover:bg-zinc-800 transition-colors">
+                  Browse levels
                 </Link>
               </div>
             </motion.div>
@@ -121,100 +108,179 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. THE VISION: Co-Evolution of Reasoning */}
-      <section className="border-y border-zinc-900 bg-zinc-900/20 py-32">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="grid lg:grid-cols-2 gap-20 items-center mb-32">
+      {/* WHAT IT EVALUATES */}
+      <section className="border-y border-zinc-900 py-28">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-16">What it evaluates</h2>
+          <div className="grid lg:grid-cols-2 gap-16">
+
             <div>
-              <h2 className="text-sm font-mono uppercase tracking-[0.4em] text-purple-400 mb-6">How It Works</h2>
-              <h3 className="text-3xl md:text-5xl font-bold text-white mb-8 tracking-tight">Design. Play. Share.</h3>
-              <p className="text-lg text-zinc-400 leading-relaxed mb-8">
-                Create grid-based logic puzzles with a visual editor — walls, switches, color-locked doors, one-way gates, and characters with unique rules. Play through hand-crafted campaigns or design your own and <strong>share them with the world.</strong>
+              <h3 className="text-xl font-semibold text-white mb-4">Solving</h3>
+              <p className="text-zinc-400 leading-relaxed mb-6">
+                Given a puzzle it hasn't seen before, can the model produce a valid solution? The puzzles involve multi-step planning: locked doors that require a switch, agents that block each other, one-way tiles, color-changing mechanics. The model must reason about preconditions and ordering, not just find a path.
               </p>
-              <div className="space-y-6">
-                <div className="flex gap-4 p-4 rounded-2xl bg-zinc-950 border border-zinc-900">
-                  <Paintbrush className="text-purple-400 shrink-0" />
-                  <div>
-                    <h4 className="text-white font-bold text-sm">Visual Level Designer</h4>
-                    <p className="text-zinc-500 text-xs mt-1">Paint tiles, place characters, set rules and constraints. Test your puzzle instantly in the same editor.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4 p-4 rounded-2xl bg-zinc-950 border border-zinc-900">
-                  <Gamepad2 className="text-blue-400 shrink-0" />
-                  <div>
-                    <h4 className="text-white font-bold text-sm">Campaign & Community</h4>
-                    <p className="text-zinc-500 text-xs mt-1">Play through curated levels that teach mechanics step by step, or jump into puzzles created by other players.</p>
-                  </div>
-                </div>
+              <p className="text-zinc-400 leading-relaxed">
+                Every move is logged and played back step-by-step, so you can inspect where the model's plan breaks down — not just whether it failed.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-4">Designing</h3>
+              <p className="text-zinc-400 leading-relaxed mb-6">
+                Given a difficulty level, a grid size, and a set of mechanics to include, can the model produce a well-formed puzzle? This tests whether the model understands the interaction between mechanics well enough to use them purposefully — not just place them decoratively.
+              </p>
+              <p className="text-zinc-400 leading-relaxed">
+                The model also provides a written explanation of its design decisions, which gives additional signal on whether it understood what it was building.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* DSL */}
+      <section className="max-w-5xl mx-auto px-6 py-28">
+        <h2 className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-16">Puzzle format</h2>
+        <div className="grid lg:grid-cols-2 gap-16 items-start">
+          <div>
+            <h3 className="text-xl font-semibold text-white mb-4">A text-based DSL</h3>
+            <p className="text-zinc-400 leading-relaxed mb-6">
+              Puzzles are defined in a small domain-specific language. A level specifies a grid of tile characters, a legend mapping each character to a tile type and color, and agent declarations with start positions and goals.
+            </p>
+            <p className="text-zinc-400 leading-relaxed mb-6">
+              The format is compact enough to fit in a prompt, which is how it gets sent to the model. It can be written by hand, produced by the visual editor, or generated by AI. All three representations stay in sync.
+            </p>
+            <p className="text-zinc-400 leading-relaxed">
+              Tile types include walls, floors, doors, switches, paint tiles, one-way tiles, locks, and goals — both color-matched and universal. Mechanics compose: a switch can open a door that a paint tile is needed to reach.
+            </p>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 font-mono text-xs leading-6 text-zinc-400 overflow-x-auto">
+            <p className="text-zinc-600 mb-3"># example level</p>
+            <p><span className="text-purple-300">level</span> <span className="text-zinc-200">"Switch Puzzle"</span> <span className="text-zinc-500">8x6</span></p>
+            <p className="mt-3 text-zinc-500">grid = [</p>
+            <p className="pl-4"><span className="text-zinc-600">W W W W W W W W,</span></p>
+            <p className="pl-4"><span className="text-zinc-600">W R R S R R R W,</span></p>
+            <p className="pl-4"><span className="text-zinc-600">W R W D W R R W,</span></p>
+            <p className="pl-4"><span className="text-zinc-600">W R W R W R G W,</span></p>
+            <p className="pl-4"><span className="text-zinc-600">W R R R R R R W,</span></p>
+            <p className="pl-4"><span className="text-zinc-600">W W W W W W W W,</span></p>
+            <p className="text-zinc-500">]</p>
+            <p className="mt-3"><span className="text-blue-300">tile</span> S = tiles.switch(<span className="text-amber-300">blue</span>)</p>
+            <p><span className="text-blue-300">tile</span> D = tiles.door(<span className="text-amber-300">blue</span>)</p>
+            <p><span className="text-blue-300">tile</span> G = tiles.goal(<span className="text-amber-300">orange</span>)</p>
+            <p className="mt-3"><span className="text-emerald-300">agent</span>(<span className="text-amber-300">orange</span>) start(1,4) and reach(6,3)</p>
+          </div>
+        </div>
+      </section>
+
+      {/* LIVE DEBUGGING */}
+      <section className="border-t border-zinc-900 py-28">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-16">Inspecting a solve attempt</h2>
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            <div className="space-y-8">
+              <div>
+                <h4 className="text-white font-semibold mb-2">Step-by-step playback</h4>
+                <p className="text-zinc-500 text-sm leading-relaxed">
+                  The model's planned move sequence plays back one step at a time. The current source tile and target tile are highlighted on the grid with the agent's color. Playback can be paused, stepped forward or backward, or rewound to the start.
+                </p>
+              </div>
+              <div>
+                <h4 className="text-white font-semibold mb-2">Move log</h4>
+                <p className="text-zinc-500 text-sm leading-relaxed">
+                  Each move is listed as <span className="font-mono text-zinc-400">agent  (x,y) → (x,y)  direction</span>, with the current step highlighted. Moves that the engine skips — because the model placed an agent at the wrong position, or a path was blocked — are annotated rather than silently dropped.
+                </p>
+              </div>
+              <div>
+                <h4 className="text-white font-semibold mb-2">Coordinate overlay</h4>
+                <p className="text-zinc-500 text-sm leading-relaxed">
+                  Axis labels run along the grid edges. During playback, the highlighted tiles show their coordinates directly, so move log entries can be cross-referenced with the grid without counting cells.
+                </p>
+              </div>
+              <div>
+                <h4 className="text-white font-semibold mb-2">Feedback loop</h4>
+                <p className="text-zinc-500 text-sm leading-relaxed">
+                  After a failed attempt, you can describe what went wrong in natural language. The original move sequence and your note are sent back to the model as context, and it retries. Useful for iterating on both the model's approach and the puzzle design.
+                </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
-                <Paintbrush className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
-                <h4 className="text-white font-bold">Level Editor</h4>
-                <p className="text-zinc-600 text-xs leading-relaxed">Tile painter, entity placement, rule configuration — all visual.</p>
-              </div>
-              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
-                <Share2 className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
-                <h4 className="text-white font-bold">Share Levels</h4>
-                <p className="text-zinc-600 text-xs leading-relaxed">Share your puzzles via link. Let others play, remix, and build on them.</p>
-              </div>
-              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
-                <Wand2 className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
-                <h4 className="text-white font-bold">AI Generation</h4>
-                <p className="text-zinc-600 text-xs leading-relaxed">Ask AI to generate a level, or design one and let it try to solve it.</p>
-              </div>
-              <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 hover:border-purple-500/30 transition-colors group space-y-3">
-                <Trophy className="text-zinc-700 group-hover:text-purple-400 transition-colors" size={22} />
-                <h4 className="text-white font-bold">Leaderboards</h4>
-                <p className="text-zinc-600 text-xs leading-relaxed">Track solve times and step counts across players and AI models.</p>
-              </div>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 font-mono text-xs leading-6 space-y-1">
+              <p className="text-zinc-600 mb-3"># move log excerpt</p>
+              <p className="text-zinc-600">orange  (1,4) → (1,3)  up</p>
+              <p className="text-zinc-600">orange  (1,3) → (2,3)  right</p>
+              <p className="text-zinc-600">orange  (2,3) → (2,2)  up</p>
+              <p className="text-zinc-600">orange  (2,2) → (2,1)  up</p>
+              <p className="bg-purple-600/20 border border-purple-500/30 rounded px-2 text-purple-200">▶ orange  (2,1) → (3,1)  right</p>
+              <p className="text-zinc-600">orange  (3,1) → (4,1)  right</p>
+              <p className="text-zinc-600">orange  (4,1) → (4,2)  down</p>
+              <p className="text-zinc-600">orange  (4,2) → (4,3)  down</p>
+              <p className="text-zinc-600">orange  (4,3) → (5,3)  right</p>
+              <p className="text-zinc-600">orange  (5,3) → (6,3)  right</p>
+              <p className="mt-4 text-zinc-600">—</p>
+              <p className="text-zinc-600 mt-1">move 5 / 10 · paused</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. THE MISSION: Universal Reasoning */}
-      <section className="max-w-6xl mx-auto px-6 py-32">
-        <div className="text-center mb-24">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Built for all kinds of minds.</h2>
-          <p className="text-zinc-500 max-w-2xl mx-auto text-lg leading-relaxed">
-            Whether you're a kid building your first logic puzzle or a researcher stress-testing an AI model, the core is the same: <strong>think clearly, solve systematically.</strong>
-          </p>
-        </div>
-        <div className="grid md:grid-cols-3 gap-12">
-          <div className="text-center space-y-4">
-            <Brain className="mx-auto text-purple-400" size={28} />
-            <h4 className="text-white font-bold text-xl">Players</h4>
-            <p className="text-zinc-500 text-sm">Solve puzzles that teach spatial reasoning and algorithmic thinking — from simple mazes to multi-character sorting challenges.</p>
+      {/* WHY THIS SETUP */}
+      <section className="max-w-5xl mx-auto px-6 py-28">
+        <h2 className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-16">Why this setup</h2>
+        <div className="grid lg:grid-cols-3 gap-12">
+          <div>
+            <h4 className="text-white font-semibold mb-3">Verifiable outcomes</h4>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              A puzzle is either solved or not. A generated puzzle is either solvable or not, and either requires its mechanics or doesn't. No scoring rubrics or LLM-as-judge needed.
+            </p>
           </div>
-          <div className="text-center space-y-4">
-            <Paintbrush className="mx-auto text-blue-400" size={28} />
-            <h4 className="text-white font-bold text-xl">Designers</h4>
-            <p className="text-zinc-500 text-sm">Build levels with the visual editor, combine mechanics in creative ways, and share your best creations with the community.</p>
+          <div>
+            <h4 className="text-white font-semibold mb-3">Novel problems</h4>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              Puzzles are designed by hand or generated on demand. Any combination of grid, mechanics, and agent layout can produce a configuration the model hasn't encountered in training data.
+            </p>
           </div>
-          <div className="text-center space-y-4">
-            <Bot className="mx-auto text-green-400" size={28} />
-            <h4 className="text-white font-bold text-xl">AI Enthusiasts</h4>
-            <p className="text-zinc-500 text-sm">Use AI to generate levels or challenge it to solve yours. Explore how human and machine approaches to the same puzzle differ.</p>
+          <div>
+            <h4 className="text-white font-semibold mb-3">Inspectable reasoning</h4>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              The step-by-step playback and move log make it possible to see where the model's plan diverges from a correct solution — useful for identifying specific failure modes.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* 4. VISION: The Intelligence Lab */}
-      <section className="max-w-4xl mx-auto px-6 py-40 text-center">
+      {/* HOW TO USE */}
+      <section className="border-t border-zinc-900 py-28">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-xs font-mono uppercase tracking-widest text-zinc-500 mb-16">Using it</h2>
+          <div className="grid md:grid-cols-3 gap-12">
+            <div>
+              <p className="font-mono text-xs text-zinc-600 mb-3">01</p>
+              <h4 className="text-white font-semibold mb-2">Design a level</h4>
+              <p className="text-zinc-500 text-sm leading-relaxed">Use the visual editor or write a puzzle in the DSL directly. Configure tile types, agent start positions, goals, and constraints.</p>
+            </div>
+            <div>
+              <p className="font-mono text-xs text-zinc-600 mb-3">02</p>
+              <h4 className="text-white font-semibold mb-2">Run a model on it</h4>
+              <p className="text-zinc-500 text-sm leading-relaxed">Select a model and watch the playback. Each move is shown in sequence with the model's planned coordinates. Compare results across Haiku, Sonnet, and Opus.</p>
+            </div>
+            <div>
+              <p className="font-mono text-xs text-zinc-600 mb-3">03</p>
+              <h4 className="text-white font-semibold mb-2">Or ask AI to design</h4>
+              <p className="text-zinc-500 text-sm leading-relaxed">Prompt AI to generate a level with specific difficulty and mechanics. The model explains its choices. You can test whether the result is actually solvable and coherent.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CLOSING */}
+      <section className="max-w-5xl mx-auto px-6 py-32">
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-12 tracking-tight">
-            Same puzzle. <br /> Different minds.
-          </h2>
-          <p className="text-zinc-400 text-xl leading-relaxed font-light">
-            Design a logic system, solve it yourself, then hand it to an AI. See where human creativity and machine reasoning overlap — and where they don't.
+          <p className="text-zinc-400 text-lg leading-relaxed max-w-2xl mb-10">
+            The same puzzle can be handed to multiple models. The same model can be asked to solve a puzzle it just designed. Both directions are informative.
           </p>
-          <div className="mt-16">
-            <Link to="/designer" className="inline-flex items-center gap-2 text-purple-400 font-bold text-lg hover:gap-4 transition-all group">
-              Design your game <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
+          <Link to="/designer" className="inline-flex items-center gap-2 text-purple-400 font-medium hover:gap-3 transition-all group text-sm">
+            Get started <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
         </motion.div>
       </section>
 
