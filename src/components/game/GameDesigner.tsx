@@ -340,6 +340,19 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
     }
   };
 
+  const handleExport = () => {
+    const dsl = serializeDSL(level);
+    const slug = level.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'level';
+    const filename = `${slug}.lrev`;
+    const blob = new Blob([dsl], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleClear = () => {
     if (confirm('Are you sure you want to clear the board?')) {
       const newTiles: Tile[][] = Array(level.height).fill(null).map((_, y) =>
@@ -603,6 +616,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 <Trash2 size={14} /> Clear
               </button>
             </div>
+            <button onClick={handleExport} className="w-full flex items-center justify-center gap-2 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 hover:border-purple-500/50 hover:text-purple-300 rounded-lg text-xs transition-colors">
+              <CloudOff size={14} /> Export .lrev
+            </button>
             {saveStatus === 'error' && (
               <p className="text-xs text-red-400 text-center">Save failed. Try again.</p>
             )}
