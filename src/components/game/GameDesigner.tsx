@@ -567,10 +567,10 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                {playOnly ? level.name : 'Make Your Game'}
+                {playOnly ? level.name : 'loreval'}
               </h1>
               <p className="text-zinc-400 text-sm mt-1">
-                {playOnly ? 'Use arrow keys to move' : 'Grid Logic Playground'}
+                {playOnly ? 'Use arrow keys to move' : 'Logic puzzle designer'}
               </p>
             </div>
             <Link

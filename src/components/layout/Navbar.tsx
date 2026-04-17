@@ -1,80 +1,59 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+
+const navLinks = [
+  { to: '/designer', label: 'Design' },
+  { to: '/play', label: 'Solve' },
+  { to: '/docs', label: 'Docs' },
+];
 
 export default function Navbar() {
   const location = useLocation();
-  const { user, profile, loading } = useAuth();
-
-  const navLinks = [
-    { to: '/designer', label: 'Make' },
-    { to: '/play', label: 'Play' },
-    { to: '/browse', label: 'Browse' },
-    ...(user ? [{ to: '/my-levels', label: 'My Levels' }] : []),
-  ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50">
+    <nav className="sticky top-0 z-50 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/40">
+      {/* top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/40 to-transparent" />
+
       <div className="max-w-6xl mx-auto px-6">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-purple-500 rounded-lg group-hover:rotate-6 transition-transform flex items-center justify-center text-white font-bold shadow-lg shadow-purple-500/20">
-              M
+        <div className="flex items-center justify-between h-14">
+
+          {/* Logo */}
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3 group">
+            <div className="relative w-7 h-7 flex items-center justify-center">
+              <div className="absolute inset-0 bg-purple-500/20 rounded rotate-45 group-hover:rotate-[55deg] transition-transform duration-300" />
+              <span className="relative text-purple-300 font-mono font-bold text-sm">L</span>
             </div>
-            <span className="text-lg font-bold text-white tracking-tight hidden sm:block">
-              Make Your Game
+            <span className="font-mono text-sm font-semibold text-zinc-200 tracking-tight hidden sm:block">
+              loreval<span className="text-purple-400">.</span>ai
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-1">
+          {/* Nav links */}
+          <div className="flex items-center gap-0.5">
             {navLinks.map(({ to, label }) => {
               const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
               return (
                 <Link
                   key={to}
                   to={to}
-                  className={`px-4 py-2 rounded-lg text-[15px] font-medium transition-all ${isActive
-                    ? 'text-white bg-zinc-800/60'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-800/40'
-                    }`}
+                  className={`relative px-4 py-1.5 font-mono text-[13px] transition-all rounded ${
+                    isActive
+                      ? 'text-purple-300'
+                      : 'text-zinc-500 hover:text-zinc-200'
+                  }`}
                 >
-                  {label}
+                  {isActive && (
+                    <span className="absolute inset-0 rounded bg-purple-500/10 border border-purple-500/20" />
+                  )}
+                  <span className="relative">{label}</span>
                 </Link>
               );
             })}
           </div>
 
-          <div className="flex items-center">
-            {!loading && (
-              user ? (
-                <Link
-                  to="/account"
-                  className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-zinc-800/50 transition-colors"
-                >
-                  {profile?.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt=""
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                      {(profile?.username?.[0] || user.email?.[0] || '?').toUpperCase()}
-                    </div>
-                  )}
-                  <span className="text-[15px] text-zinc-300 hidden sm:block">
-                    {profile?.username || 'Account'}
-                  </span>
-                </Link>
-              ) : (
-                <Link
-                  to="/login"
-                  className="px-5 py-2 text-[15px] font-medium text-zinc-300 hover:text-white bg-zinc-800/50 hover:bg-zinc-800 rounded-lg transition-colors"
-                >
-                  Sign In
-                </Link>
-              )
-            )}
-          </div>
+          {/* right side — empty for now */}
+          <div className="w-24" />
+
         </div>
       </div>
     </nav>

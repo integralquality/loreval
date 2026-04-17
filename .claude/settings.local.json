@@ -20,7 +20,8 @@
       "WebFetch(domain:www.creem.io)",
       "Bash(npm install:*)",
       "Bash(git:*)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "WebFetch(domain:arcprize.org)"
     ]
   }
 }

@@ -26,15 +26,16 @@ export default function BrowsePage() {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Browse Levels</h1>
-            <p className="text-zinc-500 mt-1">Community puzzles</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Explore</p>
+            <h1 className="text-3xl font-bold text-white">All levels</h1>
+            <p className="text-zinc-500 text-sm mt-1">Puzzles available for AI evaluation</p>
           </div>
 
-          <div className="flex bg-zinc-800 p-1 rounded-lg">
+          <div className="flex bg-zinc-900 border border-zinc-800 p-1 rounded-lg">
             {([
               ['newest', 'Newest'],
-              ['most_played', 'Most Played'],
-              ['most_liked', 'Most Liked'],
+              ['most_played', 'Most run'],
+              ['most_liked', 'Most liked'],
             ] as const).map(([value, label]) => (
               <button
                 key={value}
@@ -57,12 +58,12 @@ export default function BrowsePage() {
           </div>
         ) : levels.length === 0 ? (
           <div className="text-center py-24 border border-zinc-800 rounded-2xl bg-zinc-900/30">
-            <p className="text-zinc-500 mb-4">No published levels yet</p>
+            <p className="text-zinc-500 mb-4">No levels published yet</p>
             <Link
               to="/designer"
               className="text-purple-400 hover:text-purple-300 text-sm font-medium"
             >
-              Be the first to create one
+              Design one in the editor
             </Link>
           </div>
         ) : (

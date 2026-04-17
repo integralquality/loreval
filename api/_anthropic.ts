@@ -150,7 +150,7 @@ Put the complete move sequence inside a fenced code block.
 
 1. **Plan first.** Describe the intended path for each agent: which corridors, which switches to hit, in what order.
 2. **Track positions explicitly.** After each move in your plan, write the updated position of the agent that just moved. For example: "orange moves right → now at (3,1)". Never assume a position — always derive it from the previous step.
-3. **One move = one line.** Each `(x,y) direction` line must use the agent's position BEFORE that move. If you have 2 agents, alternate lines must reference whichever agent's current tracked position matches.
+3. **One move = one line.** Each \`(x,y) direction\` line must use the agent's position BEFORE that move. If you have 2 agents, alternate lines must reference whichever agent's current tracked position matches.
 4. **Output the full sequence.** Write every move until ALL agents have reached their goals. Do not stop early — an incomplete sequence loses the level.
 
 ## Example

@@ -74,20 +74,28 @@ export default function HomePage() {
         <div className="flex flex-col lg:flex-row items-center gap-16 relative">
           <div className="flex-[1.4]">
             <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-              <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest mb-8">AI Evaluation · Logic Puzzles</p>
-              <h1 className="text-5xl md:text-6xl font-bold text-white leading-[1.1] tracking-tight mb-8">
-                Evaluating AI<br />
-                <span className="bg-gradient-to-r from-purple-300 to-violet-400 bg-clip-text text-transparent">as solver<br />and designer</span>
+              {/* Wordmark + acronym breakdown */}
+              <div className="flex items-baseline gap-4 mb-8">
+                <span className="font-mono text-2xl font-bold text-white tracking-tight">loreval</span>
+                <span className="font-mono text-[10px] text-zinc-600 leading-5">
+                  <span className="text-purple-400">Lo</span>gic and{' '}
+                  <span className="text-purple-400">Re</span>asoning{' '}
+                  <span className="text-purple-400">Eval</span>uation
+                </span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.15] tracking-tight mb-6">
+                LLM evaluation on<br />
+                <span className="bg-gradient-to-r from-purple-300 to-violet-400 bg-clip-text text-transparent">logic and spatial reasoning</span>
               </h1>
-              <p className="text-base text-zinc-400 max-w-xl leading-relaxed mb-10">
-                A tool for testing how language models handle spatial logic puzzles — both solving puzzles they haven't seen before, and generating new ones from a description. Outcomes are discrete and verifiable.
+              <p className="text-sm text-zinc-400 max-w-xl leading-relaxed mb-10">
+                Loreval measures language model performance on grid-based spatial puzzles across two tasks: solving puzzles from a description, and generating new ones given a set of constraints. Outcomes are discrete and verifiable — a puzzle is either solved or it isn't.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link to="/designer" className="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
-                  Open the lab <ArrowRight size={15} />
+                  Open designer <ArrowRight size={15} />
                 </Link>
                 <Link to="/play" className="px-5 py-2.5 border border-zinc-700 text-zinc-300 text-sm font-medium rounded-lg hover:border-zinc-500 hover:text-white transition-colors">
-                  Browse levels
+                  Benchmark levels
                 </Link>
               </div>
             </motion.div>
