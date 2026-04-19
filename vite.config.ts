@@ -4,8 +4,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import type { IncomingMessage, ServerResponse } from 'http';
 import {
-  callAnthropic,
-  resolveModel,
+  callLLM,
   buildSolveMessages,
   parseMoves,
   SOLVE_SYSTEM_PROMPT,
@@ -69,19 +68,17 @@ export default defineConfig(({ mode }) => {
               return jsonError(res, 400, 'Invalid JSON body');
             }
 
-            const resolvedKey = typeof body.guestKey === 'string' ? body.guestKey.trim() : '';
-            if (!resolvedKey) return jsonError(res, 401, 'No API key provided. Add your Anthropic key via the "Add API key" button.');
+            const guestKey     = typeof body.guestKey     === 'string' ? body.guestKey.trim()  : '';
+            const guestProvider = typeof body.guestProvider === 'string' ? body.guestProvider    : 'anthropic';
+            const guestModel   = typeof body.guestModel    === 'string' ? body.guestModel       : 'claude-sonnet-4-6';
+            const guestBaseUrl = typeof body.guestBaseUrl  === 'string' ? body.guestBaseUrl     : '';
+            if (!guestKey) return jsonError(res, 401, 'No API key provided. Add your key via the "Add API key" button.');
 
-            const { dsl, retryContext, model } = body as {
-              dsl?: string;
-              retryContext?: RetryContext;
-              model?: string;
-            };
+            const { dsl, retryContext } = body as { dsl?: string; retryContext?: RetryContext };
             if (!dsl || typeof dsl !== 'string') return jsonError(res, 400, 'Missing dsl field');
 
-            const result = await callAnthropic({
-              apiKey: resolvedKey,
-              model: resolveModel(model),
+            const result = await callLLM({
+              guestKey, guestProvider, guestModel, guestBaseUrl,
               system: SOLVE_SYSTEM_PROMPT,
               messages: buildSolveMessages(dsl, retryContext),
               maxTokens: 8000,
@@ -110,8 +107,11 @@ export default defineConfig(({ mode }) => {
               return jsonError(res, 400, 'Invalid JSON body');
             }
 
-            const resolvedKey = typeof body.guestKey === 'string' ? body.guestKey.trim() : '';
-            if (!resolvedKey) return jsonError(res, 401, 'No API key provided. Add your Anthropic key via the "Add API key" button.');
+            const guestKey2     = typeof body.guestKey     === 'string' ? body.guestKey.trim()  : '';
+            const guestProvider2 = typeof body.guestProvider === 'string' ? body.guestProvider    : 'anthropic';
+            const guestModel2   = typeof body.guestModel    === 'string' ? body.guestModel       : 'claude-sonnet-4-6';
+            const guestBaseUrl2 = typeof body.guestBaseUrl  === 'string' ? body.guestBaseUrl     : '';
+            if (!guestKey2) return jsonError(res, 401, 'No API key provided. Add your key via the "Add API key" button.');
 
             const prompt =
               typeof body.prompt === 'string' ? body.prompt.slice(0, 500).trim() : '';
@@ -141,9 +141,9 @@ export default defineConfig(({ mode }) => {
                   }
                 : undefined;
 
-            const result = await callAnthropic({
-              apiKey: resolvedKey,
-              model: resolveModel(body.model),
+            const result = await callLLM({
+              guestKey: guestKey2, guestProvider: guestProvider2,
+              guestModel: guestModel2, guestBaseUrl: guestBaseUrl2,
               system: GENERATE_SYSTEM_PROMPT,
               messages: buildGenerateMessages(genReq, retryContext),
               maxTokens: 3000,

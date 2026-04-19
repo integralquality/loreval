@@ -23,7 +23,7 @@ export function resolveModel(raw: unknown): AiModelId {
     : DEFAULT_MODEL;
 }
 
-// ─── Anthropic API call ───────────────────────────────────────────────────────
+// ─── Shared types ─────────────────────────────────────────────────────────────
 
 export interface AnthropicMessage {
   role: 'user' | 'assistant';
@@ -32,7 +32,7 @@ export interface AnthropicMessage {
 
 interface CallParams {
   apiKey: string;
-  model: AiModelId;
+  model: string;
   system: string;
   messages: AnthropicMessage[];
   maxTokens?: number;
@@ -41,6 +41,30 @@ interface CallParams {
 export type CallResult =
   | { ok: true; text: string }
   | { ok: false; httpStatus: number; message: string };
+
+// ─── Provider routing ─────────────────────────────────────────────────────────
+
+export interface GuestCallParams {
+  guestKey: string;
+  guestProvider: string;
+  guestModel: string;
+  guestBaseUrl: string;
+  system: string;
+  messages: AnthropicMessage[];
+  maxTokens?: number;
+}
+
+export async function callLLM(params: GuestCallParams): Promise<CallResult> {
+  const { guestKey, guestProvider, guestModel, guestBaseUrl, system, messages, maxTokens } = params;
+  if (guestProvider === 'anthropic') {
+    return callAnthropic({ apiKey: guestKey, model: guestModel || 'claude-sonnet-4-6', system, messages, maxTokens });
+  }
+  // OpenAI-compatible (OpenAI, Groq, Together, Mistral, Ollama, custom)
+  const baseUrl = (guestBaseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');
+  return callOpenAI({ apiKey: guestKey, baseUrl, model: guestModel, system, messages, maxTokens });
+}
+
+// ─── Anthropic API call ───────────────────────────────────────────────────────
 
 export async function callAnthropic(params: CallParams): Promise<CallResult> {
   const { apiKey, model, system, messages, maxTokens = 2048 } = params;
@@ -77,6 +101,48 @@ export async function callAnthropic(params: CallParams): Promise<CallResult> {
     content: Array<{ type: string; text: string }>;
   };
   const text = data.content?.find((c) => c.type === 'text')?.text ?? '';
+  return { ok: true, text };
+}
+
+// ─── OpenAI-compatible API call ───────────────────────────────────────────────
+
+async function callOpenAI(params: {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  system: string;
+  messages: AnthropicMessage[];
+  maxTokens?: number;
+}): Promise<CallResult> {
+  const { apiKey, baseUrl, model, system, messages, maxTokens = 2048 } = params;
+  const openaiMessages = [
+    { role: 'system', content: system },
+    ...messages,
+  ];
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ model, max_tokens: maxTokens, messages: openaiMessages }),
+    });
+  } catch (err) {
+    return { ok: false, httpStatus: 503, message: err instanceof Error ? err.message : 'Network error' };
+  }
+
+  if (!response.ok) {
+    const body = await response.text();
+    return { ok: false, httpStatus: response.status, message: `API error ${response.status}: ${body}` };
+  }
+
+  const data = (await response.json()) as {
+    choices: Array<{ message: { content: string } }>;
+  };
+  const text = data.choices?.[0]?.message?.content ?? '';
   return { ok: true, text };
 }
 

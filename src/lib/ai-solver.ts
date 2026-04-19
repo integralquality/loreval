@@ -1,4 +1,10 @@
-import { getGuestKey } from './guestKey';
+import { getGuestConfig } from './guestKey';
+
+function guestParams() {
+  const c = getGuestConfig();
+  if (!c) return {};
+  return { guestKey: c.key, guestProvider: c.provider, guestModel: c.model, guestBaseUrl: c.baseUrl };
+}
 
 export interface AiMove {
   x: number;
@@ -28,7 +34,7 @@ export async function solveLevel(
     const res = await fetch('/api/solve-level', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dsl, retryContext, model, guestKey: getGuestKey() }),
+      body: JSON.stringify({ dsl, retryContext, model, ...guestParams() }),
     });
     const data = await res.json() as { moves?: AiMove[]; error?: string };
     if (!res.ok || data.error) {

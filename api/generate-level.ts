@@ -3,8 +3,7 @@
 //   → { dsl } | { error }
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
-  callAnthropic,
-  resolveModel,
+  callLLM,
   buildGenerateMessages,
   extractDsl,
   extractSummary,
@@ -30,10 +29,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const raw = (req.body ?? {}) as Record<string, unknown>;
 
-  const apiKey = typeof raw.guestKey === 'string' ? raw.guestKey.trim() : '';
+  const guestKey     = typeof raw.guestKey     === 'string' ? raw.guestKey.trim()     : '';
+  const guestProvider = typeof raw.guestProvider === 'string' ? raw.guestProvider       : 'anthropic';
+  const guestModel   = typeof raw.guestModel    === 'string' ? raw.guestModel          : 'claude-sonnet-4-6';
+  const guestBaseUrl = typeof raw.guestBaseUrl  === 'string' ? raw.guestBaseUrl        : '';
 
-  if (!apiKey) {
-    return res.status(401).json({ error: 'No API key provided. Add your Anthropic key via the "Add API key" button.' });
+  if (!guestKey) {
+    return res.status(401).json({ error: 'No API key provided. Add your key via the "Add API key" button.' });
   }
 
   // Validate and sanitize
@@ -71,9 +73,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       : undefined;
 
-  const result = await callAnthropic({
-    apiKey,
-    model: resolveModel(raw.model),
+  const result = await callLLM({
+    guestKey,
+    guestProvider,
+    guestModel,
+    guestBaseUrl,
     system: GENERATE_SYSTEM_PROMPT,
     messages: buildGenerateMessages(genReq, retryContext),
     maxTokens: 3000,
