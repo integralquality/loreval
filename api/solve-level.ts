@@ -16,16 +16,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY is not configured' });
-  }
-
-  const { dsl, retryContext, model } = (req.body ?? {}) as {
+  const { dsl, retryContext, model, guestKey } = (req.body ?? {}) as {
     dsl?: string;
     retryContext?: RetryContext;
     model?: string;
+    guestKey?: string;
   };
+
+  const apiKey = typeof guestKey === 'string' ? guestKey.trim() : '';
+
+  if (!apiKey) {
+    return res.status(401).json({ error: 'No API key provided. Add your Anthropic key via the "Add API key" button.' });
+  }
 
   if (!dsl || typeof dsl !== 'string') {
     return res.status(400).json({ error: 'Missing or invalid dsl field' });

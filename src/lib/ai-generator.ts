@@ -2,6 +2,7 @@ import { parseDSL } from '../dsl/parser';
 import type { Level } from '../types';
 import { AI_MODELS } from './ai-solver';
 import type { AiModelId } from './ai-solver';
+import { getGuestKey } from './guestKey';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ export async function generateLevel(opts: GenerateOptions): Promise<GenerateResu
     res = await fetch('/api/generate-level', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(opts),
+      body: JSON.stringify({ ...opts, guestKey: getGuestKey() }),
     });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Network error' };

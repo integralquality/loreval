@@ -57,14 +57,10 @@ export default defineConfig(({ mode }) => {
       {
         name: 'api-dev-middleware',
         configureServer(server) {
-          const apiKey = env.ANTHROPIC_API_KEY;
-
           // ── POST /api/solve-level ────────────────────────────────────────────
           server.middlewares.use('/api/solve-level', async (req, res, next) => {
             if (req.method !== 'POST') return next();
             res.setHeader('Content-Type', 'application/json');
-
-            if (!apiKey) return jsonError(res, 500, 'ANTHROPIC_API_KEY not set in .env.local');
 
             let body: Record<string, unknown>;
             try {
@@ -72,6 +68,9 @@ export default defineConfig(({ mode }) => {
             } catch {
               return jsonError(res, 400, 'Invalid JSON body');
             }
+
+            const resolvedKey = typeof body.guestKey === 'string' ? body.guestKey.trim() : '';
+            if (!resolvedKey) return jsonError(res, 401, 'No API key provided. Add your Anthropic key via the "Add API key" button.');
 
             const { dsl, retryContext, model } = body as {
               dsl?: string;
@@ -81,7 +80,7 @@ export default defineConfig(({ mode }) => {
             if (!dsl || typeof dsl !== 'string') return jsonError(res, 400, 'Missing dsl field');
 
             const result = await callAnthropic({
-              apiKey,
+              apiKey: resolvedKey,
               model: resolveModel(model),
               system: SOLVE_SYSTEM_PROMPT,
               messages: buildSolveMessages(dsl, retryContext),
@@ -104,14 +103,15 @@ export default defineConfig(({ mode }) => {
             if (req.method !== 'POST') return next();
             res.setHeader('Content-Type', 'application/json');
 
-            if (!apiKey) return jsonError(res, 500, 'ANTHROPIC_API_KEY not set in .env.local');
-
             let body: Record<string, unknown>;
             try {
               body = JSON.parse(await readBody(req)) as Record<string, unknown>;
             } catch {
               return jsonError(res, 400, 'Invalid JSON body');
             }
+
+            const resolvedKey = typeof body.guestKey === 'string' ? body.guestKey.trim() : '';
+            if (!resolvedKey) return jsonError(res, 401, 'No API key provided. Add your Anthropic key via the "Add API key" button.');
 
             const prompt =
               typeof body.prompt === 'string' ? body.prompt.slice(0, 500).trim() : '';
@@ -142,7 +142,7 @@ export default defineConfig(({ mode }) => {
                 : undefined;
 
             const result = await callAnthropic({
-              apiKey,
+              apiKey: resolvedKey,
               model: resolveModel(body.model),
               system: GENERATE_SYSTEM_PROMPT,
               messages: buildGenerateMessages(genReq, retryContext),

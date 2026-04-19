@@ -1,3 +1,5 @@
+import { getGuestKey } from './guestKey';
+
 export interface AiMove {
   x: number;
   y: number;
@@ -26,7 +28,7 @@ export async function solveLevel(
     const res = await fetch('/api/solve-level', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dsl, retryContext, model }),
+      body: JSON.stringify({ dsl, retryContext, model, guestKey: getGuestKey() }),
     });
     const data = await res.json() as { moves?: AiMove[]; error?: string };
     if (!res.ok || data.error) {

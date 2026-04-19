@@ -28,12 +28,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY is not configured' });
-  }
-
   const raw = (req.body ?? {}) as Record<string, unknown>;
+
+  const apiKey = typeof raw.guestKey === 'string' ? raw.guestKey.trim() : '';
+
+  if (!apiKey) {
+    return res.status(401).json({ error: 'No API key provided. Add your Anthropic key via the "Add API key" button.' });
+  }
 
   // Validate and sanitize
   const prompt =
