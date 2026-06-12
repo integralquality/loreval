@@ -1,4 +1,5 @@
 import { Outlet, Link } from 'react-router-dom';
+import { Github } from 'lucide-react';
 import Navbar from './Navbar';
 import { CookieBanner } from '@/components/shared/cookie-banner';
 
@@ -18,10 +19,11 @@ export default function SiteLayout() {
               <span className="font-mono text-sm font-semibold text-zinc-400">loreval</span>
             </div>
             <div className="flex gap-8 text-sm text-zinc-500">
-              <Link to="/designer" className="hover:text-purple-300">Design</Link>
-              <Link to="/play" className="hover:text-purple-300">Solve</Link>
-              <Link to="/docs" className="hover:text-purple-300">Docs</Link>
-              <Link to="/privacy" className="hover:text-purple-300">Privacy</Link>
+              <Link to="/designer" className="hover:text-purple-300 transition-colors">Design</Link>
+              <Link to="/docs" className="hover:text-purple-300 transition-colors">Docs</Link>
+              <a href="https://github.com/integral-quality/loreval" target="_blank" rel="noopener noreferrer" className="hover:text-purple-300 transition-colors flex items-center gap-1.5">
+                <Github size={13} /> GitHub
+              </a>
             </div>
             <p className="text-xs text-zinc-600">© 2026 Loreval. All rights reserved.</p>
           </div>

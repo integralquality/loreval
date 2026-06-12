@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Key } from 'lucide-react';
+import { Key, Github } from 'lucide-react';
 import { hasGuestKey } from '../../lib/guestKey';
 import { GuestKeyModal } from './GuestKeyModal';
 import { RequestAccessModal } from './RequestAccessModal';
 
 const navLinks = [
   { to: '/designer', label: 'Design' },
-  { to: '/play',     label: 'Solve'  },
+  // { to: '/play', label: 'Solve' },  // coming soon
   { to: '/docs',     label: 'Docs'   },
 ];
 
@@ -62,7 +62,17 @@ export default function Navbar() {
             </div>
 
             {/* Right side */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <a
+                href="https://github.com/integral-quality/loreval"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-zinc-500 hover:text-zinc-200 transition-colors"
+                title="Open source CLI on GitHub"
+              >
+                <Github size={17} />
+              </a>
+
               <button
                 onClick={() => setShowAccessModal(true)}
                 className="font-mono text-[13px] text-zinc-600 hover:text-zinc-300 transition-colors hidden sm:block"

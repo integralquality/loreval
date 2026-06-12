@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Github } from 'lucide-react';
 import { TileIcon } from '../components/game/TileIcon';
 import { EntityIcon } from '../components/game/EntityIcon';
 
@@ -99,9 +99,14 @@ export default function HomePage() {
                 <Link to="/designer" className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
                   Open designer <ArrowRight size={15} />
                 </Link>
-                <Link to="/play" className="px-6 py-3 border border-zinc-700 text-zinc-300 text-sm font-medium rounded-lg hover:border-zinc-500 hover:text-white transition-colors">
-                  Benchmark levels
-                </Link>
+                <a
+                  href="https://github.com/integral-quality/loreval"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-3 border border-zinc-700 text-zinc-300 text-sm font-medium rounded-lg hover:border-zinc-500 hover:text-white transition-colors flex items-center gap-2"
+                >
+                  <Github size={15} /> Open source CLI
+                </a>
               </div>
             </motion.div>
           </div>
