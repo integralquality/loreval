@@ -8,7 +8,7 @@ import { LevelPreview } from './LevelPreview';
 
 // ── Syntax highlighting ─────────────────────────────────────
 
-const KEYWORD_COLOR = '#c084fc';   // orange-400
+const KEYWORD_COLOR = '#93c5fd';   // blue-300 — matches DSL keyword color on landing/docs
 const STRING_COLOR = '#86efac';    // green-300
 const NUMBER_COLOR = '#fdba74';    // orange-300
 const TYPE_COLOR = '#67e8f9';      // cyan-300

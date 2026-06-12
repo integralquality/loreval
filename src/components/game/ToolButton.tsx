@@ -5,14 +5,15 @@ export function ToolButton({ active, onClick, icon, label, tooltip }: { active: 
     <button
       onClick={onClick}
       title={tooltip}
-      className={`flex flex-col items-center justify-center p-2 rounded-lg transition-all ${
+      className={`flex flex-col items-center justify-center p-1.5 rounded-md transition-all border ${
         active
-          ? 'bg-orange-600/20 border border-orange-500 text-orange-300'
-          : 'bg-zinc-800 border border-transparent text-zinc-400 hover:bg-zinc-700'
+          ? 'border-zinc-900 bg-white'
+          : 'border-zinc-900/15 bg-white/50 hover:border-zinc-900/50'
       }`}
     >
-      <div className="mb-1">{icon}</div>
-      <span className="text-[10px] uppercase font-medium">{label}</span>
+      {/* Dark mini-well keeps tile art legible on the light chrome */}
+      <div className="mb-1 w-9 h-9 rounded bg-zinc-950 flex items-center justify-center">{icon}</div>
+      <span className={`text-[10px] uppercase font-medium ${active ? 'text-zinc-900' : 'text-zinc-500'}`}>{label}</span>
     </button>
   );
 }

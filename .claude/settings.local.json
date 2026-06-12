@@ -24,7 +24,9 @@
       "WebFetch(domain:arcprize.org)",
       "PowerShell(npm run *)",
       "PowerShell(npx -y tsx check-hero.ts)",
-      "PowerShell(Remove-Item *)"
+      "PowerShell(Remove-Item *)",
+      "Bash(sed -i 's|<p className=\"text-zinc-300 mb-1\">|<p className=\"text-zinc-900 mb-1\">|g' GameDesigner.tsx)",
+      "Bash(sed -i 's|<div className=\"grid grid-cols-2 gap-1 text-xs text-zinc-400|<div className=\"grid grid-cols-2 gap-1 text-xs text-zinc-600|g' GameDesigner.tsx)"
     ]
   }
 }
