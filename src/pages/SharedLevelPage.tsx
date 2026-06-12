@@ -37,7 +37,7 @@ export default function SharedLevelPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-zinc-950">
-        <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -47,7 +47,7 @@ export default function SharedLevelPage() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 text-center px-6">
         <h1 className="text-2xl font-semibold text-white mb-3">Level not found</h1>
         <p className="text-zinc-500 mb-6">This level may have been removed or the link is invalid.</p>
-        <Link to="/browse" className="text-purple-400 hover:text-purple-300 text-sm">
+        <Link to="/browse" className="text-orange-400 hover:text-orange-300 text-sm">
           Browse levels
         </Link>
       </div>
@@ -59,7 +59,7 @@ export default function SharedLevelPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 text-center px-6">
         <h1 className="text-2xl font-semibold text-white mb-3">Failed to load level</h1>
-        <Link to="/browse" className="text-purple-400 hover:text-purple-300 text-sm">
+        <Link to="/browse" className="text-orange-400 hover:text-orange-300 text-sm">
           Browse levels
         </Link>
       </div>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, Github, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { ArrowRight, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check, Github } from 'lucide-react';
 import { TileIcon } from '../components/game/TileIcon';
 import { EntityIcon } from '../components/game/EntityIcon';
 import { parseDSL } from '../dsl/parser';
@@ -9,8 +9,8 @@ import { executeMove } from '../gameLogic';
 import type { GameState, Level } from '../types';
 
 // ─── Hero level ───────────────────────────────────────────────────────────────
-// The playable hero grid and the DSL sample below are the same level: this
-// string is parsed by the real parser and run by the real engine.
+// The playable hero grid and the DSL sample further down are the same level:
+// this string is parsed by the real parser and run by the real engine.
 
 const HERO_DSL = `level "Switch Gate" 8x6
 grid = [
@@ -26,7 +26,7 @@ tile D = tiles.door(blue)
 tile G = tiles.goal(orange)
 agent(orange) start(1,1) and reach(3,3)`;
 
-const HERO_OPTIMAL = 10;
+const HERO_OPTIMAL = 10; // verified by exhaustive search over the engine
 const HERO_LEVEL: Level | null = parseDSL(HERO_DSL).level;
 
 function freshState(level: Level): GameState {
@@ -73,12 +73,12 @@ function PlayableHero({ level }: { level: Level }) {
   const gridH = level.height * CELL;
 
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+    <div className="rounded-lg bg-zinc-950 border border-zinc-800 shadow-[0_12px_40px_-12px_rgba(33,32,28,0.45)] overflow-hidden">
       {/* Panel header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800 bg-zinc-900/60">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-[2px] bg-orange-400" />
-          <span className="font-mono text-xs text-zinc-400">switch-gate.puzzle</span>
+          <span className="font-mono text-xs text-zinc-400">switch-gate.puzzle · you, solving</span>
         </div>
         <span className="font-mono text-xs text-zinc-500">
           moves {moves} · optimal {HERO_OPTIMAL}
@@ -189,14 +189,14 @@ function PlayableHero({ level }: { level: Level }) {
   );
 }
 
-// ─── DSL rendering ────────────────────────────────────────────────────────────
+// ─── Shared bits ──────────────────────────────────────────────────────────────
 
 function DslBlock({ source }: { source: string }) {
   return (
-    <div className="bg-zinc-900/60 p-6 font-mono text-sm leading-7">
+    <div className="bg-zinc-950 p-6 font-mono text-sm leading-7">
       {source.split('\n').map((line, i) => {
         const kw = /^(level|grid|tile|agent)\b/.exec(line)?.[1];
-        if (!kw) return <p key={i} className="text-zinc-500 whitespace-pre">{line || ' '}</p>;
+        if (!kw) return <p key={i} className="text-zinc-500 whitespace-pre">{line || ' '}</p>;
         return (
           <p key={i} className="whitespace-pre">
             <span className="text-blue-300">{kw}</span>
@@ -208,69 +208,66 @@ function DslBlock({ source }: { source: string }) {
   );
 }
 
-// ─── Page scaffolding ─────────────────────────────────────────────────────────
-
-function SectionLabel({ coord, children }: { coord: string; children: string }) {
+/** Ledger-style section rule: heavy top line, title left, grid coordinate right. */
+function RuleHeader({ coord, title }: { coord: string; title: string }) {
   return (
-    <p className="font-mono text-xs tracking-wider text-zinc-500 mb-10">
-      <span className="text-orange-400/80">({coord})</span>
-      <span className="mx-2 text-zinc-700">·</span>
-      {children}
-    </p>
-  );
-}
-
-function PanelHeader({ label, accent }: { label: string; accent: string }) {
-  return (
-    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-900/60">
-      <div className="w-2 h-2 rounded-[2px]" style={{ backgroundColor: accent }} />
-      <span className="font-mono text-xs text-zinc-400">{label}</span>
+    <div className="border-t-2 border-zinc-900 pt-4 mb-12 flex items-baseline justify-between gap-4">
+      <h2 className="font-mono text-sm font-bold text-zinc-900 lowercase tracking-wide">{title}</h2>
+      <span className="font-mono text-xs text-zinc-400">({coord})</span>
     </div>
   );
 }
 
-const GRAPH_PAPER = {
-  backgroundImage:
-    'linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)',
-  backgroundSize: '56px 56px',
-};
+function DarkPanel({ label, accent, children }: { label: string; accent: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg bg-zinc-950 border border-zinc-800 shadow-[0_12px_40px_-12px_rgba(33,32,28,0.45)] overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800">
+        <div className="w-2 h-2 rounded-[2px]" style={{ backgroundColor: accent }} />
+        <span className="font-mono text-xs text-zinc-400">{label}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   return (
-    <div className="bg-zinc-950 text-zinc-300 font-sans selection:bg-orange-500/30" style={GRAPH_PAPER}>
+    <div className="text-ink selection:bg-orange-500/20">
 
       {/* HERO */}
-      <section className="max-w-5xl mx-auto px-6 pt-24 pb-24">
+      <section className="max-w-5xl mx-auto px-6 pt-16 pb-24">
+        {/* Meta strip */}
+        <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-[11px] text-zinc-500 border-b border-zinc-900/15 pb-3 mb-14">
+          <span>
+            <span className="text-orange-600 font-bold">lo</span>gic and{' '}
+            <span className="text-orange-600 font-bold">re</span>asoning{' '}
+            <span className="text-orange-600 font-bold">eval</span>uation
+          </span>
+          <span className="border border-zinc-900/20 rounded px-2 py-0.5">v0 · early scaffolding — no published results yet</span>
+        </div>
+
         <div className="flex flex-col lg:flex-row items-start gap-14">
-          <div className="flex-[1.2] pt-4">
-            {/* Wordmark + acronym breakdown */}
-            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 mb-3">
-              <span className="font-mono text-2xl font-bold text-white tracking-tight">loreval</span>
-              <span className="font-mono text-sm text-zinc-500 leading-5">
-                <span className="text-orange-400">Lo</span>gic and{' '}
-                <span className="text-orange-400">Re</span>asoning{' '}
-                <span className="text-orange-400">Eval</span>uation
-              </span>
-            </div>
-            <p className="inline-block font-mono text-[11px] text-zinc-500 border border-zinc-800 rounded px-2 py-0.5 mb-8">
-              v0 · early scaffolding — no published results yet
-            </p>
-            <h1 className="text-4xl md:text-5xl font-bold text-white leading-[1.15] tracking-tight mb-6">
-              LLM evaluation on<br />
-              <span className="text-orange-300">logic and spatial reasoning</span>
+          <div className="flex-[1.2] pt-2">
+            <h1 className="text-[2.6rem] md:text-5xl font-bold text-zinc-900 leading-[1.1] tracking-tight mb-7">
+              Can a language model<br />solve this puzzle?
             </h1>
-            <p className="text-base text-zinc-400 max-w-xl leading-relaxed mb-10">
-              Loreval measures language model performance on grid-based spatial puzzles across two tasks: solving puzzles from a description, and generating new ones given a set of constraints. Outcomes are discrete and verifiable — a puzzle is either solved or it isn't.
+            <p className="text-base text-zinc-600 max-w-xl leading-relaxed mb-4">
+              Loreval measures LLM performance on grid-based spatial puzzles across two tasks: <strong className="text-zinc-900 font-semibold">solving</strong> a puzzle from its text description, and <strong className="text-zinc-900 font-semibold">designing</strong> a new one to a set of constraints.
+            </p>
+            <p className="text-base text-zinc-600 max-w-xl leading-relaxed mb-10">
+              Outcomes are discrete and verifiable. A puzzle is either solved or it isn't — no rubric, no judge model. Try the one on the right; a model gets the exact same level, as text.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link to="/designer" className="px-6 py-3 bg-orange-500 hover:bg-orange-400 text-zinc-950 text-sm font-semibold rounded-md transition-colors flex items-center gap-2">
+              <Link to="/designer" className="px-6 py-3 bg-zinc-900 hover:bg-zinc-700 text-paper text-sm font-semibold rounded transition-colors flex items-center gap-2">
                 Open designer <ArrowRight size={15} />
               </Link>
               <a
                 href="https://github.com/integral-quality/loreval"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-6 py-3 border border-zinc-700 text-zinc-300 text-sm font-medium rounded-md hover:border-zinc-500 hover:text-white transition-colors flex items-center gap-2"
+                className="px-6 py-3 border border-zinc-900/25 text-zinc-800 text-sm font-medium rounded hover:border-zinc-900 transition-colors flex items-center gap-2"
               >
                 <Github size={15} /> GitHub
               </a>
@@ -279,108 +276,107 @@ export default function HomePage() {
 
           <div className="flex-1 w-full max-w-md">
             {HERO_LEVEL && <PlayableHero level={HERO_LEVEL} />}
-            <p className="font-mono text-xs text-zinc-600 mt-3 leading-5">
-              This is a real level running on the real engine. The switch opens the door. Models get the same puzzle as text.
+            <p className="font-mono text-[11px] text-zinc-500 mt-3 leading-5">
+              real level, real engine — the switch opens the door. optimal verified by exhaustive search.
             </p>
           </div>
         </div>
       </section>
 
-      {/* WHAT IT EVALUATES */}
-      <section className="border-y border-zinc-800/60 py-24 bg-zinc-950/60">
-        <div className="max-w-5xl mx-auto px-6">
-          <SectionLabel coord="0,1">what it evaluates</SectionLabel>
-          <div className="grid lg:grid-cols-2 gap-px bg-zinc-800/40 rounded-lg overflow-hidden border border-zinc-800/60">
-
-            <div className="bg-zinc-950 p-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-2.5 h-2.5 rounded-[2px] bg-orange-400" />
-                <h3 className="text-xl font-semibold text-white">Solving</h3>
-              </div>
-              <p className="text-zinc-400 text-base leading-relaxed mb-5">
-                Given a puzzle it hasn't seen before, can the model produce a valid solution? The puzzles involve multi-step planning: locked doors that require a switch, agents that block each other, one-way tiles, color-changing mechanics. The model must reason about preconditions and ordering, not just find a path.
+      {/* THE TWO TASKS */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <RuleHeader coord="0,1" title="the two tasks" />
+        <div className="grid md:grid-cols-2 gap-x-16 gap-y-12">
+          <div className="flex gap-6">
+            <span className="font-mono text-3xl font-bold text-orange-500 leading-none select-none">1</span>
+            <div>
+              <h3 className="text-lg font-bold text-zinc-900 mb-3">Solving</h3>
+              <p className="text-zinc-600 text-[15px] leading-relaxed mb-4">
+                Given a puzzle it hasn't seen before, can the model produce a valid move sequence? The puzzles demand multi-step planning: doors that need a switch hit first, agents that block each other, one-way tiles, color-changing paint. Preconditions and ordering, not just pathfinding.
               </p>
-              <p className="text-zinc-500 text-base leading-relaxed">
-                Every move is logged and played back step-by-step, so you can inspect where the model's plan breaks down — not just whether it failed.
+              <p className="text-zinc-500 text-[15px] leading-relaxed">
+                Every attempt is replayed move-by-move through the engine, so you see <em>where</em> a plan breaks — not just that it failed.
               </p>
             </div>
-
-            <div className="bg-zinc-950 p-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-2.5 h-2.5 rounded-[2px] bg-blue-400" />
-                <h3 className="text-xl font-semibold text-white">Designing</h3>
-              </div>
-              <p className="text-zinc-400 text-base leading-relaxed mb-5">
-                Given a difficulty level, a grid size, and a set of mechanics to include, can the model produce a well-formed puzzle? This tests whether the model understands the interaction between mechanics well enough to use them purposefully — not just place them decoratively.
+          </div>
+          <div className="flex gap-6">
+            <span className="font-mono text-3xl font-bold text-blue-500 leading-none select-none">2</span>
+            <div>
+              <h3 className="text-lg font-bold text-zinc-900 mb-3">Designing</h3>
+              <p className="text-zinc-600 text-[15px] leading-relaxed mb-4">
+                Given a difficulty, a grid size, and a set of mechanics, can the model produce a well-formed puzzle? This probes whether it understands how mechanics interact — a switch placed where it matters, not as decoration.
               </p>
-              <p className="text-zinc-500 text-base leading-relaxed">
-                The model also provides a written explanation of its design decisions, which gives additional signal on whether it understood what it was building.
+              <p className="text-zinc-500 text-[15px] leading-relaxed">
+                The model also explains its design decisions in writing, which is extra signal on whether it understood what it built.
               </p>
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* DSL */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <SectionLabel coord="0,2">puzzle format</SectionLabel>
-        <div className="grid lg:grid-cols-2 gap-16 items-start">
+      {/* PUZZLE FORMAT */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <RuleHeader coord="0,2" title="the puzzle format" />
+        <div className="grid lg:grid-cols-2 gap-14 items-start">
           <div>
-            <h3 className="text-2xl font-semibold text-white mb-5">A text-based DSL</h3>
-            <p className="text-zinc-400 text-base leading-relaxed mb-5">
-              Puzzles are defined in a small domain-specific language. A level specifies a grid of tile characters, a legend mapping each character to a tile type and color, and agent declarations with start positions and goals.
+            <h3 className="text-2xl font-bold text-zinc-900 mb-5">Plain text, all the way down</h3>
+            <p className="text-zinc-600 text-[15px] leading-relaxed mb-4">
+              Levels are written in a small DSL: a grid of tile characters, a legend mapping characters to tile types and colors, and agent declarations with start positions and goals.
             </p>
-            <p className="text-zinc-400 text-base leading-relaxed mb-5">
-              The source on the right is the level at the top of this page — the one you can play. It's parsed by the same parser and run by the same engine that scores a model's attempt. The format is compact enough to fit in a prompt, which is how it gets sent to the model.
+            <p className="text-zinc-600 text-[15px] leading-relaxed mb-4">
+              The source on the right is the level at the top of this page — the one you can play. The same parser and the same engine that just ran your moves also score a model's attempt. There is no separate "eval version" of the game.
             </p>
-            <p className="text-zinc-400 text-base leading-relaxed">
-              Tile types include walls, floors, doors, switches, paint tiles, one-way tiles, locks, and goals — both color-matched and universal. Mechanics compose: a switch can open a door that a paint tile is needed to reach. Levels can be written by hand, produced by the visual editor, or generated by AI — all three stay in sync.
+            <p className="text-zinc-600 text-[15px] leading-relaxed mb-6">
+              The format is compact enough to fit in a prompt, which is exactly how a model receives it. Levels can be written by hand, drawn in the visual editor, or generated by a model — all three read and write the same text.
             </p>
+            <Link to="/docs" className="inline-flex items-center gap-2 font-mono text-sm text-orange-600 hover:text-orange-500 transition-colors">
+              full DSL reference <ArrowRight size={14} />
+            </Link>
           </div>
 
-          <div className="rounded-lg border border-zinc-800 overflow-hidden">
-            <PanelHeader label="switch-gate.puzzle — source" accent="#60a5fa" />
+          <DarkPanel label="switch-gate.puzzle · source" accent="#60a5fa">
             <DslBlock source={HERO_DSL} />
-          </div>
+          </DarkPanel>
         </div>
       </section>
 
-      {/* LIVE DEBUGGING */}
-      <section className="border-t border-zinc-800/60 py-24 bg-zinc-950/60">
-        <div className="max-w-5xl mx-auto px-6">
-          <SectionLabel coord="0,3">inspecting a solve attempt</SectionLabel>
-          <div className="grid lg:grid-cols-2 gap-16 items-start">
+      {/* INSPECTING AN ATTEMPT */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <RuleHeader coord="0,3" title="inspecting a solve attempt" />
+        <div className="grid lg:grid-cols-2 gap-14 items-start">
 
-            <div className="space-y-10">
-              {[
-                {
-                  title: 'Step-by-step playback',
-                  body: 'The model\'s planned move sequence plays back one step at a time. The current source and target tile are highlighted on the grid. Playback can be paused, stepped forward or backward, or rewound to the start.',
-                },
-                {
-                  title: 'Move log',
-                  body: 'Each move is listed as agent (x,y) → (x,y) direction, with the active step highlighted. Moves the engine skips — because the model placed an agent at the wrong position, or a path was blocked — are annotated rather than silently dropped.',
-                },
-                {
-                  title: 'Coordinate overlay',
-                  body: 'Axis labels run along the grid edges. During playback, highlighted tiles show their coordinates directly, so move log entries can be cross-referenced without counting cells.',
-                },
-                {
-                  title: 'Feedback loop',
-                  body: 'After a failed attempt, you can describe what went wrong in natural language. The original move sequence and your note are sent back to the model as context, and it retries.',
-                },
-              ].map(({ title, body }) => (
-                <div key={title}>
-                  <h4 className="text-base font-semibold text-zinc-200 mb-2">{title}</h4>
-                  <p className="text-zinc-500 text-base leading-relaxed">{body}</p>
+          <div className="space-y-9">
+            {[
+              {
+                title: 'Step-by-step playback',
+                body: 'The model\'s move sequence plays back one step at a time. Source and target tiles are highlighted; playback can be paused, stepped in either direction, or rewound.',
+              },
+              {
+                title: 'Move log',
+                body: 'Each move is listed as agent (x,y) → (x,y) direction. Moves the engine rejects — wrong agent position, blocked path — are annotated rather than silently dropped.',
+              },
+              {
+                title: 'Coordinate overlay',
+                body: 'Axis labels run along the grid edges, and highlighted tiles show their coordinates during playback, so the log can be cross-referenced without counting cells.',
+              },
+              {
+                title: 'Feedback loop',
+                body: 'After a failed attempt you can tell the model what went wrong, in plain language. Its previous moves and your note go back as context, and it retries.',
+              },
+            ].map(({ title, body }, i) => (
+              <div key={title} className="flex gap-5">
+                <span className="font-mono text-xs text-zinc-400 pt-1 select-none">{`0${i + 1}`}</span>
+                <div>
+                  <h4 className="text-base font-bold text-zinc-900 mb-1.5">{title}</h4>
+                  <p className="text-zinc-600 text-[15px] leading-relaxed">{body}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            <div className="rounded-lg border border-zinc-800 overflow-hidden lg:sticky lg:top-20">
-              <PanelHeader label="move log · paused" accent="#fb923c" />
-              <div className="bg-zinc-900/60 p-6 font-mono text-sm leading-8 space-y-0.5">
+          <div className="lg:sticky lg:top-20">
+            <DarkPanel label="move log · paused" accent="#fb923c">
+              <div className="p-6 font-mono text-sm leading-8 space-y-0.5">
                 {[
                   'orange  (1,4) → (1,3)  up',
                   'orange  (1,3) → (2,3)  right',
@@ -403,73 +399,99 @@ export default function HomePage() {
                 ))}
                 <div className="pt-4 border-t border-zinc-800 mt-3 flex justify-between text-zinc-500 text-sm">
                   <span>move 5 / 10</span>
-                  <span className="text-emerald-500/70">✓ solved</span>
+                  <span className="text-emerald-500/80">✓ solved</span>
                 </div>
               </div>
-            </div>
-
+            </DarkPanel>
           </div>
+
         </div>
       </section>
 
-      {/* WHY THIS SETUP */}
-      <section className="max-w-5xl mx-auto px-6 py-24">
-        <SectionLabel coord="0,4">why this setup</SectionLabel>
-        <div className="grid lg:grid-cols-3 gap-8">
+      {/* WHY GRIDS */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <RuleHeader coord="0,4" title="why grid puzzles" />
+        <div className="grid md:grid-cols-3 gap-x-12 gap-y-10">
           {[
             {
-              accent: '#6ee7b7',
+              accent: 'bg-emerald-500',
               title: 'Verifiable outcomes',
-              body: 'A puzzle is either solved or not. A generated puzzle is either solvable or not, and either requires its mechanics or doesn\'t. No scoring rubrics or LLM-as-judge needed.',
+              body: 'Solved or not. Solvable or not. Mechanics required or decorative. Every score is computed by executing moves, never by asking another model to grade.',
             },
             {
-              accent: '#60a5fa',
-              title: 'Novel problems',
-              body: 'Puzzles are designed by hand or generated on demand. Any combination of grid layout, mechanics, and agent configuration can produce something the model hasn\'t encountered in training.',
+              accent: 'bg-blue-500',
+              title: 'Inexhaustible novelty',
+              body: 'Any combination of layout, mechanics, and agents yields a level no model saw in training. Fresh test items can be minted forever, which keeps the benchmark honest.',
             },
             {
-              accent: '#fb923c',
-              title: 'Inspectable reasoning',
-              body: 'The step-by-step playback makes it possible to see where the model\'s plan diverges from a correct solution — useful for identifying specific failure modes rather than just recording a pass/fail.',
+              accent: 'bg-orange-500',
+              title: 'Inspectable failures',
+              body: 'Playback shows the exact move where a plan diverges. That turns a pass/fail number into a failure mode you can name — and study.',
             },
           ].map(({ accent, title, body }) => (
-            <div key={title} className="border border-zinc-800/60 rounded-lg p-7">
-              <div className="w-2.5 h-2.5 rounded-[2px] mb-5" style={{ backgroundColor: accent }} />
-              <h4 className="text-base font-semibold text-white mb-3">{title}</h4>
-              <p className="text-zinc-500 text-base leading-relaxed">{body}</p>
+            <div key={title}>
+              <div className={`w-2.5 h-2.5 rounded-[2px] mb-4 ${accent}`} />
+              <h4 className="text-base font-bold text-zinc-900 mb-2">{title}</h4>
+              <p className="text-zinc-600 text-[15px] leading-relaxed">{body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* HOW TO USE */}
-      <section className="border-t border-zinc-800/60 py-24 bg-zinc-950/60">
-        <div className="max-w-5xl mx-auto px-6">
-          <SectionLabel coord="0,5">using it</SectionLabel>
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              { n: '(0,0)', title: 'Design a level', body: 'Use the visual editor or write a puzzle in the DSL directly. Configure tile types, agent start positions, goals, and constraints.' },
-              { n: '(1,0)', title: 'Run a model on it', body: 'Select a model and watch the playback. Each move is shown in sequence with coordinates. Compare results across Haiku, Sonnet, and Opus.' },
-              { n: '(2,0)', title: 'Or ask AI to design', body: 'Prompt AI to generate a level with specific difficulty and mechanics. The model explains its choices. Test whether the result is actually solvable and coherent.' },
-            ].map(({ n, title, body }) => (
-              <div key={n} className="relative pl-7 border-l border-zinc-800">
-                <p className="font-mono text-xs text-orange-400/70 mb-3">{n}</p>
-                <h4 className="text-base font-semibold text-white mb-2">{title}</h4>
-                <p className="text-zinc-500 text-base leading-relaxed">{body}</p>
-              </div>
-            ))}
+      {/* STATUS */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <RuleHeader coord="0,5" title="status: built / building" />
+        <div className="grid md:grid-cols-2 gap-14">
+          <div>
+            <p className="font-mono text-xs text-emerald-700 mb-5">— working today</p>
+            <ul className="space-y-3">
+              {[
+                'DSL parser, serializer, and game engine — one source of truth',
+                'Visual designer with code editor, kept in sync both ways',
+                'Model solve attempts with step-by-step playback and retry loop',
+                'Model-generated levels from difficulty + mechanics constraints',
+                'Level saving, sharing, and community browsing',
+              ].map(item => (
+                <li key={item} className="flex gap-3 text-[15px] text-zinc-700 leading-relaxed">
+                  <Check size={15} className="text-emerald-600 mt-1 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="font-mono text-xs text-zinc-500 mb-5">— next, in order</p>
+            <ul className="space-y-3">
+              {[
+                'Deterministic solver: verified solvability and optimal length for every level',
+                'Fixed benchmark suites with batch runs, pass@k, and moves-vs-optimal',
+                'Interactive solve mode: the model sees the board state after every move',
+                'Logic gates (AND / OR / XOR) wiring switches to doors',
+                'Open-source CLI for running the eval against any provider',
+              ].map((item, i) => (
+                <li key={item} className="flex gap-3 text-[15px] text-zinc-500 leading-relaxed">
+                  <span className="font-mono text-xs text-zinc-400 mt-0.5 shrink-0 w-4">{i + 1}.</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p className="text-zinc-500 text-sm leading-relaxed mt-6 border-l-2 border-zinc-900/15 pl-4">
+              No model comparison numbers are published yet — they'll come from the benchmark harness, not from anecdotes. What exists today is the instrument.
+            </p>
           </div>
         </div>
       </section>
 
       {/* CLOSING */}
-      <section className="max-w-5xl mx-auto px-6 py-32">
-        <p className="text-zinc-400 text-xl leading-relaxed max-w-2xl mb-8">
-          The same puzzle can be handed to multiple models. The same model can be asked to solve a puzzle it just designed. Both directions are informative.
-        </p>
-        <Link to="/designer" className="inline-flex items-center gap-2 text-orange-400 text-base font-medium hover:text-orange-300 transition-colors group">
-          Get started <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
-        </Link>
+      <section className="max-w-5xl mx-auto px-6 pb-28">
+        <div className="border-t-2 border-zinc-900 pt-12">
+          <p className="text-zinc-700 text-xl leading-relaxed max-w-2xl mb-8">
+            The same puzzle can be handed to multiple models. The same model can be asked to solve a puzzle it just designed. Both directions are informative.
+          </p>
+          <Link to="/designer" className="inline-flex items-center gap-2 font-mono text-sm text-orange-600 hover:text-orange-500 transition-colors group">
+            open the designer <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
       </section>
 
     </div>

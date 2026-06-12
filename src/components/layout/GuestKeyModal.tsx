@@ -7,6 +7,8 @@ interface Props {
   onSave: () => void;
 }
 
+const inputCls = 'w-full bg-white border border-zinc-900/20 rounded px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 font-mono focus:outline-none focus:border-zinc-900 transition-colors';
+
 export function GuestKeyModal({ onClose, onSave }: Props) {
   const existing = getGuestConfig();
 
@@ -51,19 +53,19 @@ export function GuestKeyModal({ onClose, onSave }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+      <div className="absolute inset-0 bg-zinc-900/50" onClick={onClose} />
+      <div className="relative bg-paper border-2 border-zinc-900 rounded-lg w-full max-w-md p-6 shadow-2xl">
 
-        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-300 transition-colors">
+        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 transition-colors">
           <X size={18} />
         </button>
 
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
-            <Key size={15} className="text-purple-400" />
+          <div className="w-8 h-8 bg-orange-500/15 border border-orange-500/30 rounded flex items-center justify-center">
+            <Key size={15} className="text-orange-600" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Add your API key</h2>
+            <h2 className="text-base font-bold text-zinc-900">Add your API key</h2>
             <p className="text-xs text-zinc-500">Stored locally in your browser only</p>
           </div>
         </div>
@@ -72,16 +74,16 @@ export function GuestKeyModal({ onClose, onSave }: Props) {
 
           {/* Provider */}
           <div>
-            <label className="block text-xs text-zinc-400 mb-1.5">Provider</label>
+            <label className="block text-xs text-zinc-600 mb-1.5">Provider</label>
             <div className="grid grid-cols-2 gap-1.5">
               {PROVIDERS.map(p => (
                 <button
                   key={p.id}
                   onClick={() => handleProviderChange(p.id)}
-                  className={`py-2 px-3 rounded-lg text-xs font-medium transition-all border ${
+                  className={`py-2 px-3 rounded text-xs font-medium transition-all border ${
                     providerId === p.id
-                      ? 'bg-purple-600/20 border-purple-500/50 text-purple-300'
-                      : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-600'
+                      ? 'bg-zinc-900 border-zinc-900 text-paper'
+                      : 'bg-white/60 border-zinc-900/20 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900'
                   }`}
                 >
                   {p.label}
@@ -92,19 +94,19 @@ export function GuestKeyModal({ onClose, onSave }: Props) {
 
           {/* API key */}
           <div>
-            <label className="block text-xs text-zinc-400 mb-1.5">API key</label>
+            <label className="block text-xs text-zinc-600 mb-1.5">API key</label>
             <div className="relative">
               <input
                 type={visible ? 'text' : 'password'}
                 value={key}
                 onChange={e => { setKey(e.target.value); setError(''); }}
                 placeholder={provider.keyHint}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 pr-10 text-sm text-white placeholder-zinc-600 font-mono focus:outline-none focus:border-purple-500 transition-colors"
+                className={`${inputCls} pr-10`}
                 autoFocus
               />
               <button
                 onClick={() => setVisible(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 transition-colors"
               >
                 {visible ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
@@ -113,14 +115,14 @@ export function GuestKeyModal({ onClose, onSave }: Props) {
 
           {/* Model */}
           <div>
-            <label className="block text-xs text-zinc-400 mb-1.5">Model</label>
+            <label className="block text-xs text-zinc-600 mb-1.5">Model</label>
             <input
               type="text"
               value={model}
               onChange={e => { setModel(e.target.value); setError(''); }}
               placeholder={provider.defaultModel || 'model-name'}
               list={`models-${providerId}`}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 font-mono focus:outline-none focus:border-purple-500 transition-colors"
+              className={inputCls}
             />
             {provider.modelSuggestions.length > 0 && (
               <datalist id={`models-${providerId}`}>
@@ -132,34 +134,34 @@ export function GuestKeyModal({ onClose, onSave }: Props) {
           {/* Base URL (non-Anthropic) */}
           {showBaseUrl && (
             <div>
-              <label className="block text-xs text-zinc-400 mb-1.5">Base URL</label>
+              <label className="block text-xs text-zinc-600 mb-1.5">Base URL</label>
               <input
                 type="text"
                 value={baseUrl}
                 onChange={e => { setBaseUrl(e.target.value); setError(''); }}
                 placeholder="https://api.openai.com/v1"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-600 font-mono focus:outline-none focus:border-purple-500 transition-colors"
+                className={inputCls}
               />
             </div>
           )}
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && <p className="text-xs text-red-600">{error}</p>}
 
-          <p className="text-xs text-zinc-600 leading-relaxed">
+          <p className="text-xs text-zinc-500 leading-relaxed">
             Your key is saved in <code className="font-mono">localStorage</code> and sent directly to the provider via our proxy — we do not store it.
           </p>
 
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleSave}
-              className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded-lg transition-colors"
+              className="flex-1 py-2 bg-zinc-900 hover:bg-zinc-700 text-paper text-sm font-medium rounded transition-colors"
             >
               Save
             </button>
             {existing?.key && (
               <button
                 onClick={handleClear}
-                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-red-400 text-sm rounded-lg transition-colors"
+                className="px-4 py-2 border border-zinc-900/20 text-zinc-500 hover:border-red-600 hover:text-red-600 text-sm rounded transition-colors"
               >
                 Remove
               </button>

@@ -3,4 +3,20 @@
 
 @theme {
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Lab-notebook surface palette. Marketing pages are paper; game surfaces
+     (grids, code, designer) are dark instrument panels sitting on it. */
+  --color-paper: #f5f2ea;
+  --color-ink: #21201c;
+}
+
+@layer utilities {
+  /* Paper with graph ruling at half-tile pitch (TILE_SIZE = 56). */
+  .graph-paper {
+    background-color: var(--color-paper);
+    background-image:
+      linear-gradient(rgba(33, 32, 28, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(33, 32, 28, 0.05) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
 }

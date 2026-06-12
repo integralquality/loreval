@@ -35,7 +35,7 @@ export default function AccountPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[70vh]">
-        <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -53,32 +53,32 @@ export default function AccountPage() {
         {/* Avatar + name */}
         <div className="flex items-center gap-4">
           {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="w-16 h-16 rounded-full" />
+            <img src={profile.avatar_url} alt="" className="w-16 h-16 rounded-lg" />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-purple-500 flex items-center justify-center text-white text-2xl font-bold">
+            <div className="w-16 h-16 rounded-lg bg-zinc-900 flex items-center justify-center text-paper text-2xl font-bold font-mono">
               {profile.username[0]?.toUpperCase()}
             </div>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-white">{profile.username}</h1>
+            <h1 className="text-2xl font-bold text-zinc-900">{profile.username}</h1>
             <p className="text-sm text-zinc-500">{user.email}</p>
           </div>
         </div>
 
         {/* Edit username */}
         <div className="space-y-2">
-          <label className="text-sm text-zinc-400">Username</label>
+          <label className="text-sm text-zinc-600">Username</label>
           <div className="flex gap-2">
             <input
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500"
+              className="flex-1 px-3 py-2 bg-white border border-zinc-900/20 rounded text-zinc-900 text-sm focus:outline-none focus:border-zinc-900"
             />
             <button
               onClick={handleSaveUsername}
               disabled={saving || username === profile.username}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-40"
+              className="px-4 py-2 bg-zinc-900 hover:bg-zinc-700 text-paper text-sm font-medium rounded transition-colors disabled:opacity-40"
             >
               {saving ? 'Saving...' : 'Update'}
             </button>
@@ -89,7 +89,7 @@ export default function AccountPage() {
         <div className="space-y-2">
           <Link
             to="/my-levels"
-            className="block w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-300 text-sm hover:border-zinc-700 transition-colors"
+            className="block w-full px-4 py-3 bg-white/60 border border-zinc-900/15 rounded text-zinc-700 text-sm hover:border-zinc-900 transition-colors"
           >
             My Levels
           </Link>
@@ -99,7 +99,7 @@ export default function AccountPage() {
         <div className="flex items-center justify-between">
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-2 px-4 py-2.5 text-zinc-500 hover:text-red-400 text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 text-zinc-500 hover:text-red-600 text-sm transition-colors"
           >
             <LogOut size={16} /> Sign out
           </button>
@@ -113,7 +113,7 @@ export default function AccountPage() {
                 navigate('/');
               }
             }}
-            className="flex items-center gap-2 px-4 py-2.5 text-zinc-600 hover:text-red-500 text-xs transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 text-zinc-400 hover:text-red-600 text-xs transition-colors"
           >
             <Trash2 size={14} /> Delete account
           </button>

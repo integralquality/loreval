@@ -15,7 +15,7 @@ export function LoadingSpinner({ className, size = 'md' }: LoadingSpinnerProps) 
   return (
     <div
       className={cn(
-        'animate-spin rounded-full border-zinc-700 border-t-purple-400',
+        'animate-spin rounded-full border-zinc-700 border-t-orange-400',
         sizeClasses[size],
         className,
       )}

@@ -548,7 +548,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   if (cloudLoading) {
     return (
       <div className="flex h-screen bg-zinc-950 items-center justify-center">
-        <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -600,7 +600,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         {!playOnly && mode === 'design' && designTab === 'visual' && (
           <div className="p-4 space-y-2">
             <div className="flex gap-2">
-              <button onClick={handleSave} disabled={saveStatus === 'saving'} className="flex-1 flex items-center justify-center gap-2 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
+              <button onClick={handleSave} disabled={saveStatus === 'saving'} className="flex-1 flex items-center justify-center gap-2 py-2 bg-orange-600 hover:bg-orange-500 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
                 {saveStatus === 'saving' ? <Loader2 size={14} className="animate-spin" /> : saveStatus === 'saved' ? <Check size={14} /> : user ? <Cloud size={14} /> : <Save size={14} />}
                 {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
               </button>
@@ -616,7 +616,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 <Trash2 size={14} /> Clear
               </button>
             </div>
-            <button onClick={handleExport} className="w-full flex items-center justify-center gap-2 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 hover:border-purple-500/50 hover:text-purple-300 rounded-lg text-xs transition-colors">
+            <button onClick={handleExport} className="w-full flex items-center justify-center gap-2 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 hover:border-orange-500/50 hover:text-orange-300 rounded-lg text-xs transition-colors">
               <CloudOff size={14} /> Export .lrev
             </button>
             {saveStatus === 'error' && (
@@ -624,7 +624,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             )}
             {!user && (
               <p className="text-xs text-zinc-600 text-center">
-                <Link to="/login" className="text-purple-400 hover:text-purple-300">Sign in</Link> to save to cloud
+                <Link to="/login" className="text-orange-400 hover:text-orange-300">Sign in</Link> to save to cloud
               </p>
             )}
           </div>
@@ -662,7 +662,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     <div
                       className={`w-9 h-9 rounded-lg border-2 transition-all ${
                         (level.theme ?? 'dungeon') === t.id
-                          ? 'border-purple-400 scale-110 shadow-lg shadow-purple-500/30'
+                          ? 'border-orange-400 scale-110 shadow-lg shadow-orange-500/30'
                           : 'border-zinc-700 hover:border-zinc-500'
                       }`}
                       style={{ backgroundColor: t.wallPreview }}
@@ -675,9 +675,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* Entity Properties Panel */}
             {selectedEntityId && (
-              <div className="bg-zinc-800/50 p-4 rounded-xl border border-purple-500/30 animate-in fade-in slide-in-from-right-4">
+              <div className="bg-zinc-800/50 p-4 rounded-xl border border-orange-500/30 animate-in fade-in slide-in-from-right-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-purple-300">Agent</h3>
+                  <h3 className="text-sm font-bold text-orange-300">Agent</h3>
                   <button onClick={() => setSelectedEntityId(null)} className="text-zinc-500 hover:text-zinc-300">
                     <Ban size={14} />
                   </button>
@@ -727,9 +727,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
               <p className="text-sm text-zinc-400">
                 Click grid to place items. Select items to edit properties (Color, Rules).
                 <br /><br />
-                <span className="text-purple-400">Doors</span> block unless color matches.
+                <span className="text-orange-400">Doors</span> block unless color matches.
                 <br />
-                <span className="text-purple-400">Paint</span> changes character color.
+                <span className="text-orange-400">Paint</span> changes character color.
                 <br />
                 <span className="text-amber-400">Switches</span> toggle doors of matching color.
                 <br />
@@ -826,7 +826,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 onClick={() => { aiPlayback.stop(); setPlayMode('ai'); }}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
                   playMode === 'ai'
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-orange-600 text-white'
                     : 'bg-zinc-800 text-zinc-400 hover:text-white'
                 }`}
               >
@@ -862,7 +862,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 {aiPlayback.status === 'idle' && (
                   <button
                     onClick={() => void aiPlayback.startSolving(gameState, undefined, aiModel)}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium transition-colors"
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-sm font-medium transition-colors"
                   >
                     <Play size={14} /> Play
                   </button>
@@ -870,7 +870,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
                 {/* Solving */}
                 {aiPlayback.status === 'solving' && (
-                  <div className="flex items-center gap-2 text-sm text-purple-300">
+                  <div className="flex items-center gap-2 text-sm text-orange-300">
                     <Loader2 size={14} className="animate-spin" />
                     AI Thinking...
                   </div>
@@ -887,7 +887,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       </div>
                       <div className="h-1 bg-zinc-700 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-purple-500 rounded-full transition-all"
+                          className="h-full bg-orange-500 rounded-full transition-all"
                           style={{ width: `${aiPlayback.totalMoves ? (aiPlayback.currentMoveIndex / aiPlayback.totalMoves) * 100 : 0}%` }}
                         />
                       </div>
@@ -932,7 +932,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                           </button>
                           <button
                             onClick={aiPlayback.resume}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs transition-colors hover:bg-purple-500"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-orange-600 text-white text-xs transition-colors hover:bg-orange-500"
                           >
                             <Play size={12} /> Resume
                           </button>
@@ -1033,13 +1033,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         data-active={isActive ? 'true' : undefined}
                         className={`px-3 py-0.5 font-mono text-[11px] leading-5 ${
                           isActive
-                            ? 'bg-purple-600/30 text-white'
+                            ? 'bg-orange-600/30 text-white'
                             : isDone
                             ? 'text-zinc-600'
                             : 'text-zinc-400'
                         }`}
                       >
-                        {isActive && <span className="text-purple-400 mr-1">▶</span>}
+                        {isActive && <span className="text-orange-400 mr-1">▶</span>}
                         {line}
                       </div>
                     );
@@ -1063,7 +1063,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       className={`w-full text-left p-2 rounded-lg transition-colors ${isFinished
                           ? 'bg-zinc-900/50 opacity-40 cursor-default'
                           : gameState.selectedEntityId === entity.id
-                            ? 'bg-purple-600/20 border border-purple-500/50'
+                            ? 'bg-orange-600/20 border border-orange-500/50'
                             : 'bg-zinc-900 hover:bg-zinc-800'
                         }`}
                     >
@@ -1093,8 +1093,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             </div>
 
             {gameState.message && (
-              <div className="bg-purple-900/30 border border-purple-500/30 p-4 rounded-xl">
-                <p className="text-purple-200 text-sm">{gameState.message}</p>
+              <div className="bg-orange-900/30 border border-orange-500/30 p-4 rounded-xl">
+                <p className="text-orange-200 text-sm">{gameState.message}</p>
               </div>
             )}
 
@@ -1199,7 +1199,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                   <div className="flex bg-zinc-800 p-1 rounded-lg">
                     <button
                       onClick={() => setMode('design')}
-                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'design' ? 'bg-purple-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'}`}
+                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'design' ? 'bg-orange-600 text-white shadow-lg' : 'text-zinc-400 hover:text-zinc-200'}`}
                     >
                       <Grid3X3 size={15} /> Design
                     </button>
@@ -1244,7 +1244,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 onClick={() => setShowGenerate(!showGenerate)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm font-medium ${
                   showGenerate
-                    ? 'bg-purple-600 text-white shadow-lg'
+                    ? 'bg-orange-600 text-white shadow-lg'
                     : 'bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700'
                 }`}
               >
@@ -1272,7 +1272,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* Grid Container */}
             <div className="relative">
-              <div className="absolute inset-0 blur-3xl opacity-20 bg-purple-500/50 rounded-full scale-90 -z-10" />
+              <div className="absolute inset-0 blur-3xl opacity-20 bg-orange-500/50 rounded-full scale-90 -z-10" />
 
               <div className="flex items-start" style={{ gap: 4 }}>
                 {/* Row axis labels (left) */}
@@ -1402,7 +1402,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 {/* Header */}
                 <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800 shrink-0">
                   <span className="text-xs font-semibold text-white flex items-center gap-1.5">
-                    <Wand2 size={13} className="text-purple-400" /> Generate
+                    <Wand2 size={13} className="text-orange-400" /> Generate
                   </span>
                   <button
                     onClick={() => { setShowGenerate(false); aiGeneration.reset(); setGenSettingsOpen(true); }}
@@ -1430,7 +1430,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         onChange={(e) => setGenPrompt(e.target.value)}
                         placeholder="Describe your level…"
                         rows={3}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-purple-500 transition-colors"
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-orange-500 transition-colors"
                       />
 
                       {/* Size */}
@@ -1468,7 +1468,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                             return (
                               <button key={f.id}
                                 onClick={() => setGenFeatures((prev) => active ? prev.filter((x) => x !== f.id) : [...prev, f.id])}
-                                className={`px-2 py-0.5 rounded-full text-[11px] transition-colors border ${active ? 'bg-purple-600/30 text-purple-300 border-purple-600/50' : 'bg-zinc-800 text-zinc-400 hover:text-white border-transparent'}`}>
+                                className={`px-2 py-0.5 rounded-full text-[11px] transition-colors border ${active ? 'bg-orange-600/30 text-orange-300 border-orange-600/50' : 'bg-zinc-800 text-zinc-400 hover:text-white border-transparent'}`}>
                                 {f.label}
                               </button>
                             );
@@ -1510,7 +1510,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                             <button
                               onClick={() => { setGenMode('new'); aiGeneration.generate(opts); }}
                               disabled={disabled}
-                              className="flex items-center justify-center gap-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-medium transition-colors"
+                              className="flex items-center justify-center gap-1 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-medium transition-colors"
                               title="Generate a brand new level"
                             >
                               {generating && genMode === 'new' ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
@@ -1534,7 +1534,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       {aiGeneration.chatHistory.map((msg, i) => (
                         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[92%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
-                            msg.role === 'user' ? 'bg-purple-700/60 text-purple-100' : 'bg-zinc-800 text-zinc-300'
+                            msg.role === 'user' ? 'bg-orange-700/60 text-orange-100' : 'bg-zinc-800 text-zinc-300'
                           }`}>
                             {aiGeneration.status === 'generating' && i === aiGeneration.chatHistory.length - 1 && msg.role === 'user'
                               ? <span className="flex items-center gap-1.5"><Loader2 size={10} className="animate-spin shrink-0" />{msg.content}</span>
@@ -1560,12 +1560,12 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                           }}
                           placeholder="Make it harder, add switches… (Enter to send)"
                           rows={3}
-                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-purple-500"
+                          className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-xs text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-orange-500"
                         />
                         {genFeedback.trim() && (
                           <button
                             onClick={() => { aiGeneration.refine(genFeedback); setGenFeedback(''); }}
-                            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs transition-colors"
+                            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs transition-colors"
                           >
                             <Sparkles size={11} /> Refine level
                           </button>
@@ -1597,7 +1597,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[92%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
                         msg.role === 'user'
-                          ? 'bg-purple-700/60 text-purple-100'
+                          ? 'bg-orange-700/60 text-orange-100'
                           : 'bg-zinc-800 text-zinc-300 font-mono'
                       }`}>
                         {msg.content}
@@ -1621,12 +1621,12 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       }}
                       placeholder="Tell Claude what went wrong... (Enter to send)"
                       rows={6}
-                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-purple-500"
+                      className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-orange-500"
                     />
                     {aiFeedback.trim() && (
                       <button
                         onClick={() => { aiPlayback.retryWithFeedback(aiFeedback); setAiFeedback(''); }}
-                        className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs transition-colors"
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs transition-colors"
                       >
                         <Sparkles size={12} /> Send
                       </button>

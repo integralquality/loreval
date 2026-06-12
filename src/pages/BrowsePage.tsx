@@ -26,12 +26,12 @@ export default function BrowsePage() {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center justify-between mb-8">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Explore</p>
-            <h1 className="text-3xl font-bold text-white">All levels</h1>
+            <p className="font-mono text-[11px] text-zinc-500 mb-2">explore</p>
+            <h1 className="text-3xl font-bold text-zinc-900">All levels</h1>
             <p className="text-zinc-500 text-sm mt-1">Puzzles available for AI evaluation</p>
           </div>
 
-          <div className="flex bg-zinc-900 border border-zinc-800 p-1 rounded-lg">
+          <div className="flex bg-white/60 border border-zinc-900/15 p-1 rounded-lg">
             {([
               ['newest', 'Newest'],
               ['most_played', 'Most run'],
@@ -42,8 +42,8 @@ export default function BrowsePage() {
                 onClick={() => setSort(value)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                   sort === value
-                    ? 'bg-purple-600 text-white shadow-lg'
-                    : 'text-zinc-400 hover:text-zinc-200'
+                    ? 'bg-zinc-900 text-paper'
+                    : 'text-zinc-500 hover:text-zinc-900'
                 }`}
               >
                 {label}
@@ -54,16 +54,16 @@ export default function BrowsePage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : levels.length === 0 ? (
-          <div className="text-center py-24 border border-zinc-800 rounded-2xl bg-zinc-900/30">
+          <div className="text-center py-24 border border-dashed border-zinc-900/20 rounded-lg">
             <p className="text-zinc-500 mb-4">No levels published yet</p>
             <Link
               to="/designer"
-              className="text-purple-400 hover:text-purple-300 text-sm font-medium"
+              className="font-mono text-orange-600 hover:text-orange-500 text-sm"
             >
-              Design one in the editor
+              design one in the editor
             </Link>
           </div>
         ) : (
@@ -74,16 +74,16 @@ export default function BrowsePage() {
                 <Link
                   key={level.id}
                   to={`/play/s/${level.short_id}`}
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-purple-500/30 transition-colors group"
+                  className="bg-white/60 border border-zinc-900/15 rounded-lg overflow-hidden hover:border-zinc-900 transition-colors group"
                 >
-                  {/* Preview */}
+                  {/* Preview — dark instrument well */}
                   <div className="p-4 bg-zinc-950 flex items-center justify-center min-h-[160px]">
                     {parsed && <LevelPreview level={parsed} maxWidth={260} />}
                   </div>
 
                   {/* Info */}
                   <div className="p-4 space-y-2">
-                    <h3 className="text-white font-semibold truncate group-hover:text-purple-300 transition-colors">
+                    <h3 className="text-zinc-900 font-bold truncate">
                       {level.name}
                     </h3>
 
@@ -99,8 +99,8 @@ export default function BrowsePage() {
                       </span>
                     </div>
 
-                    <p className="text-xs text-zinc-600">
-                      {level.width}x{level.height}
+                    <p className="font-mono text-xs text-zinc-400">
+                      {level.width}×{level.height}
                     </p>
                   </div>
                 </Link>

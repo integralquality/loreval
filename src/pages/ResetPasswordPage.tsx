@@ -4,6 +4,9 @@ import { motion } from 'motion/react';
 import { Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { LogoMark } from '../components/layout/Navbar';
+
+const inputCls = 'w-full pl-10 pr-4 py-3 bg-white border border-zinc-900/20 rounded text-zinc-900 text-sm placeholder-zinc-400 focus:outline-none focus:border-zinc-900 transition-colors';
 
 export default function ResetPasswordPage() {
   const { updatePassword } = useAuth();
@@ -48,10 +51,10 @@ export default function ResetPasswordPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-sm w-full">
-          <div className="w-12 h-12 bg-emerald-500 rounded-xl mx-auto mb-6 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+          <div className="w-12 h-12 bg-emerald-600 rounded-lg mx-auto mb-6 flex items-center justify-center text-white">
             <Lock size={24} />
           </div>
-          <h1 className="text-2xl font-semibold text-white mb-3">Password updated</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 mb-3">Password updated</h1>
           <p className="text-zinc-500">Redirecting you now...</p>
         </motion.div>
       </div>
@@ -62,7 +65,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-sm w-full">
-          <div className="w-12 h-12 bg-zinc-800 rounded-xl mx-auto mb-6 animate-pulse" />
+          <div className="w-12 h-12 bg-zinc-900/10 rounded-lg mx-auto mb-6 animate-pulse" />
           <p className="text-zinc-500">Verifying reset link...</p>
         </motion.div>
       </div>
@@ -77,15 +80,13 @@ export default function ResetPasswordPage() {
         transition={{ duration: 0.4 }}
         className="max-w-sm w-full"
       >
-        <div className="w-12 h-12 bg-purple-500 rounded-xl mx-auto mb-6 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-purple-500/20">
-          M
-        </div>
-        <h1 className="text-3xl font-semibold text-white mb-3">New password</h1>
+        <div className="mx-auto mb-6 w-fit"><LogoMark className="w-10 h-10" /></div>
+        <h1 className="text-3xl font-bold text-zinc-900 mb-3">New password</h1>
         <p className="text-zinc-500 mb-8">Choose a new password for your account.</p>
 
         <form onSubmit={handleSubmit} className="space-y-3 text-left">
           <div className="relative">
-            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="password"
               placeholder="New password"
@@ -94,11 +95,11 @@ export default function ResetPasswordPage() {
               required
               minLength={6}
               autoComplete="new-password"
-              className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-purple-500 transition-colors"
+              className={inputCls}
             />
           </div>
           <div className="relative">
-            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="password"
               placeholder="Confirm password"
@@ -107,16 +108,16 @@ export default function ResetPasswordPage() {
               required
               minLength={6}
               autoComplete="new-password"
-              className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-purple-500 transition-colors"
+              className={inputCls}
             />
           </div>
 
-          {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+          {error && <p className="text-sm text-red-600 text-center">{error}</p>}
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-xl transition-all disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-zinc-900 hover:bg-zinc-700 text-paper font-medium rounded transition-colors disabled:opacity-50"
           >
             {submitting ? 'Updating...' : 'Update password'}
             {!submitting && <ArrowRight size={16} />}

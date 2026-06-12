@@ -8,7 +8,7 @@ import { LevelPreview } from './LevelPreview';
 
 // ── Syntax highlighting ─────────────────────────────────────
 
-const KEYWORD_COLOR = '#c084fc';   // purple-400
+const KEYWORD_COLOR = '#c084fc';   // orange-400
 const STRING_COLOR = '#86efac';    // green-300
 const NUMBER_COLOR = '#fdba74';    // orange-300
 const TYPE_COLOR = '#67e8f9';      // cyan-300
@@ -716,7 +716,7 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
       <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900/80 border-b border-zinc-800 shrink-0">
         <button
           onClick={handleParse}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium rounded-md transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-medium rounded-md transition-colors"
         >
           {showPreview ? <EyeOff size={13} /> : <Eye size={13} />}
           Preview
@@ -775,7 +775,7 @@ export function CodeEditorPanel({ initialCode, onApply, onCodeChange }: CodeEdit
               spellCheck={false}
               autoCorrect="off"
               autoCapitalize="off"
-              className="absolute inset-0 w-full h-full bg-transparent font-mono text-sm leading-6 py-4 pl-3 pr-4 resize-none outline-none border-none text-transparent caret-zinc-200 selection:bg-purple-500/30"
+              className="absolute inset-0 w-full h-full bg-transparent font-mono text-sm leading-6 py-4 pl-3 pr-4 resize-none outline-none border-none text-transparent caret-zinc-200 selection:bg-orange-500/30"
               style={{ tabSize: 2 }}
               placeholder={`level "My Level" 8x6\n\ngrid = [\n  W W W W W W W W,\n  W R R R R R R W,\n  W R W G R W R W,\n  W R R R R W R W,\n  W W R W R R R W,\n  W W W W W W W W,\n]\n\ntile G = tiles.goal(orange)\n\nagent(orange) start(1,1) and reach(3,2)`}
             />

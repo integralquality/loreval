@@ -6,18 +6,18 @@ import { GuestKeyModal } from './GuestKeyModal';
 import { RequestAccessModal } from './RequestAccessModal';
 
 const navLinks = [
-  { to: '/designer', label: 'Design' },
-  // { to: '/play', label: 'Solve' },  // coming soon
-  { to: '/docs',     label: 'Docs'   },
+  { to: '/designer', label: 'design' },
+  // { to: '/play', label: 'solve' },  // coming soon
+  { to: '/docs',     label: 'docs'   },
 ];
 
 export function LogoMark({ className = 'w-6 h-6' }: { className?: string }) {
   return (
     <div className={`grid grid-cols-2 gap-[3px] ${className}`}>
-      <div className="rounded-[2px] bg-orange-400" />
-      <div className="rounded-[2px] bg-blue-400" />
-      <div className="rounded-[2px] bg-zinc-700" />
-      <div className="rounded-[2px] bg-emerald-400" />
+      <div className="rounded-[2px] bg-orange-500" />
+      <div className="rounded-[2px] bg-blue-500" />
+      <div className="rounded-[2px] bg-zinc-900" />
+      <div className="rounded-[2px] bg-emerald-500" />
     </div>
   );
 }
@@ -36,7 +36,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/40">
+      <nav className="sticky top-0 z-50 bg-paper/90 backdrop-blur-md border-b-2 border-zinc-900">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-between h-14">
 
@@ -45,25 +45,26 @@ export default function Navbar() {
               <div className="group-hover:rotate-90 transition-transform duration-300">
                 <LogoMark />
               </div>
-              <span className="font-mono text-sm font-semibold text-zinc-200 tracking-tight hidden sm:block">
-                loreval<span className="text-orange-400">.</span>ai
+              <span className="font-mono text-sm font-bold text-zinc-900 tracking-tight hidden sm:block">
+                loreval<span className="text-orange-600">.</span>ai
               </span>
             </Link>
 
             {/* Nav links */}
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-1">
               {navLinks.map(({ to, label }) => {
                 const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
                 return (
                   <Link
                     key={to}
                     to={to}
-                    className={`relative px-4 py-1.5 font-mono text-[13px] transition-all rounded ${
-                      isActive ? 'text-orange-300' : 'text-zinc-500 hover:text-zinc-200'
+                    className={`px-4 py-1.5 font-mono text-[13px] transition-colors border-b-2 ${
+                      isActive
+                        ? 'text-zinc-900 border-orange-500'
+                        : 'text-zinc-500 border-transparent hover:text-zinc-900'
                     }`}
                   >
-                    {isActive && <span className="absolute inset-0 rounded bg-orange-500/10 border border-orange-500/20" />}
-                    <span className="relative">{label}</span>
+                    {label}
                   </Link>
                 );
               })}
@@ -75,7 +76,7 @@ export default function Navbar() {
                 href="https://github.com/integral-quality/loreval"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-zinc-500 hover:text-zinc-200 transition-colors"
+                className="p-2 text-zinc-500 hover:text-zinc-900 transition-colors"
                 title="Loreval on GitHub"
               >
                 <Github size={17} />
@@ -83,21 +84,21 @@ export default function Navbar() {
 
               <button
                 onClick={() => setShowAccessModal(true)}
-                className="font-mono text-[13px] text-zinc-600 hover:text-zinc-300 transition-colors hidden sm:block"
+                className="font-mono text-[13px] text-zinc-500 hover:text-zinc-900 transition-colors hidden sm:block px-2"
               >
-                Request access
+                request access
               </button>
 
               <button
                 onClick={() => setShowKeyModal(true)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-[13px] border transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-[13px] border transition-colors ${
                   keyActive
-                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
-                    : 'border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
+                    ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-700 hover:bg-emerald-600/20'
+                    : 'border-zinc-400 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900'
                 }`}
               >
                 <Key size={13} />
-                <span className="hidden sm:block">{keyActive ? 'Key active' : 'Add API key'}</span>
+                <span className="hidden sm:block">{keyActive ? 'key active' : 'add API key'}</span>
               </button>
             </div>
 
