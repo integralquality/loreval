@@ -12,21 +12,25 @@ import type { GameState, Level } from '../types';
 // The playable hero grid and the DSL sample further down are the same level:
 // this string is parsed by the real parser and run by the real engine.
 
-const HERO_DSL = `level "Switch Gate" 8x6
+const HERO_DSL = `level "Paint Run" 9x7
 grid = [
-  W W W W W W W W,
-  W R R R R R R W,
-  W R W W W W S W,
-  W R W G D R R W,
-  W R R W R R R W,
-  W W W W W W W W,
+  W W W W W W W W W,
+  W R R R W W W W W,
+  W R W S W W W W W,
+  W R W W W N W W W,
+  W R D R R R E P W,
+  W W W W W W W G W,
+  W W W W W W W W W,
 ]
 tile S = tiles.switch(blue)
 tile D = tiles.door(blue)
+tile N = tiles.paint(green)
+tile E = tiles.door(green)
+tile P = tiles.paint(orange)
 tile G = tiles.goal(orange)
-agent(orange) start(1,1) and reach(3,3)`;
+agent(orange) start(1,1) and reach(7,5)`;
 
-const HERO_OPTIMAL = 10; // verified by exhaustive search over the engine
+const HERO_OPTIMAL = 18; // verified by exhaustive search over the engine
 const HERO_LEVEL: Level | null = parseDSL(HERO_DSL).level;
 
 function freshState(level: Level): GameState {
@@ -49,7 +53,8 @@ const KEY_DELTAS: Record<string, [number, number]> = {
 };
 
 function PlayableHero({ level }: { level: Level }) {
-  const CELL = 44;
+  const CELL = 40;
+  const STEP = CELL + 1; // 1px hairline gap between tiles, matching the designer grid
   const [state, setState] = useState<GameState>(() => freshState(level));
   const [focused, setFocused] = useState(false);
 
@@ -69,33 +74,39 @@ function PlayableHero({ level }: { level: Level }) {
     move(d[0], d[1]);
   };
 
-  const gridW = level.width * CELL;
-  const gridH = level.height * CELL;
+  const gridW = level.width * CELL + (level.width - 1);
+  const gridH = level.height * CELL + (level.height - 1);
+
+  // Agent color tracks paint tiles, so look it up instead of hardcoding orange
+  const AGENT_HEX: Record<string, string> = {
+    orange: '#fb923c', blue: '#60a5fa', green: '#6ee7b7', red: '#f87171', purple: '#c084fc', pink: '#f472b6',
+  };
+  const agentHex = AGENT_HEX[agent?.color ?? 'orange'] ?? '#fb923c';
 
   return (
     <div className="rounded-lg bg-zinc-950 border border-zinc-800 shadow-[0_12px_40px_-12px_rgba(33,32,28,0.45)] overflow-hidden">
       {/* Panel header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-[2px] bg-orange-400" />
-          <span className="font-mono text-xs text-zinc-400">switch-gate.puzzle · you, solving</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ backgroundColor: agentHex }} />
+          <span className="font-mono text-xs text-zinc-400 truncate">paint-run.puzzle · you, solving</span>
         </div>
-        <span className="font-mono text-xs text-zinc-500">
+        <span className="font-mono text-xs text-zinc-500 shrink-0">
           moves {moves} · optimal {HERO_OPTIMAL}
         </span>
       </div>
 
-      <div className="p-5">
-        {/* Grid + axis labels */}
-        <div className="inline-block">
-          <div className="flex">
-            {/* y axis */}
-            <div className="flex flex-col mr-1.5" style={{ height: gridH }}>
-              {Array.from({ length: level.height }).map((_, y) => (
-                <div key={y} className="flex items-center justify-end font-mono text-[10px] text-zinc-600 w-3" style={{ height: CELL }}>{y}</div>
-              ))}
-            </div>
+      <div className="p-4 flex flex-col items-center">
+        {/* Axis labels + grid */}
+        <div className="flex items-start gap-1.5">
+          {/* y axis */}
+          <div className="flex flex-col" style={{ height: gridH }}>
+            {Array.from({ length: level.height }).map((_, y) => (
+              <div key={y} className="flex items-center justify-end font-mono text-[10px] text-zinc-600 w-3" style={{ height: STEP }}>{y}</div>
+            ))}
+          </div>
 
+          <div className="flex flex-col gap-1">
             <div
               tabIndex={0}
               role="application"
@@ -103,11 +114,11 @@ function PlayableHero({ level }: { level: Level }) {
               onKeyDown={onKeyDown}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              className="relative outline-none rounded-md cursor-pointer focus:ring-2 focus:ring-orange-400/40"
+              className="relative outline-none rounded-sm cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
               style={{ width: gridW, height: gridH }}
             >
               <div
-                className="grid rounded-md overflow-hidden"
+                className="grid gap-px"
                 style={{
                   gridTemplateColumns: `repeat(${level.width}, ${CELL}px)`,
                   gridTemplateRows: `repeat(${level.height}, ${CELL}px)`,
@@ -134,16 +145,20 @@ function PlayableHero({ level }: { level: Level }) {
                 <motion.div
                   className="absolute top-0 left-0 flex items-center justify-center pointer-events-none"
                   style={{ width: CELL, height: CELL }}
-                  animate={{ x: agent.position.x * CELL, y: agent.position.y * CELL }}
+                  animate={{ x: agent.position.x * STEP, y: agent.position.y * STEP }}
                   transition={{ type: 'spring', stiffness: 350, damping: 26 }}
                 >
-                  <EntityIcon type="robot" color="#fb923c" className="w-6 h-6 drop-shadow-[0_0_8px_rgba(251,146,60,0.5)]" />
+                  <EntityIcon
+                    type="robot"
+                    color={agentHex}
+                    className="w-6 h-6"
+                  />
                 </motion.div>
               )}
 
               {/* Win overlay */}
               {won && (
-                <div className="absolute inset-0 rounded-md bg-zinc-950/85 flex flex-col items-center justify-center gap-3">
+                <div className="absolute inset-0 rounded-sm bg-zinc-950/85 flex flex-col items-center justify-center gap-3">
                   <p className="font-mono text-sm text-emerald-400 flex items-center gap-2">
                     <Check size={15} /> solved in {moves} moves
                   </p>
@@ -156,22 +171,22 @@ function PlayableHero({ level }: { level: Level }) {
                 </div>
               )}
             </div>
-          </div>
 
-          {/* x axis */}
-          <div className="flex ml-[18px]" style={{ width: gridW }}>
-            {Array.from({ length: level.width }).map((_, x) => (
-              <div key={x} className="text-center font-mono text-[10px] text-zinc-600" style={{ width: CELL }}>{x}</div>
-            ))}
+            {/* x axis */}
+            <div className="grid gap-px" style={{ gridTemplateColumns: `repeat(${level.width}, ${CELL}px)` }}>
+              {Array.from({ length: level.width }).map((_, x) => (
+                <div key={x} className="text-center font-mono text-[10px] text-zinc-600">{x}</div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Controls row */}
-        <div className="mt-3 flex items-center justify-between gap-3">
-          <p className="font-mono text-xs text-zinc-500 min-h-4">
-            {won ? '' : state.message || (focused ? 'arrow keys / wasd' : 'click the grid to play')}
+        <div className="mt-3 w-full flex items-center justify-between gap-3 border-t border-zinc-800/60 pt-3">
+          <p className="font-mono text-[11px] text-zinc-500 min-h-4 truncate">
+            {won ? '✓ done' : state.message || (focused ? 'arrow keys / wasd' : 'click the grid to play')}
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             {([
               [ChevronLeft, -1, 0], [ChevronUp, 0, -1], [ChevronDown, 0, 1], [ChevronRight, 1, 0],
             ] as const).map(([Icon, dx, dy], i) => (
@@ -277,7 +292,7 @@ export default function HomePage() {
           <div className="flex-1 w-full max-w-md">
             {HERO_LEVEL && <PlayableHero level={HERO_LEVEL} />}
             <p className="font-mono text-[11px] text-zinc-500 mt-3 leading-5">
-              real level, real engine — the switch opens the door. optimal verified by exhaustive search.
+              real level, real engine. the switch opens the blue door — but the goal takes more than that. optimal verified by exhaustive search.
             </p>
           </div>
         </div>
@@ -334,7 +349,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <DarkPanel label="switch-gate.puzzle · source" accent="#60a5fa">
+          <DarkPanel label="paint-run.puzzle · source" accent="#60a5fa">
             <DslBlock source={HERO_DSL} />
           </DarkPanel>
         </div>
