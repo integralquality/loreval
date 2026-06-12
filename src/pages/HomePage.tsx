@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check, Github } from 'lucide-react';
+import { ArrowRight, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check, Github, Code2, Grid3X3 } from 'lucide-react';
 import { TileIcon } from '../components/game/TileIcon';
 import { EntityIcon } from '../components/game/EntityIcon';
 import { parseDSL } from '../dsl/parser';
@@ -57,15 +57,37 @@ function PlayableHero({ level }: { level: Level }) {
   const STEP = CELL + 1; // 1px hairline gap between tiles, matching the designer grid
   const [state, setState] = useState<GameState>(() => freshState(level));
   const [focused, setFocused] = useState(false);
+  const [log, setLog] = useState<string[]>([]);
+  const [showSource, setShowSource] = useState(false);
+  const logRef = useRef<HTMLDivElement>(null);
 
   const agent = state.entities[0];
   const moves = agent ? state.moves[agent.id] ?? 0 : 0;
   const won = state.status === 'won';
 
-  const move = (dx: number, dy: number) =>
-    setState(prev => executeMove(level, prev, dx, dy) ?? prev);
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [log]);
 
-  const reset = () => setState(freshState(level));
+  const move = (dx: number, dy: number) => {
+    const dir = dx === 1 ? 'right' : dx === -1 ? 'left' : dy === 1 ? 'down' : 'up';
+    const next = executeMove(level, state, dx, dy);
+    if (!next) return;
+    const a0 = state.entities[0];
+    const a1 = next.entities[0];
+    if (a0 && a1 && (a0.position.x !== a1.position.x || a0.position.y !== a1.position.y)) {
+      setLog(l => [...l, `${a0.color ?? 'agent'}  (${a0.position.x},${a0.position.y}) → (${a1.position.x},${a1.position.y})  ${dir}`]);
+    } else if (next.message) {
+      // Rejected moves are annotated, not silently dropped — same rule as playback
+      setLog(l => [...l, `✗ ${dir} — blocked`]);
+    }
+    setState(next);
+  };
+
+  const reset = () => {
+    setState(freshState(level));
+    setLog([]);
+  };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     const d = KEY_DELTAS[e.key];
@@ -97,7 +119,25 @@ function PlayableHero({ level }: { level: Level }) {
       </div>
 
       <div className="p-4 flex flex-col items-center">
-        {/* Axis labels + grid */}
+        {showSource ? (
+          /* Source view — same level, same string the model receives */
+          <div
+            className="overflow-auto w-full rounded-sm border border-zinc-800/60 px-4 py-3 font-mono text-xs leading-6"
+            style={{ height: gridH + 18 }}
+          >
+            {HERO_DSL.split('\n').map((line, i) => {
+              const kw = /^(level|grid|tile|agent)\b/.exec(line)?.[1];
+              if (!kw) return <p key={i} className="text-zinc-500 whitespace-pre">{line || ' '}</p>;
+              return (
+                <p key={i} className="whitespace-pre">
+                  <span className="text-blue-300">{kw}</span>
+                  <span className="text-zinc-300">{line.slice(kw.length)}</span>
+                </p>
+              );
+            })}
+          </div>
+        ) : (
+        /* Axis labels + grid */
         <div className="flex items-start gap-1.5">
           {/* y axis */}
           <div className="flex flex-col" style={{ height: gridH }}>
@@ -180,9 +220,27 @@ function PlayableHero({ level }: { level: Level }) {
             </div>
           </div>
         </div>
+        )}
+
+        {/* Move log */}
+        <div
+          ref={logRef}
+          className="mt-3 w-full h-16 overflow-y-auto border-t border-zinc-800/60 pt-2 font-mono text-[11px] leading-5"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: '#3f3f46 transparent' }}
+        >
+          {log.length === 0 ? (
+            <p className="text-zinc-700">— move log: your moves appear here, exactly as a model's would —</p>
+          ) : (
+            log.map((line, i) => (
+              <p key={i} className={line.startsWith('✗') ? 'text-red-400/80' : 'text-zinc-500'}>
+                <span className="text-zinc-700 mr-2">{String(i + 1).padStart(2, '0')}</span>{line}
+              </p>
+            ))
+          )}
+        </div>
 
         {/* Controls row */}
-        <div className="mt-3 w-full flex items-center justify-between gap-3 border-t border-zinc-800/60 pt-3">
+        <div className="mt-2 w-full flex items-center justify-between gap-3 border-t border-zinc-800/60 pt-3">
           <p className="font-mono text-[11px] text-zinc-500 min-h-4 truncate">
             {won ? '✓ done' : state.message || (focused ? 'arrow keys / wasd' : 'click the grid to play')}
           </p>
@@ -196,6 +254,18 @@ function PlayableHero({ level }: { level: Level }) {
             ))}
             <button onClick={reset} className="p-1.5 ml-1 rounded border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-600 transition-colors" aria-label="reset">
               <RotateCcw size={13} />
+            </button>
+            <button
+              onClick={() => setShowSource(s => !s)}
+              className={`flex items-center gap-1.5 px-2 py-1.5 ml-1 rounded border font-mono text-[11px] transition-colors ${
+                showSource
+                  ? 'border-blue-400/40 text-blue-300 bg-blue-500/10'
+                  : 'border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-600'
+              }`}
+              title={showSource ? 'Back to the grid' : 'View this level as DSL source'}
+            >
+              {showSource ? <Grid3X3 size={12} /> : <Code2 size={12} />}
+              {showSource ? 'grid' : 'source'}
             </button>
           </div>
         </div>
