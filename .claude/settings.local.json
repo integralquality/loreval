@@ -21,7 +21,10 @@
       "Bash(npm install:*)",
       "Bash(git:*)",
       "Bash(xargs grep:*)",
-      "WebFetch(domain:arcprize.org)"
+      "WebFetch(domain:arcprize.org)",
+      "PowerShell(npm run *)",
+      "PowerShell(npx -y tsx check-hero.ts)",
+      "PowerShell(Remove-Item *)"
     ]
   }
 }
