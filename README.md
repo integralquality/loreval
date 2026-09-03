@@ -1,6 +1,6 @@
 # LoREval
 
-> **AI sloppy docs, will improve when things are more stable**
+> **Experimental version - temporary AI generated docs**
 
 Loreval measures how well language models do **logic and reasoning** on grid-based spatial puzzles. It's a web app for playing and designing puzzles, plus the harness that hands the same puzzles to an LLM and scores what comes back — no rubric, no judge model. A puzzle is either solved or it isn't.
 
