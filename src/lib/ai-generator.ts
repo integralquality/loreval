@@ -1,14 +1,7 @@
 import { parseDSL } from '../dsl/parser';
 import type { Level } from '../types';
-import { AI_MODELS } from './ai-solver';
-import type { AiModelId } from './ai-solver';
-import { getGuestConfig } from './guestKey';
-
-function guestParams() {
-  const c = getGuestConfig();
-  if (!c) return {};
-  return { guestKey: c.key, guestProvider: c.provider, guestModel: c.model, guestBaseUrl: c.baseUrl };
-}
+import { defaultModelSelection, resolveModelSelection } from './credentials';
+import type { ModelSelection } from './ai-solver';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -38,7 +31,7 @@ export interface GenerateOptions {
   height?: number;
   difficulty?: Difficulty;
   features?: LevelFeature[];
-  model?: AiModelId;
+  model?: ModelSelection;
   /** Passed automatically by useAiGeneration on retry. */
   retryContext?: { previousDsl: string; error?: string; userFeedback?: string };
 }
@@ -50,12 +43,27 @@ export type GenerateResult = GenerateSuccess | GenerateFailure;
 // ─── Core function ────────────────────────────────────────────────────────────
 
 export async function generateLevel(opts: GenerateOptions): Promise<GenerateResult> {
+  const chosen = opts.model ?? defaultModelSelection();
+  if (!chosen) {
+    return { ok: false, error: 'No API key configured. Add one with the "API keys" button.' };
+  }
+  const resolved = resolveModelSelection(chosen);
+  if (!resolved) {
+    return { ok: false, error: `No API key for the selected model (${chosen}).` };
+  }
+
   let res: Response;
   try {
     res = await fetch('/api/generate-level', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...opts, ...guestParams() }),
+      body: JSON.stringify({
+        ...opts,
+        provider: resolved.providerId,
+        model: resolved.modelId,
+        apiKey: resolved.key,
+        baseUrl: resolved.baseUrl,
+      }),
     });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Network error' };
@@ -76,6 +84,4 @@ export async function generateLevel(opts: GenerateOptions): Promise<GenerateResu
   return { ok: true, level: parsed.level, dsl: data.dsl, summary: data.summary };
 }
 
-// Re-export for convenience in the UI layer
-export { AI_MODELS };
-export type { AiModelId };
+export type { ModelSelection };

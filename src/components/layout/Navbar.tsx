@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Key, Github } from 'lucide-react';
-import { hasGuestKey } from '../../lib/guestKey';
-import { GuestKeyModal } from './GuestKeyModal';
-import { RequestAccessModal } from './RequestAccessModal';
+import { hasAnyCredential, configuredProviderIds } from '../../lib/credentials';
+import { ApiKeysModal } from './ApiKeysModal';
 
 const navLinks = [
   { to: '/designer', label: 'design' },
+  { to: '/eval',     label: 'eval'   },
   // { to: '/play', label: 'solve' },  // coming soon
   { to: '/docs',     label: 'docs'   },
 ];
@@ -25,14 +25,13 @@ export function LogoMark({ className = 'w-6 h-6' }: { className?: string }) {
 export default function Navbar() {
   const location = useLocation();
   const [showKeyModal, setShowKeyModal]     = useState(false);
-  const [showAccessModal, setShowAccessModal] = useState(false);
-  const [keyActive, setKeyActive]           = useState(false);
+  const [keyActive, setKeyActive]           = useState(() => hasAnyCredential());
+  const [keyCount, setKeyCount]             = useState(() => configuredProviderIds().length);
 
-  useEffect(() => {
-    setKeyActive(hasGuestKey());
-  }, []);
-
-  const handleKeySaved = () => setKeyActive(hasGuestKey());
+  const handleKeySaved = () => {
+    setKeyActive(hasAnyCredential());
+    setKeyCount(configuredProviderIds().length);
+  };
 
   return (
     <>
@@ -83,13 +82,6 @@ export default function Navbar() {
               </a>
 
               <button
-                onClick={() => setShowAccessModal(true)}
-                className="font-mono text-[13px] text-zinc-500 hover:text-zinc-900 transition-colors hidden sm:block px-2"
-              >
-                request access
-              </button>
-
-              <button
                 onClick={() => setShowKeyModal(true)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-[13px] border transition-colors ${
                   keyActive
@@ -98,7 +90,9 @@ export default function Navbar() {
                 }`}
               >
                 <Key size={13} />
-                <span className="hidden sm:block">{keyActive ? 'key active' : 'add API key'}</span>
+                <span className="hidden sm:block">
+                  {keyActive ? `${keyCount} key${keyCount === 1 ? '' : 's'}` : 'add API key'}
+                </span>
               </button>
             </div>
 
@@ -106,8 +100,7 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {showKeyModal    && <GuestKeyModal    onClose={() => setShowKeyModal(false)}    onSave={handleKeySaved} />}
-      {showAccessModal && <RequestAccessModal onClose={() => setShowAccessModal(false)} />}
+      {showKeyModal && <ApiKeysModal onClose={() => setShowKeyModal(false)} onSave={handleKeySaved} />}
     </>
   );
 }

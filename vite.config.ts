@@ -14,6 +14,7 @@ import {
   GENERATE_SYSTEM_PROMPT,
   VALID_DIFFICULTIES,
   VALID_FEATURES,
+  DEFAULT_MODEL,
 } from './api/_anthropic';
 import type { RetryContext, GenerateRequest, GenerateRetryContext, Difficulty, LevelFeature } from './api/_anthropic';
 
@@ -66,17 +67,17 @@ export default defineConfig(() => {
               return jsonError(res, 400, 'Invalid JSON body');
             }
 
-            const guestKey     = typeof body.guestKey     === 'string' ? body.guestKey.trim()  : '';
-            const guestProvider = typeof body.guestProvider === 'string' ? body.guestProvider    : 'anthropic';
-            const guestModel   = typeof body.guestModel    === 'string' ? body.guestModel       : 'claude-sonnet-4-6';
-            const guestBaseUrl = typeof body.guestBaseUrl  === 'string' ? body.guestBaseUrl     : '';
-            if (!guestKey) return jsonError(res, 401, 'No API key provided. Add your key via the "Add API key" button.');
+            const apiKey   = typeof body.apiKey   === 'string' ? body.apiKey.trim() : '';
+            const provider = typeof body.provider === 'string' ? body.provider      : 'anthropic';
+            const model    = typeof body.model    === 'string' && body.model ? body.model : DEFAULT_MODEL;
+            const baseUrl  = typeof body.baseUrl  === 'string' ? body.baseUrl       : '';
+            if (!apiKey) return jsonError(res, 401, 'No API key provided. Add one with the "API keys" button.');
 
             const { dsl, retryContext } = body as { dsl?: string; retryContext?: RetryContext };
             if (!dsl || typeof dsl !== 'string') return jsonError(res, 400, 'Missing dsl field');
 
             const result = await callLLM({
-              guestKey, guestProvider, guestModel, guestBaseUrl,
+              apiKey, provider, model, baseUrl,
               system: SOLVE_SYSTEM_PROMPT,
               messages: buildSolveMessages(dsl, retryContext),
               maxTokens: 8000,
@@ -84,13 +85,13 @@ export default defineConfig(() => {
 
             if (!result.ok) return jsonError(res, 502, result.message);
 
-            console.log('[AI solver] Claude response:\n', result.text);
+            console.log('[AI solver] response:\n', result.text);
             const moves = parseMoves(result.text);
             if (!moves) {
-              res.end(JSON.stringify({ moves: [], error: 'No valid moves found in response', raw: result.text }));
+              res.end(JSON.stringify({ moves: [], error: 'No valid moves found in response', raw: result.text, usage: result.usage }));
               return;
             }
-            res.end(JSON.stringify({ moves }));
+            res.end(JSON.stringify({ moves, usage: result.usage }));
           });
 
           // ── POST /api/generate-level ─────────────────────────────────────────
@@ -105,11 +106,11 @@ export default defineConfig(() => {
               return jsonError(res, 400, 'Invalid JSON body');
             }
 
-            const guestKey2     = typeof body.guestKey     === 'string' ? body.guestKey.trim()  : '';
-            const guestProvider2 = typeof body.guestProvider === 'string' ? body.guestProvider    : 'anthropic';
-            const guestModel2   = typeof body.guestModel    === 'string' ? body.guestModel       : 'claude-sonnet-4-6';
-            const guestBaseUrl2 = typeof body.guestBaseUrl  === 'string' ? body.guestBaseUrl     : '';
-            if (!guestKey2) return jsonError(res, 401, 'No API key provided. Add your key via the "Add API key" button.');
+            const apiKey2   = typeof body.apiKey   === 'string' ? body.apiKey.trim() : '';
+            const provider2 = typeof body.provider === 'string' ? body.provider      : 'anthropic';
+            const model2    = typeof body.model    === 'string' && body.model ? body.model : DEFAULT_MODEL;
+            const baseUrl2  = typeof body.baseUrl  === 'string' ? body.baseUrl       : '';
+            if (!apiKey2) return jsonError(res, 401, 'No API key provided. Add one with the "API keys" button.');
 
             const prompt =
               typeof body.prompt === 'string' ? body.prompt.slice(0, 500).trim() : '';
@@ -140,8 +141,8 @@ export default defineConfig(() => {
                 : undefined;
 
             const result = await callLLM({
-              guestKey: guestKey2, guestProvider: guestProvider2,
-              guestModel: guestModel2, guestBaseUrl: guestBaseUrl2,
+              apiKey: apiKey2, provider: provider2,
+              model: model2, baseUrl: baseUrl2,
               system: GENERATE_SYSTEM_PROMPT,
               messages: buildGenerateMessages(genReq, retryContext),
               maxTokens: 3000,
@@ -149,14 +150,14 @@ export default defineConfig(() => {
 
             if (!result.ok) return jsonError(res, 502, result.message);
 
-            console.log('[AI generator] Claude response:\n', result.text);
+            console.log('[AI generator] response:\n', result.text);
             const dsl = extractDsl(result.text);
             if (!dsl) {
-              res.end(JSON.stringify({ error: 'Claude did not output a DSL code block', raw: result.text }));
+              res.end(JSON.stringify({ error: 'The model did not output a DSL code block', raw: result.text, usage: result.usage }));
               return;
             }
             const summary = extractSummary(result.text);
-            res.end(JSON.stringify({ dsl, ...(summary && { summary }) }));
+            res.end(JSON.stringify({ dsl, usage: result.usage, ...(summary && { summary }) }));
           });
         },
       },

@@ -7,21 +7,12 @@
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
-export const VALID_MODELS = [
-  'claude-haiku-4-5-20251001',
-  'claude-sonnet-4-6',
-  'claude-opus-4-6',
-] as const;
-
-export type AiModelId = (typeof VALID_MODELS)[number];
-
-export const DEFAULT_MODEL: AiModelId = 'claude-sonnet-4-6';
-
-export function resolveModel(raw: unknown): AiModelId {
-  return (VALID_MODELS as readonly string[]).includes(raw as string)
-    ? (raw as AiModelId)
-    : DEFAULT_MODEL;
-}
+/**
+ * Fallback when a request names no model. The selectable catalog lives in
+ * `src/lib/providers.ts` — the client owns it, so there is one list to keep
+ * current instead of two that drift apart.
+ */
+export const DEFAULT_MODEL = 'claude-sonnet-5';
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
@@ -38,30 +29,46 @@ interface CallParams {
   maxTokens?: number;
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export type CallResult =
-  | { ok: true; text: string }
+  | { ok: true; text: string; usage?: TokenUsage }
   | { ok: false; httpStatus: number; message: string };
 
 // ─── Provider routing ─────────────────────────────────────────────────────────
 
-export interface GuestCallParams {
-  guestKey: string;
-  guestProvider: string;
-  guestModel: string;
-  guestBaseUrl: string;
+export interface ProviderCallParams {
+  apiKey: string;
+  /** Provider id from the client catalog; 'anthropic' uses the native API. */
+  provider: string;
+  model: string;
+  /** Required for OpenAI-compatible providers. */
+  baseUrl: string;
   system: string;
   messages: AnthropicMessage[];
   maxTokens?: number;
 }
 
-export async function callLLM(params: GuestCallParams): Promise<CallResult> {
-  const { guestKey, guestProvider, guestModel, guestBaseUrl, system, messages, maxTokens } = params;
-  if (guestProvider === 'anthropic') {
-    return callAnthropic({ apiKey: guestKey, model: guestModel || 'claude-sonnet-4-6', system, messages, maxTokens });
+export async function callLLM(params: ProviderCallParams): Promise<CallResult> {
+  const { apiKey, provider, model, baseUrl, system, messages, maxTokens } = params;
+  if (provider === 'anthropic') {
+    return callAnthropic({ apiKey, model: model || DEFAULT_MODEL, system, messages, maxTokens });
   }
-  // OpenAI-compatible (OpenAI, Groq, Together, Mistral, Ollama, custom)
-  const baseUrl = (guestBaseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');
-  return callOpenAI({ apiKey: guestKey, baseUrl, model: guestModel, system, messages, maxTokens });
+  // OpenAI-compatible (OpenAI, Google, Groq, OpenRouter, Ollama, custom).
+  // Never guess a base URL here: defaulting to one provider's endpoint would
+  // send another provider's key to it.
+  const url = baseUrl.trim().replace(/\/$/, '');
+  if (!url) {
+    return {
+      ok: false,
+      httpStatus: 400,
+      message: `No base URL supplied for provider "${provider}".`,
+    };
+  }
+  return callOpenAI({ apiKey, baseUrl: url, model, system, messages, maxTokens });
 }
 
 // ─── Anthropic API call ───────────────────────────────────────────────────────
@@ -99,9 +106,17 @@ export async function callAnthropic(params: CallParams): Promise<CallResult> {
 
   const data = (await response.json()) as {
     content: Array<{ type: string; text: string }>;
+    usage?: { input_tokens?: number; output_tokens?: number };
   };
   const text = data.content?.find((c) => c.type === 'text')?.text ?? '';
-  return { ok: true, text };
+  return {
+    ok: true,
+    text,
+    usage: {
+      inputTokens: data.usage?.input_tokens ?? 0,
+      outputTokens: data.usage?.output_tokens ?? 0,
+    },
+  };
 }
 
 // ─── OpenAI-compatible API call ───────────────────────────────────────────────
@@ -141,9 +156,17 @@ async function callOpenAI(params: {
 
   const data = (await response.json()) as {
     choices: Array<{ message: { content: string } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
   const text = data.choices?.[0]?.message?.content ?? '';
-  return { ok: true, text };
+  return {
+    ok: true,
+    text,
+    usage: {
+      inputTokens: data.usage?.prompt_tokens ?? 0,
+      outputTokens: data.usage?.completion_tokens ?? 0,
+    },
+  };
 }
 
 // ─── Solver ───────────────────────────────────────────────────────────────────

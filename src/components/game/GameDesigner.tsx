@@ -32,8 +32,9 @@ import {
 import type { Level, Tile, TileType, Entity, RuleType, Direction, GameState } from '../../types';
 import { useAiPlayback } from '../../hooks/useAiPlayback';
 import { useAiGeneration } from '../../hooks/useAiGeneration';
-import { AI_MODELS } from '../../lib/ai-solver';
-import type { AiModelId } from '../../lib/ai-solver';
+import type { ModelSelection } from '../../lib/ai-solver';
+import { useAvailableModels } from '../../hooks/useAvailableModels';
+import { modelKey } from '../../lib/providers';
 import {
   DIFFICULTIES,
   FEATURES,
@@ -102,7 +103,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   });
   const [playMode, setPlayMode] = useState<'human' | 'ai'>('human');
   const [aiSpeed, setAiSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
-  const [aiModel, setAiModel] = useState<AiModelId>('claude-sonnet-4-6');
+  const [aiModel, setAiModel] = useState<ModelSelection>('');
   const [aiFeedback, setAiFeedback] = useState('');
   const aiPlayback = useAiPlayback(level, setGameState);
   const chatScrollRef = useRef<HTMLDivElement>(null);
@@ -115,8 +116,15 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   const [genSize, setGenSize] = useState<{ width: number; height: number }>({ width: 8, height: 8 });
   const [genDifficulty, setGenDifficulty] = useState<Difficulty>('medium');
   const [genFeatures, setGenFeatures] = useState<LevelFeature[]>([]);
-  const [genModel, setGenModel] = useState<AiModelId>('claude-sonnet-4-6');
+  const [genModel, setGenModel] = useState<ModelSelection>('');
   const [genFeedback, setGenFeedback] = useState('');
+
+  // Models the user has keys for. Selections fall back to the first available
+  // one so the pickers work before anything has been chosen explicitly.
+  const models = useAvailableModels();
+  const firstModelKey = models.length > 0 ? modelKey(models[0].providerId, models[0].id) : '';
+  const activeSolveModel = aiModel || firstModelKey;
+  const activeGenModel = genModel || firstModelKey;
   const [genMode, setGenMode] = useState<'update' | 'new' | null>(null);
   const genChatScrollRef = useRef<HTMLDivElement>(null);
   const aiGeneration = useAiGeneration((generatedLevel, generatedDsl) => {
@@ -271,10 +279,11 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
   const handleSave = async () => {
     if (!user) {
-      // Fallback: save to localStorage if not logged in
-      const data = JSON.stringify(level);
-      localStorage.setItem('my-game-level', data);
-      navigate('/login');
+      // No accounts yet — saving keeps the level in this browser.
+      localStorage.setItem('my-game-level', JSON.stringify(level));
+      setSaveStatus('saved');
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
       return;
     }
 
@@ -297,10 +306,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   };
 
   const handleShare = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+    // Sharing publishes to the cloud; without an account there is nowhere to
+    // publish to, and the button is hidden in that case.
+    if (!user) return;
     // Save first if not saved
     if (!cloudLevelId) {
       await handleSave();
@@ -603,9 +611,11 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 {saveStatus === 'saving' ? <Loader2 size={14} className="animate-spin" /> : saveStatus === 'saved' ? <Check size={14} /> : user ? <Cloud size={14} /> : <Save size={14} />}
                 {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
               </button>
-              <button onClick={handleShare} className="flex-1 flex items-center justify-center gap-2 py-2 border border-zinc-900/20 text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 rounded text-xs transition-colors">
-                <Share2 size={14} /> {shareUrl ? 'Copy Link' : 'Share'}
-              </button>
+              {user && (
+                <button onClick={handleShare} className="flex-1 flex items-center justify-center gap-2 py-2 border border-zinc-900/20 text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 rounded text-xs transition-colors">
+                  <Share2 size={14} /> {shareUrl ? 'Copy Link' : 'Share'}
+                </button>
+              )}
             </div>
             <div className="flex gap-2">
               <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 border border-zinc-900/20 text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 rounded text-xs transition-colors">
@@ -623,7 +633,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             )}
             {!user && (
               <p className="text-xs text-zinc-500 text-center">
-                <Link to="/login" className="text-orange-600 hover:text-orange-500">Sign in</Link> to save to cloud
+                Saved in this browser · use Export for a file
               </p>
             )}
           </div>
@@ -843,27 +853,30 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 {/* Model picker */}
                 {(aiPlayback.status === 'idle' || aiPlayback.status === 'done' || aiPlayback.status === 'error') && (
                   <div className="flex gap-1">
-                    {AI_MODELS.map(m => (
-                      <button
-                        key={m.id}
-                        onClick={() => setAiModel(m.id)}
-                        className={`flex-1 py-1 rounded text-[11px] transition-colors ${
-                          aiModel === m.id
-                            ? 'bg-zinc-900 text-paper'
-                            : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'
-                        }`}
-                        title={m.note}
+                    {models.length === 0 ? (
+                      <p className="flex-1 text-[11px] text-zinc-500 py-1">
+                        Add an API key to pick a model.
+                      </p>
+                    ) : (
+                      <select
+                        value={activeSolveModel}
+                        onChange={e => setAiModel(e.target.value)}
+                        className="flex-1 bg-white/60 border border-zinc-900/15 rounded px-2 py-1 text-[11px] text-zinc-700 focus:outline-none focus:border-zinc-900"
                       >
-                        {m.label}
-                      </button>
-                    ))}
+                        {models.map(m => (
+                          <option key={modelKey(m.providerId, m.id)} value={modelKey(m.providerId, m.id)}>
+                            {m.providerLabel} · {m.label}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 )}
 
                 {/* Idle — show Play */}
                 {aiPlayback.status === 'idle' && (
                   <button
-                    onClick={() => void aiPlayback.startSolving(gameState, undefined, aiModel)}
+                    onClick={() => void aiPlayback.startSolving(gameState, undefined, activeSolveModel)}
                     className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-zinc-900 hover:bg-zinc-700 text-paper text-sm font-medium transition-colors"
                   >
                     <Play size={14} /> Play
@@ -980,7 +993,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         <Play size={12} /> Play myself
                       </button>
                       <button
-                        onClick={() => { setAiFeedback(''); aiPlayback.retry(aiModel); }}
+                        onClick={() => { setAiFeedback(''); aiPlayback.retry(activeSolveModel); }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
                       >
                         <RotateCcw size={12} /> Retry
@@ -1003,7 +1016,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         <Play size={12} /> Play myself
                       </button>
                       <button
-                        onClick={() => { setAiFeedback(''); aiPlayback.retry(aiModel); }}
+                        onClick={() => { setAiFeedback(''); aiPlayback.retry(activeSolveModel); }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
                       >
                         <RotateCcw size={12} /> Retry
@@ -1478,17 +1491,23 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       <div>
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wide mb-1.5">Model</p>
                         <div className="grid grid-cols-3 gap-1">
-                          {AI_MODELS.map((m) => (
-                            <button key={m.id} onClick={() => setGenModel(m.id)}
-                              className={`py-1 rounded text-[11px] transition-colors ${genModel === m.id ? 'bg-zinc-900 text-paper' : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'}`}>
-                              {m.label}
-                            </button>
-                          ))}
+                          {models.map((m) => {
+                            const key = modelKey(m.providerId, m.id);
+                            return (
+                              <button key={key} onClick={() => setGenModel(key)} title={`${m.providerLabel} · ${m.id}`}
+                                className={`py-1 px-1 rounded text-[11px] truncate transition-colors ${activeGenModel === key ? 'bg-zinc-900 text-paper' : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'}`}>
+                                {m.label}
+                              </button>
+                            );
+                          })}
+                          {models.length === 0 && (
+                            <p className="col-span-3 text-[11px] text-zinc-500">Add an API key to pick a model.</p>
+                          )}
                         </div>
                       </div>
 
                       {(() => {
-                        const opts = { prompt: genPrompt, width: genSize.width, height: genSize.height, difficulty: genDifficulty, features: genFeatures, model: genModel };
+                        const opts = { prompt: genPrompt, width: genSize.width, height: genSize.height, difficulty: genDifficulty, features: genFeatures, model: activeGenModel };
                         // In code tab: use the raw dslCode (may have unapplied edits).
                         // In visual tab: serialize current level state.
                         const currentDsl = designTab === 'code' && dslCode ? dslCode : serializeDSL(level);

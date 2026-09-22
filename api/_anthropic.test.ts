@@ -1,37 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_MODEL,
   VALID_DIFFICULTIES,
   VALID_FEATURES,
-  VALID_MODELS,
   buildGenerateMessages,
   buildSolveMessages,
+  callLLM,
   extractDsl,
   extractSummary,
   parseMoves,
-  resolveModel,
 } from './_anthropic';
 
 const fence = (body: string) => '```\n' + body + '\n```';
 
-describe('resolveModel', () => {
-  it('passes through every valid model id', () => {
-    for (const model of VALID_MODELS) {
-      expect(resolveModel(model)).toBe(model);
-    }
-  });
-
-  it('falls back to the default for anything else', () => {
-    expect(resolveModel('gpt-4o')).toBe(DEFAULT_MODEL);
-    expect(resolveModel(undefined)).toBe(DEFAULT_MODEL);
-    expect(resolveModel(null)).toBe(DEFAULT_MODEL);
-    expect(resolveModel(42)).toBe(DEFAULT_MODEL);
-    expect(resolveModel({})).toBe(DEFAULT_MODEL);
-    expect(resolveModel('')).toBe(DEFAULT_MODEL);
-  });
-
-  it('has a default that is itself a valid model', () => {
-    expect(VALID_MODELS as readonly string[]).toContain(DEFAULT_MODEL);
+describe('DEFAULT_MODEL', () => {
+  it('is a concrete model id the proxy can fall back to', () => {
+    expect(DEFAULT_MODEL).toMatch(/^claude-/);
+    // No date suffix — the current model ids are bare.
+    expect(DEFAULT_MODEL).not.toMatch(/-\d{8}$/);
   });
 });
 
@@ -209,5 +195,91 @@ describe('request vocabularies', () => {
   it('lists features without duplicates', () => {
     expect(new Set(VALID_FEATURES).size).toBe(VALID_FEATURES.length);
     expect(VALID_FEATURES.length).toBeGreaterThan(0);
+  });
+});
+
+describe('callLLM routing', () => {
+  const base = {
+    apiKey: 'test-key',
+    model: 'some-model',
+    system: 'sys',
+    messages: [{ role: 'user' as const, content: 'hi' }],
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('refuses to call an OpenAI-compatible provider with no base URL', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const result = await callLLM({ ...base, provider: 'groq', baseUrl: '' });
+
+    // Guarding this matters: falling back to a default endpoint would hand one
+    // provider's key to a different provider.
+    expect(result).toMatchObject({ ok: false, httpStatus: 400 });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('treats a whitespace-only base URL as missing', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const result = await callLLM({ ...base, provider: 'custom', baseUrl: '   ' });
+    expect(result.ok).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('posts to the Anthropic endpoint for the anthropic provider', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        content: [{ type: 'text', text: 'ok' }],
+        usage: { input_tokens: 11, output_tokens: 3 },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const result = await callLLM({ ...base, provider: 'anthropic', baseUrl: '' });
+
+    expect(fetchSpy.mock.calls[0][0]).toBe('https://api.anthropic.com/v1/messages');
+    expect(result).toMatchObject({ ok: true, text: 'ok', usage: { inputTokens: 11, outputTokens: 3 } });
+  });
+
+  it('posts to the supplied base URL for an OpenAI-compatible provider', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'ok' } }],
+        usage: { prompt_tokens: 9, completion_tokens: 4 },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const result = await callLLM({
+      ...base,
+      provider: 'groq',
+      baseUrl: 'https://api.groq.com/openai/v1/',
+    });
+
+    // Trailing slash trimmed, not doubled.
+    expect(fetchSpy.mock.calls[0][0]).toBe('https://api.groq.com/openai/v1/chat/completions');
+    expect(result).toMatchObject({ ok: true, usage: { inputTokens: 9, outputTokens: 4 } });
+  });
+
+  it('reports a provider error without throwing', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      text: async () => 'bad key',
+    }));
+    const result = await callLLM({ ...base, provider: 'anthropic', baseUrl: '' });
+    expect(result).toMatchObject({ ok: false, httpStatus: 401 });
+  });
+
+  it('reports a network failure without throwing', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    const result = await callLLM({ ...base, provider: 'anthropic', baseUrl: '' });
+    expect(result).toMatchObject({ ok: false, httpStatus: 503, message: 'offline' });
   });
 });

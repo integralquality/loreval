@@ -1,5 +1,5 @@
 // Vercel serverless function
-// POST /api/generate-level { prompt, width?, height?, difficulty?, features?, model?, retryContext? }
+// POST /api/generate-level { prompt, provider, model, apiKey, baseUrl?, width?, height?, difficulty?, features?, retryContext? }
 //   → { dsl } | { error }
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
@@ -10,6 +10,7 @@ import {
   GENERATE_SYSTEM_PROMPT,
   VALID_DIFFICULTIES,
   VALID_FEATURES,
+  DEFAULT_MODEL,
 } from './_anthropic';
 import type { Difficulty, LevelFeature, GenerateRequest, GenerateRetryContext } from './_anthropic';
 
@@ -21,6 +22,8 @@ function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, isFinite(n) ? n : min));
 }
 
+export const config = { maxDuration: 60 };
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -29,13 +32,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const raw = (req.body ?? {}) as Record<string, unknown>;
 
-  const guestKey     = typeof raw.guestKey     === 'string' ? raw.guestKey.trim()     : '';
-  const guestProvider = typeof raw.guestProvider === 'string' ? raw.guestProvider       : 'anthropic';
-  const guestModel   = typeof raw.guestModel    === 'string' ? raw.guestModel          : 'claude-sonnet-4-6';
-  const guestBaseUrl = typeof raw.guestBaseUrl  === 'string' ? raw.guestBaseUrl        : '';
+  const apiKey   = typeof raw.apiKey   === 'string' ? raw.apiKey.trim() : '';
+  const provider = typeof raw.provider === 'string' ? raw.provider      : 'anthropic';
+  const model    = typeof raw.model    === 'string' && raw.model ? raw.model : DEFAULT_MODEL;
+  const baseUrl  = typeof raw.baseUrl  === 'string' ? raw.baseUrl       : '';
 
-  if (!guestKey) {
-    return res.status(401).json({ error: 'No API key provided. Add your key via the "Add API key" button.' });
+  if (!apiKey) {
+    return res.status(401).json({ error: 'No API key provided. Add one with the "API keys" button.' });
   }
 
   // Validate and sanitize
@@ -74,10 +77,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : undefined;
 
   const result = await callLLM({
-    guestKey,
-    guestProvider,
-    guestModel,
-    guestBaseUrl,
+    apiKey,
+    provider,
+    model,
+    baseUrl,
     system: GENERATE_SYSTEM_PROMPT,
     messages: buildGenerateMessages(genReq, retryContext),
     maxTokens: 3000,
@@ -91,9 +94,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!dsl) {
     return res
       .status(200)
-      .json({ error: 'Claude did not output a DSL code block', raw: result.text });
+      .json({ error: 'The model did not output a DSL code block', raw: result.text, usage: result.usage });
   }
 
   const summary = extractSummary(result.text);
-  return res.status(200).json({ dsl, ...(summary && { summary }) });
+  return res.status(200).json({ dsl, usage: result.usage, ...(summary && { summary }) });
 }

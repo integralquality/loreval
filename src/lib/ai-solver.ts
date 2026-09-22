@@ -1,55 +1,90 @@
-import { getGuestConfig } from './guestKey';
+import { defaultModelSelection, resolveModelSelection } from './credentials';
+import { directionToDelta, type AiMove } from './moves';
+import type { TokenUsage } from './eval/types';
 
-function guestParams() {
-  const c = getGuestConfig();
-  if (!c) return {};
-  return { guestKey: c.key, guestProvider: c.provider, guestModel: c.model, guestBaseUrl: c.baseUrl };
-}
-
-export interface AiMove {
-  x: number;
-  y: number;
-  direction: string;
-}
+export type { AiMove };
+export { directionToDelta };
 
 export interface RetryContext {
   previousMovesText: string;
   userFeedback: string;
 }
 
-export const AI_MODELS = [
-  { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5', note: 'Fast' },
-  { id: 'claude-sonnet-4-6',         label: 'Sonnet 4.6', note: 'Balanced' },
-  { id: 'claude-opus-4-6',           label: 'Opus 4.6',   note: 'Smart' },
-] as const;
+/** A `provider:model` key from `credentials.availableModels()`. */
+export type ModelSelection = string;
 
-export type AiModelId = typeof AI_MODELS[number]['id'];
+export interface SolveResult {
+  moves: AiMove[];
+  error?: string;
+  /** Set when the model answered but no move list could be parsed out. */
+  parseFailed?: boolean;
+  usage?: TokenUsage;
+  raw?: string;
+}
 
+interface ApiResponse {
+  moves?: AiMove[];
+  error?: string;
+  raw?: string;
+  usage?: TokenUsage;
+}
+
+/**
+ * Ask a model to solve a level.
+ *
+ * `selection` names which configured model to use; when omitted the first
+ * available one is used. Credentials are resolved per call, so an eval can run
+ * several providers side by side.
+ */
 export async function solveLevel(
   dsl: string,
   retryContext?: RetryContext,
-  model?: AiModelId,
-): Promise<{ moves: AiMove[]; error?: string }> {
+  selection?: ModelSelection,
+): Promise<SolveResult> {
+  const chosen = selection ?? defaultModelSelection();
+  if (!chosen) {
+    return { moves: [], error: 'No API key configured. Add one with the "API keys" button.' };
+  }
+
+  const resolved = resolveModelSelection(chosen);
+  if (!resolved) {
+    return { moves: [], error: `No API key for the selected model (${chosen}).` };
+  }
+
+  let res: Response;
   try {
-    const res = await fetch('/api/solve-level', {
+    res = await fetch('/api/solve-level', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dsl, retryContext, model, ...guestParams() }),
+      body: JSON.stringify({
+        dsl,
+        retryContext,
+        provider: resolved.providerId,
+        model: resolved.modelId,
+        apiKey: resolved.key,
+        baseUrl: resolved.baseUrl,
+      }),
     });
-    const data = await res.json() as { moves?: AiMove[]; error?: string };
-    if (!res.ok || data.error) {
-      return { moves: [], error: data.error ?? `Request failed (${res.status})` };
-    }
-    return { moves: data.moves ?? [] };
   } catch (err) {
     return { moves: [], error: err instanceof Error ? err.message : 'Network error' };
   }
-}
 
-export function directionToDelta(dir: string): { dx: number; dy: number } | null {
-  if (dir === 'up') return { dx: 0, dy: -1 };
-  if (dir === 'down') return { dx: 0, dy: 1 };
-  if (dir === 'left') return { dx: -1, dy: 0 };
-  if (dir === 'right') return { dx: 1, dy: 0 };
-  return null;
+  let data: ApiResponse;
+  try {
+    data = (await res.json()) as ApiResponse;
+  } catch {
+    return { moves: [], error: `Request failed (${res.status})` };
+  }
+
+  if (!res.ok) {
+    return { moves: [], error: data.error ?? `Request failed (${res.status})`, usage: data.usage };
+  }
+
+  const moves = data.moves ?? [];
+  if (data.error) {
+    // The call succeeded but the response held no usable move list.
+    return { moves, error: data.error, parseFailed: true, usage: data.usage, raw: data.raw };
+  }
+
+  return { moves, usage: data.usage };
 }

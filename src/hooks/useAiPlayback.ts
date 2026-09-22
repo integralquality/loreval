@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 import type { Level, GameState } from '../types';
-import { executeMove } from '../gameLogic';
 import { serializeDSL } from '../dsl/serializer';
-import { solveLevel, directionToDelta } from '../lib/ai-solver';
-import type { AiMove, RetryContext, AiModelId } from '../lib/ai-solver';
+import { solveLevel } from '../lib/ai-solver';
+import type { AiMove, RetryContext, ModelSelection } from '../lib/ai-solver';
+import { applyAiMove } from '../lib/eval/replay';
 
 export type AiStatus = 'idle' | 'solving' | 'playing' | 'paused' | 'done' | 'error';
 
@@ -75,7 +75,7 @@ export function useAiPlayback(
   const moveIndexRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialGameStateRef = useRef<GameState | null>(null);
-  const modelRef = useRef<AiModelId | undefined>(undefined);
+  const modelRef = useRef<ModelSelection | undefined>(undefined);
 
   // Stable refs so interval callback doesn't need re-registration when props change
   const levelRef = useRef(level);
@@ -127,51 +127,24 @@ export function useAiPlayback(
     }
 
     const move = moves[index];
+    const applied = applyAiMove(currentLevel, currentState, move);
 
-    // Find the active entity currently at (move.x, move.y)
-    const entity = currentState.entities.find(e =>
-      e.position.x === move.x && e.position.y === move.y &&
-      !currentState.finishedEntityIds.includes(e.id)
-    );
-
-    if (!entity) {
-      // No agent at expected position — skip (position may be stale from a previous skip)
-      moveIndexRef.current = index + 1;
-      setCurrentMoveIndex(index + 1);
-      return;
-    }
-
-    const delta = directionToDelta(move.direction);
-    if (!delta) {
+    if (applied.outcome === 'bad-direction') {
       clearTimer();
       setError(`Unknown direction "${move.direction}" at move ${index + 1}`);
       setStatus('error');
       return;
     }
 
-    const stateForMove: GameState = { ...currentState, selectedEntityId: entity.id };
-    const newState = executeMove(currentLevel, stateForMove, delta.dx, delta.dy);
-
-    // Skip invalid moves (wall collision, out of bounds)
-    if (!newState) {
+    // Skipped: no agent on that square, engine refused (wall/edge/agent), or the
+    // agent was held in place by a door, lock or one-way tile.
+    if (applied.outcome !== 'moved') {
       moveIndexRef.current = index + 1;
       setCurrentMoveIndex(index + 1);
       return;
     }
 
-    // Detect blocked move — entity position unchanged (door/one-way/lock)
-    const entityBefore = currentState.entities.find(e => e.id === entity.id)!;
-    const entityAfter = newState.entities.find(e => e.id === entity.id);
-    const didMove = entityAfter
-      ? entityAfter.position.x !== entityBefore.position.x || entityAfter.position.y !== entityBefore.position.y
-      : true; // entity disappeared (reached goal) — valid
-
-    if (!didMove) {
-      moveIndexRef.current = index + 1;
-      setCurrentMoveIndex(index + 1);
-      return;
-    }
-
+    const newState = applied.state;
     liveStateRef.current = newState;
     onStateChangeRef.current(newState);
     moveIndexRef.current = index + 1;
@@ -215,24 +188,8 @@ export function useAiPlayback(
     let state = initialState;
     for (let i = 0; i < targetIndex; i++) {
       if (i >= moves.length) break;
-      const move = moves[i];
-      const entity = state.entities.find(e =>
-        e.position.x === move.x && e.position.y === move.y &&
-        !state.finishedEntityIds.includes(e.id)
-      );
-      if (!entity) continue;
-      const delta = directionToDelta(move.direction);
-      if (!delta) continue;
-      const stateForMove: GameState = { ...state, selectedEntityId: entity.id };
-      const newState = executeMove(currentLevel, stateForMove, delta.dx, delta.dy);
-      if (!newState) continue;
-      const entityBefore = state.entities.find(e => e.id === entity.id)!;
-      const entityAfter = newState.entities.find(e => e.id === entity.id);
-      const didMove = entityAfter
-        ? entityAfter.position.x !== entityBefore.position.x || entityAfter.position.y !== entityBefore.position.y
-        : true;
-      if (!didMove) continue;
-      state = newState;
+      const applied = applyAiMove(currentLevel, state, moves[i]);
+      if (applied.outcome === 'moved') state = applied.state;
     }
 
     liveStateRef.current = state;
@@ -264,7 +221,7 @@ export function useAiPlayback(
     }
   }, [clearTimer, tick]);
 
-  const startSolving = useCallback(async (gameState: GameState, retryContext?: RetryContext, model?: AiModelId) => {
+  const startSolving = useCallback(async (gameState: GameState, retryContext?: RetryContext, model?: ModelSelection) => {
     if (model !== undefined) modelRef.current = model;
     clearTimer();
     setStatus('solving');
@@ -288,7 +245,7 @@ export function useAiPlayback(
 
     if (result.error || result.moves.length === 0) {
       setStatus('error');
-      setError(result.error ?? 'Claude returned no moves');
+      setError(result.error ?? 'The model returned no moves');
       if (result.error) {
         setChatHistory(h => [...h, { role: 'assistant', content: `Error: ${result.error}` }]);
       }
@@ -307,7 +264,7 @@ export function useAiPlayback(
   }, [clearTimer, startInterval]);
 
   // Retry from scratch using the stored initial game state
-  const retry = useCallback((model?: AiModelId) => {
+  const retry = useCallback((model?: ModelSelection) => {
     const gameState = initialGameStateRef.current;
     if (!gameState) return;
     void startSolving(gameState, undefined, model);

@@ -1,13 +1,17 @@
 // Vercel serverless function
-// POST /api/solve-level { dsl, retryContext?, model? } → { moves } | { error }
+// POST /api/solve-level { dsl, provider, model, apiKey, baseUrl?, retryContext? }
+//   → { moves, usage } | { error }
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
   callLLM,
   buildSolveMessages,
   parseMoves,
+  DEFAULT_MODEL,
   SOLVE_SYSTEM_PROMPT,
 } from './_anthropic';
 import type { RetryContext } from './_anthropic';
+
+export const config = { maxDuration: 60 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -15,27 +19,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { dsl, retryContext, guestKey, guestProvider, guestModel, guestBaseUrl } = (req.body ?? {}) as {
-    dsl?: string;
-    retryContext?: RetryContext;
-    guestKey?: string;
-    guestProvider?: string;
-    guestModel?: string;
-    guestBaseUrl?: string;
-  };
+  const raw = (req.body ?? {}) as Record<string, unknown>;
 
-  if (!guestKey?.trim()) {
-    return res.status(401).json({ error: 'No API key provided. Add your key via the "Add API key" button.' });
+  const dsl = typeof raw.dsl === 'string' ? raw.dsl : '';
+  const apiKey = typeof raw.apiKey === 'string' ? raw.apiKey.trim() : '';
+  const provider = typeof raw.provider === 'string' ? raw.provider : 'anthropic';
+  const model = typeof raw.model === 'string' && raw.model ? raw.model : DEFAULT_MODEL;
+  const baseUrl = typeof raw.baseUrl === 'string' ? raw.baseUrl : '';
+  const retryContext = raw.retryContext as RetryContext | undefined;
+
+  if (!apiKey) {
+    return res.status(401).json({ error: 'No API key provided. Add one with the "API keys" button.' });
   }
-  if (!dsl || typeof dsl !== 'string') {
+  if (!dsl) {
     return res.status(400).json({ error: 'Missing or invalid dsl field' });
   }
 
   const result = await callLLM({
-    guestKey: guestKey.trim(),
-    guestProvider: guestProvider ?? 'anthropic',
-    guestModel: guestModel ?? 'claude-sonnet-4-6',
-    guestBaseUrl: guestBaseUrl ?? '',
+    apiKey,
+    provider,
+    model,
+    baseUrl,
     system: SOLVE_SYSTEM_PROMPT,
     messages: buildSolveMessages(dsl, retryContext),
     maxTokens: 8000,
@@ -47,10 +51,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const moves = parseMoves(result.text);
   if (!moves) {
-    return res
-      .status(200)
-      .json({ moves: [], error: 'No valid moves found in response', raw: result.text });
+    // The model answered but produced no parsable move list — a format failure,
+    // which the caller scores separately from a wrong plan.
+    return res.status(200).json({
+      moves: [],
+      error: 'No valid moves found in response',
+      raw: result.text,
+      usage: result.usage,
+    });
   }
 
-  return res.status(200).json({ moves });
+  return res.status(200).json({ moves, usage: result.usage });
 }
