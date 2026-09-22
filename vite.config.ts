@@ -11,6 +11,8 @@ import {
   buildGenerateMessages,
   extractDsl,
   extractSummary,
+  describeEmptyResult,
+  ANTHROPIC_MAX_TOKENS,
   GENERATE_SYSTEM_PROMPT,
   VALID_DIFFICULTIES,
   VALID_FEATURES,
@@ -80,7 +82,7 @@ export default defineConfig(() => {
               apiKey, provider, model, baseUrl,
               system: SOLVE_SYSTEM_PROMPT,
               messages: buildSolveMessages(dsl, retryContext),
-              maxTokens: 8000,
+              maxTokens: ANTHROPIC_MAX_TOKENS,
             });
 
             if (!result.ok) return jsonError(res, 502, result.message);
@@ -88,7 +90,12 @@ export default defineConfig(() => {
             console.log('[AI solver] response:\n', result.text);
             const moves = parseMoves(result.text);
             if (!moves) {
-              res.end(JSON.stringify({ moves: [], error: 'No valid moves found in response', raw: result.text, usage: result.usage }));
+              res.end(JSON.stringify({
+                moves: [],
+                error: describeEmptyResult(result, 'any moves', 'No valid moves found in response'),
+                raw: result.text,
+                usage: result.usage,
+              }));
               return;
             }
             res.end(JSON.stringify({ moves, usage: result.usage }));
@@ -145,7 +152,8 @@ export default defineConfig(() => {
               model: model2, baseUrl: baseUrl2,
               system: GENERATE_SYSTEM_PROMPT,
               messages: buildGenerateMessages(genReq, retryContext),
-              maxTokens: 3000,
+              // Mirrors api/generate-level.ts — see the note there.
+              maxTokens: ANTHROPIC_MAX_TOKENS,
             });
 
             if (!result.ok) return jsonError(res, 502, result.message);
@@ -153,7 +161,11 @@ export default defineConfig(() => {
             console.log('[AI generator] response:\n', result.text);
             const dsl = extractDsl(result.text);
             if (!dsl) {
-              res.end(JSON.stringify({ error: 'The model did not output a DSL code block', raw: result.text, usage: result.usage }));
+              res.end(JSON.stringify({
+                error: describeEmptyResult(result, 'the level', 'The model did not output a DSL code block'),
+                raw: result.text,
+                usage: result.usage,
+              }));
               return;
             }
             const summary = extractSummary(result.text);

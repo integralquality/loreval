@@ -41,6 +41,8 @@ export function useAiGeneration(onLevel: (level: Level, dsl: string) => void) {
       setError(null);
 
       let retryContext = initialContext;
+      let lastSoftError: string | null = null;
+      let lastRawResponse: string | null = null;
 
       for (let i = 0; i < MAX_ATTEMPTS; i++) {
         setAttempt(i + 1);
@@ -56,6 +58,21 @@ export function useAiGeneration(onLevel: (level: Level, dsl: string) => void) {
           return;
         }
 
+        // The model said something, but no DSL block could be pulled out of it
+        // — a formatting miss, not a hard failure, so ask again from scratch.
+        // There is no previous DSL to send back, hence no retryContext.
+        //
+        // An empty rawResponse deliberately falls through to the hard-failure
+        // branch below: a model that returned nothing (budget spent on
+        // reasoning, say) will return nothing again, so retrying only bills
+        // the user twice more for the same answer.
+        if (!result.rawDsl && result.rawResponse) {
+          lastSoftError = result.error;
+          lastRawResponse = result.rawResponse;
+          retryContext = undefined;
+          continue;
+        }
+
         // Hard failure (network, API key…) — no point retrying
         if (!result.rawDsl) {
           setChatHistory((h) => [
@@ -68,11 +85,23 @@ export function useAiGeneration(onLevel: (level: Level, dsl: string) => void) {
         }
 
         // Soft failure (bad DSL) — feed the error back to Claude
+        lastSoftError = result.error;
         retryContext = { previousDsl: result.rawDsl, error: result.error };
       }
 
-      const lastError = retryContext?.error ?? 'Failed to generate a valid level';
-      setChatHistory((h) => [...h, { role: 'assistant', content: `Error: ${lastError}` }]);
+      const lastError =
+        retryContext?.error ?? lastSoftError ?? 'Failed to generate a valid level';
+      // Show what actually came back when every attempt produced no DSL at all,
+      // so the failure is diagnosable instead of a dead end.
+      const excerpt = lastRawResponse
+        ? `\n\nThe model replied:\n${lastRawResponse.slice(0, 600)}${
+            lastRawResponse.length > 600 ? '…' : ''
+          }`
+        : '';
+      setChatHistory((h) => [
+        ...h,
+        { role: 'assistant', content: `Error: ${lastError}${excerpt}` },
+      ]);
       setStatus('error');
       setError(lastError);
     },

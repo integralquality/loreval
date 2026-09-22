@@ -37,7 +37,14 @@ export interface GenerateOptions {
 }
 
 export type GenerateSuccess = { ok: true; level: Level; dsl: string; summary?: string };
-export type GenerateFailure = { ok: false; error: string; rawDsl?: string };
+export type GenerateFailure = {
+  ok: false;
+  error: string;
+  /** The DSL the model produced, when it produced some but it didn't parse. */
+  rawDsl?: string;
+  /** The model's full reply, when no DSL block could be found in it at all. */
+  rawResponse?: string;
+};
 export type GenerateResult = GenerateSuccess | GenerateFailure;
 
 // ─── Core function ────────────────────────────────────────────────────────────
@@ -69,10 +76,19 @@ export async function generateLevel(opts: GenerateOptions): Promise<GenerateResu
     return { ok: false, error: err instanceof Error ? err.message : 'Network error' };
   }
 
-  const data = (await res.json()) as { dsl?: string; summary?: string; error?: string };
+  const data = (await res.json()) as {
+    dsl?: string;
+    summary?: string;
+    error?: string;
+    raw?: string;
+  };
 
   if (!res.ok || !data.dsl) {
-    return { ok: false, error: data.error ?? `Request failed (${res.status})` };
+    return {
+      ok: false,
+      error: data.error ?? `Request failed (${res.status})`,
+      rawResponse: data.raw,
+    };
   }
 
   const parsed = parseDSL(data.dsl);

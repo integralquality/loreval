@@ -14,6 +14,32 @@
  */
 export const DEFAULT_MODEL = 'claude-sonnet-5';
 
+/**
+ * Models that accept `thinking: {type:'adaptive'}` and `output_config.effort`.
+ *
+ * This matters because on Opus 5 and Sonnet 5 **thinking is on whether or not
+ * we ask for it** — omitting the parameter runs adaptive. Left unbounded, a
+ * hard prompt can spend the entire `max_tokens` budget thinking and return no
+ * text at all. Naming an effort level puts a ceiling on that without turning
+ * thinking off, which matters here: an eval instrument that silently disabled
+ * reasoning would be measuring the wrong thing.
+ *
+ * Deliberately excludes Haiku 4.5 and anything older, which predate adaptive
+ * thinking and would reject both parameters.
+ */
+const EFFORT_CAPABLE = /^claude-(opus-5|sonnet-5|fable-5)/;
+
+export function supportsEffort(model: string): boolean {
+  return EFFORT_CAPABLE.test(model);
+}
+
+/**
+ * How hard an effort-capable model should think. `medium` leaves clear room
+ * for the answer inside our token budget; `high` and above regularly consume
+ * the whole thing on a "make it complex" prompt.
+ */
+export const DEFAULT_EFFORT = 'medium';
+
 // ─── Shared types ─────────────────────────────────────────────────────────────
 
 export interface AnthropicMessage {
@@ -35,7 +61,24 @@ export interface TokenUsage {
 }
 
 export type CallResult =
-  | { ok: true; text: string; usage?: TokenUsage }
+  | {
+      ok: true;
+      text: string;
+      usage?: TokenUsage;
+      /**
+       * The model hit the output-token ceiling mid-answer. The text is a
+       * fragment, so a missing code block means "cut off", not "refused" —
+       * callers report those differently.
+       */
+      truncated?: boolean;
+      /**
+       * The model produced output but none of it was the answer — the budget
+       * went entirely on thinking/reasoning content. Distinct from `truncated`
+       * alone, because raising the ceiling is the fix for one and a different
+       * model is usually the fix for the other.
+       */
+      reasonedOnly?: boolean;
+    }
   | { ok: false; httpStatus: number; message: string };
 
 // ─── Provider routing ─────────────────────────────────────────────────────────
@@ -68,8 +111,25 @@ export async function callLLM(params: ProviderCallParams): Promise<CallResult> {
       message: `No base URL supplied for provider "${provider}".`,
     };
   }
-  return callOpenAI({ apiKey, baseUrl: url, model, system, messages, maxTokens });
+  // Several OpenAI-compatible models top out at 8192 output tokens and reject
+  // anything larger outright, so the generous Anthropic ceiling is trimmed
+  // here rather than turning a working model into a 400.
+  const capped = maxTokens === undefined ? undefined : Math.min(maxTokens, OPENAI_MAX_TOKENS);
+  return callOpenAI({ apiKey, baseUrl: url, model, system, messages, maxTokens: capped });
 }
+
+/** Ceiling for the OpenAI-compatible path — see the note in `callLLM`. */
+export const OPENAI_MAX_TOKENS = 8000;
+
+/**
+ * Output ceiling for a solve or generate call.
+ *
+ * Thinking tokens count against this, so it has to cover the reasoning *and*
+ * the answer. 8000 was not enough: a "make it complex and tricky" prompt spent
+ * all of it thinking and returned no text. Paired with `DEFAULT_EFFORT`, this
+ * leaves the answer plenty of room.
+ */
+export const ANTHROPIC_MAX_TOKENS = 16000;
 
 // ─── Anthropic API call ───────────────────────────────────────────────────────
 
@@ -85,7 +145,17 @@ export async function callAnthropic(params: CallParams): Promise<CallResult> {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
       },
-      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages }),
+      body: JSON.stringify({
+        model,
+        max_tokens: maxTokens,
+        system,
+        messages,
+        // Sent explicitly rather than relying on the default, so the budget is
+        // predictable across models that differ on whether thinking is on.
+        ...(supportsEffort(model)
+          ? { thinking: { type: 'adaptive' }, output_config: { effort: DEFAULT_EFFORT } }
+          : {}),
+      }),
     });
   } catch (err) {
     return {
@@ -105,13 +175,25 @@ export async function callAnthropic(params: CallParams): Promise<CallResult> {
   }
 
   const data = (await response.json()) as {
-    content: Array<{ type: string; text: string }>;
+    content: Array<{ type: string; text?: string }>;
+    stop_reason?: string;
     usage?: { input_tokens?: number; output_tokens?: number };
   };
-  const text = data.content?.find((c) => c.type === 'text')?.text ?? '';
+  const blocks = data.content ?? [];
+  // Join every text block rather than taking the first: a reply that carries
+  // thinking blocks puts the answer in a later one, and a long answer can be
+  // split across several.
+  const text = blocks
+    .filter((c) => c.type === 'text' && typeof c.text === 'string')
+    .map((c) => c.text as string)
+    .join('');
   return {
     ok: true,
     text,
+    truncated: data.stop_reason === 'max_tokens',
+    // Whether the model produced anything at all that wasn't the answer —
+    // used to explain an empty reply that still burned the whole budget.
+    reasonedOnly: text.trim() === '' && blocks.some((c) => c.type !== 'text'),
     usage: {
       inputTokens: data.usage?.input_tokens ?? 0,
       outputTokens: data.usage?.output_tokens ?? 0,
@@ -155,13 +237,31 @@ async function callOpenAI(params: {
   }
 
   const data = (await response.json()) as {
-    choices: Array<{ message: { content: string } }>;
-    usage?: { prompt_tokens?: number; completion_tokens?: number };
+    choices: Array<{
+      message: {
+        content: string | null;
+        // Reasoning models on OpenRouter, Groq, DeepSeek and friends put their
+        // chain of thought in a sibling field and may leave `content` null.
+        reasoning_content?: string | null;
+        reasoning?: string | null;
+      };
+      finish_reason?: string;
+    }>;
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      completion_tokens_details?: { reasoning_tokens?: number };
+    };
   };
-  const text = data.choices?.[0]?.message?.content ?? '';
+  const message = data.choices?.[0]?.message;
+  const text = message?.content ?? '';
+  const reasoning = message?.reasoning_content ?? message?.reasoning ?? '';
+  const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens ?? 0;
   return {
     ok: true,
     text,
+    truncated: data.choices?.[0]?.finish_reason === 'length',
+    reasonedOnly: text.trim() === '' && (reasoning.trim() !== '' || reasoningTokens > 0),
     usage: {
       inputTokens: data.usage?.prompt_tokens ?? 0,
       outputTokens: data.usage?.completion_tokens ?? 0,
@@ -448,21 +548,63 @@ export function buildGenerateMessages(
   ];
 }
 
-/** Extract the last fenced code block from Claude's response. */
+/**
+ * Extract the last fenced code block from the model's response.
+ *
+ * The closing fence is optional: a response cut short by the output-token
+ * ceiling leaves the block open, and handing the partial level to the parser
+ * produces a specific complaint ("grid has 4 rows, expected 9") instead of the
+ * useless "no DSL code block". The trailing newline before the fence is
+ * optional too — not every model emits one.
+ */
 export function extractDsl(text: string): string | null {
-  const regex = /```(?:[\w]*)\r?\n([\s\S]+?)\r?\n```/g;
+  const regex = /```(?:[\w]*)\r?\n([\s\S]*?)(?:\r?\n?```|$)/g;
   let last: string | null = null;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(text)) !== null) {
-    last = match[1].trim();
+    const body = match[1].trim();
+    if (body) last = body;
+    // A zero-width match at end-of-string would spin forever.
+    if (regex.lastIndex === match.index) regex.lastIndex++;
   }
   return last;
 }
 
 /** Extract the design summary — text that appears after the last code block. */
 export function extractSummary(text: string): string | null {
+  // An odd fence count means the final block was never closed, so the last
+  // ``` is an *opening* fence and everything after it is the level itself,
+  // not prose about it.
+  const fences = text.match(/```/g)?.length ?? 0;
+  if (fences === 0 || fences % 2 !== 0) return null;
+
   const lastClose = text.lastIndexOf('```');
-  if (lastClose === -1) return null;
   const after = text.slice(lastClose + 3).trim();
   return after.length > 0 ? after : null;
+}
+
+/**
+ * Explain a successful call that yielded nothing usable.
+ *
+ * The cases need different remedies, so they get different wording: a
+ * reasoning model that never reached its answer, an answer cut off mid-flight,
+ * an empty reply, and a model that simply answered in the wrong shape.
+ */
+export function describeEmptyResult(
+  result: { text: string; truncated?: boolean; reasonedOnly?: boolean },
+  /** What the caller was looking for, e.g. 'the level' or 'any moves'. */
+  wanted: string,
+  /** The message for a well-formed reply that just didn't contain it. */
+  malformed: string,
+): string {
+  if (result.reasonedOnly) {
+    return `The model spent its entire output budget on internal reasoning and never wrote ${wanted}. Pick a non-reasoning model, or reduce the difficulty and grid size.`;
+  }
+  if (result.truncated) {
+    return `The model ran out of output tokens before writing ${wanted}. Try a simpler request or a smaller grid.`;
+  }
+  if (result.text.trim() === '') {
+    return 'The model returned an empty response.';
+  }
+  return malformed;
 }

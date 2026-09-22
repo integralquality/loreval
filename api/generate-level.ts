@@ -8,6 +8,8 @@ import {
   extractDsl,
   extractSummary,
   GENERATE_SYSTEM_PROMPT,
+  describeEmptyResult,
+  ANTHROPIC_MAX_TOKENS,
   VALID_DIFFICULTIES,
   VALID_FEATURES,
   DEFAULT_MODEL,
@@ -83,7 +85,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     baseUrl,
     system: GENERATE_SYSTEM_PROMPT,
     messages: buildGenerateMessages(genReq, retryContext),
-    maxTokens: 3000,
+    // Generous, because a prompt like "make it complex and verify it" sends the
+    // model into a long reasoning preamble before the level itself.
+    maxTokens: ANTHROPIC_MAX_TOKENS,
   });
 
   if (!result.ok) {
@@ -92,9 +96,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const dsl = extractDsl(result.text);
   if (!dsl) {
-    return res
-      .status(200)
-      .json({ error: 'The model did not output a DSL code block', raw: result.text, usage: result.usage });
+    return res.status(200).json({
+      error: describeEmptyResult(result, 'the level', 'The model did not output a DSL code block'),
+      raw: result.text,
+      usage: result.usage,
+    });
   }
 
   const summary = extractSummary(result.text);

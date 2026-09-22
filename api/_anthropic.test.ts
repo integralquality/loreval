@@ -1,11 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  ANTHROPIC_MAX_TOKENS,
+  DEFAULT_EFFORT,
   DEFAULT_MODEL,
+  OPENAI_MAX_TOKENS,
+  supportsEffort,
   VALID_DIFFICULTIES,
   VALID_FEATURES,
   buildGenerateMessages,
   buildSolveMessages,
   callLLM,
+  describeEmptyResult,
   extractDsl,
   extractSummary,
   parseMoves,
@@ -97,9 +102,36 @@ describe('extractDsl', () => {
   it('returns null when there is no fenced block', () => {
     expect(extractDsl('No code here.')).toBeNull();
   });
+
+  // A response cut off by the output-token ceiling leaves the fence open. The
+  // partial level is worth salvaging: the parser's complaint about it is far
+  // more useful than "the model did not output a DSL code block".
+  it('salvages a block whose closing fence never arrived', () => {
+    expect(extractDsl('Here you go:\n```\nlevel "A" 9x9\ngrid = [\n  W W W,')).toBe(
+      'level "A" 9x9\ngrid = [\n  W W W,',
+    );
+  });
+
+  it('accepts a closing fence with no newline before it', () => {
+    expect(extractDsl('```\nlevel "A" 1x1```')).toBe('level "A" 1x1');
+  });
+
+  it('is not fooled by a stray fence after the real block', () => {
+    expect(extractDsl(`${fence('level "A" 1x1')}\nNotes follow.\n\`\`\`\n`)).toBe('level "A" 1x1');
+  });
+
+  it('still prefers the last complete block', () => {
+    expect(extractDsl(`${fence('first')}\ntext\n${fence('second')}`)).toBe('second');
+  });
 });
 
 describe('extractSummary', () => {
+  // Without this, a cut-off response hands the level body back as its own
+  // design notes, because the last ``` is the opening fence.
+  it('returns null when the final block was never closed', () => {
+    expect(extractSummary('Here:\n```\nlevel "A" 9x9\ngrid = [\n  W W W,')).toBeNull();
+  });
+
   it('returns the prose that follows the last block', () => {
     expect(extractSummary(`${fence('level "A" 1x1')}\n\nThe key idea is the switch.`)).toBe(
       'The key idea is the switch.',
@@ -198,6 +230,144 @@ describe('request vocabularies', () => {
   });
 });
 
+describe('thinking and effort', () => {
+  const base = {
+    apiKey: 'test-key',
+    system: 'sys',
+    messages: [{ role: 'user' as const, content: 'hi' }],
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const bodyOf = (spy: ReturnType<typeof vi.fn>) =>
+    JSON.parse(spy.mock.calls[0][1].body as string) as Record<string, unknown>;
+
+  const okFetch = () =>
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn' }),
+    });
+
+  it('knows which models take an effort setting', () => {
+    expect(supportsEffort('claude-opus-5')).toBe(true);
+    expect(supportsEffort('claude-sonnet-5')).toBe(true);
+    expect(supportsEffort('claude-fable-5-1')).toBe(true);
+    // Pre-4.6 — sending the parameters would be rejected.
+    expect(supportsEffort('claude-haiku-4-5')).toBe(false);
+  });
+
+  // On Opus 5 and Sonnet 5 thinking runs whether or not it is requested, so
+  // bounding it is the only way to keep room for the answer.
+  it('bounds thinking on an effort-capable model', async () => {
+    const spy = okFetch();
+    vi.stubGlobal('fetch', spy);
+
+    await callLLM({ ...base, provider: 'anthropic', model: 'claude-opus-5', baseUrl: '' });
+
+    const body = bodyOf(spy);
+    expect(body.thinking).toEqual({ type: 'adaptive' });
+    expect(body.output_config).toEqual({ effort: DEFAULT_EFFORT });
+  });
+
+  it('sends neither parameter to a model that would reject them', async () => {
+    const spy = okFetch();
+    vi.stubGlobal('fetch', spy);
+
+    await callLLM({ ...base, provider: 'anthropic', model: 'claude-haiku-4-5', baseUrl: '' });
+
+    const body = bodyOf(spy);
+    expect(body).not.toHaveProperty('thinking');
+    expect(body).not.toHaveProperty('output_config');
+  });
+
+  it('never sends budget_tokens, which the 5-series rejects outright', async () => {
+    const spy = okFetch();
+    vi.stubGlobal('fetch', spy);
+
+    await callLLM({
+      ...base,
+      provider: 'anthropic',
+      model: 'claude-opus-5',
+      baseUrl: '',
+      maxTokens: ANTHROPIC_MAX_TOKENS,
+    });
+
+    expect(JSON.stringify(bodyOf(spy))).not.toContain('budget_tokens');
+  });
+
+  it('leaves the Anthropic ceiling alone', async () => {
+    const spy = okFetch();
+    vi.stubGlobal('fetch', spy);
+
+    await callLLM({
+      ...base,
+      provider: 'anthropic',
+      model: 'claude-opus-5',
+      baseUrl: '',
+      maxTokens: ANTHROPIC_MAX_TOKENS,
+    });
+
+    expect(bodyOf(spy).max_tokens).toBe(ANTHROPIC_MAX_TOKENS);
+  });
+
+  // Raising the ceiling must not turn a working OpenAI-compatible model into
+  // a 400: several of them cap output at 8192.
+  it('trims the ceiling on the OpenAI-compatible path', async () => {
+    const spy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] }),
+    });
+    vi.stubGlobal('fetch', spy);
+
+    await callLLM({
+      ...base,
+      provider: 'groq',
+      model: 'llama-3.1-8b-instant',
+      baseUrl: 'https://api.groq.com/openai/v1',
+      maxTokens: ANTHROPIC_MAX_TOKENS,
+    });
+
+    expect(bodyOf(spy).max_tokens).toBe(OPENAI_MAX_TOKENS);
+  });
+});
+
+describe('describeEmptyResult', () => {
+  const malformed = 'The model did not output a DSL code block';
+  const say = (r: { text: string; truncated?: boolean; reasonedOnly?: boolean }) =>
+    describeEmptyResult(r, 'the level', malformed);
+
+  it('names reasoning as the cause when the budget went to thinking', () => {
+    // The case that prompted this: 8000 output tokens, empty text.
+    expect(say({ text: '', truncated: true, reasonedOnly: true })).toMatch(/internal reasoning/);
+  });
+
+  it('prefers the reasoning explanation over the plain truncation one', () => {
+    // Both flags are set for a reasoning model that ran out — raising the
+    // ceiling is not the remedy there, so the wording must not suggest it.
+    expect(say({ text: '', truncated: true, reasonedOnly: true })).not.toMatch(/simpler request/);
+  });
+
+  it('reports a plain cut-off answer as running out of tokens', () => {
+    expect(say({ text: 'Let me start by', truncated: true })).toMatch(/ran out of output tokens/);
+  });
+
+  it('reports an empty reply as empty', () => {
+    expect(say({ text: '   ' })).toBe('The model returned an empty response.');
+  });
+
+  it('falls back to the caller message for a well-formed but unusable reply', () => {
+    expect(say({ text: 'I think this puzzle is impossible to build.' })).toBe(malformed);
+  });
+
+  it('takes the subject from the caller, so the solver reads correctly', () => {
+    expect(describeEmptyResult({ text: '', truncated: true }, 'any moves', 'no moves')).toMatch(
+      /before writing any moves/,
+    );
+  });
+});
+
 describe('callLLM routing', () => {
   const base = {
     apiKey: 'test-key',
@@ -244,6 +414,130 @@ describe('callLLM routing', () => {
 
     expect(fetchSpy.mock.calls[0][0]).toBe('https://api.anthropic.com/v1/messages');
     expect(result).toMatchObject({ ok: true, text: 'ok', usage: { inputTokens: 11, outputTokens: 3 } });
+    expect(result).toMatchObject({ truncated: false });
+  });
+
+  // Callers report a cut-off answer differently from one the model simply
+  // formatted wrong, so the stop reason has to survive the call.
+  it('flags an Anthropic answer stopped at the token ceiling', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          content: [{ type: 'text', text: 'partial' }],
+          stop_reason: 'max_tokens',
+        }),
+      }),
+    );
+
+    const result = await callLLM({ ...base, provider: 'anthropic', baseUrl: '' });
+    expect(result).toMatchObject({ ok: true, truncated: true });
+  });
+
+  // The reported failure: 8000 output tokens, empty text. All of it went to
+  // thinking blocks, which the old code silently skipped past.
+  it('flags an Anthropic answer that was all thinking and no text', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          content: [{ type: 'thinking', thinking: 'long deliberation' }],
+          stop_reason: 'max_tokens',
+          usage: { input_tokens: 1579, output_tokens: 8000 },
+        }),
+      }),
+    );
+
+    const result = await callLLM({ ...base, provider: 'anthropic', baseUrl: '' });
+    expect(result).toMatchObject({ ok: true, text: '', truncated: true, reasonedOnly: true });
+  });
+
+  it('joins every Anthropic text block instead of only the first', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          content: [
+            { type: 'thinking', thinking: 'hmm' },
+            { type: 'text', text: 'part one ' },
+            { type: 'text', text: 'part two' },
+          ],
+          stop_reason: 'end_turn',
+        }),
+      }),
+    );
+
+    const result = await callLLM({ ...base, provider: 'anthropic', baseUrl: '' });
+    expect(result).toMatchObject({ ok: true, text: 'part one part two', reasonedOnly: false });
+  });
+
+  // OpenRouter, Groq and DeepSeek return reasoning in a sibling field and may
+  // leave `content` null, which read as "the model said nothing".
+  it('flags an OpenAI-compatible answer that was all reasoning', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: { content: null, reasoning_content: 'long deliberation' },
+              finish_reason: 'length',
+            },
+          ],
+          usage: { completion_tokens: 8000 },
+        }),
+      }),
+    );
+
+    const result = await callLLM({
+      ...base,
+      provider: 'openrouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+    });
+    expect(result).toMatchObject({ ok: true, text: '', reasonedOnly: true });
+  });
+
+  it('flags reasoning-only from the token accounting when the field is absent', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: '' }, finish_reason: 'length' }],
+          usage: { completion_tokens: 8000, completion_tokens_details: { reasoning_tokens: 7990 } },
+        }),
+      }),
+    );
+
+    const result = await callLLM({
+      ...base,
+      provider: 'openai',
+      baseUrl: 'https://api.openai.com/v1',
+    });
+    expect(result).toMatchObject({ ok: true, reasonedOnly: true });
+  });
+
+  it('flags an OpenAI-compatible answer stopped at the token ceiling', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: 'partial' }, finish_reason: 'length' }],
+        }),
+      }),
+    );
+
+    const result = await callLLM({
+      ...base,
+      provider: 'groq',
+      baseUrl: 'https://api.groq.com/openai/v1',
+    });
+    expect(result).toMatchObject({ ok: true, truncated: true });
   });
 
   it('posts to the supplied base URL for an OpenAI-compatible provider', async () => {

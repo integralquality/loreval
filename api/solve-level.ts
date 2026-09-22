@@ -8,6 +8,8 @@ import {
   parseMoves,
   DEFAULT_MODEL,
   SOLVE_SYSTEM_PROMPT,
+  describeEmptyResult,
+  ANTHROPIC_MAX_TOKENS,
 } from './_anthropic';
 import type { RetryContext } from './_anthropic';
 
@@ -42,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     baseUrl,
     system: SOLVE_SYSTEM_PROMPT,
     messages: buildSolveMessages(dsl, retryContext),
-    maxTokens: 8000,
+    maxTokens: ANTHROPIC_MAX_TOKENS,
   });
 
   if (!result.ok) {
@@ -55,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // which the caller scores separately from a wrong plan.
     return res.status(200).json({
       moves: [],
-      error: 'No valid moves found in response',
+      error: describeEmptyResult(result, 'any moves', 'No valid moves found in response'),
       raw: result.text,
       usage: result.usage,
     });
