@@ -11,8 +11,8 @@ export default function DocsPage() {
         {/* Header */}
         <div className="mb-16">
           <p className="font-mono text-[11px] text-zinc-500 mb-4">docs / dsl-reference</p>
-          <h1 className="text-3xl font-bold text-zinc-900 mb-4">Puzzle DSL reference</h1>
-          <p className="text-zinc-600 text-[15px] leading-relaxed max-w-2xl">
+          <h1 className="text-3xl font-bold text-zinc-100 mb-4">Puzzle DSL reference</h1>
+          <p className="text-zinc-400 text-[15px] leading-relaxed max-w-2xl">
             Puzzles are defined in a small text-based domain-specific language. A level file specifies a grid, a tile legend, and agent declarations. The same format is used by the visual editor, the AI solver, and the AI generator — they all read and write the same text.
           </p>
         </div>
@@ -37,7 +37,7 @@ tile D = tiles.door(blue)
 tile G = tiles.goal(orange)
 
 agent(orange) start(1,4) and reach(6,3)`}</CodeBlock>
-            <p className="text-zinc-600 text-sm mt-4 leading-relaxed">
+            <p className="text-zinc-400 text-sm mt-4 leading-relaxed">
               An orange agent starts at (1,4). It must step on the blue switch to open the blue door, then navigate to the goal at (6,3).
             </p>
           </Section>
@@ -80,17 +80,17 @@ agent(blue) start(3,1)`}</CodeBlock>
 
           {/* Tile types */}
           <Section coord="0,2" title="tile types">
-            <div className="rounded-lg border border-zinc-900/15 overflow-hidden bg-white/50">
+            <div className="rounded-lg border border-white/15 overflow-hidden bg-surface/50">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-900/15 bg-zinc-900/5">
+                  <tr className="border-b border-white/15 bg-white/5">
                     <th className="text-left px-4 py-3 font-mono text-[11px] text-zinc-500 font-medium w-12">tile</th>
                     <th className="text-left px-4 py-3 font-mono text-[11px] text-zinc-500 font-medium">syntax</th>
                     <th className="text-left px-4 py-3 font-mono text-[11px] text-zinc-500 font-medium">behavior</th>
                     <th className="text-left px-4 py-3 font-mono text-[11px] text-zinc-500 font-medium">passable</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-900/10">
+                <tbody className="divide-y divide-white/10">
                   {TILE_ROWS.map(({ swatch, syn, desc, pass }) => (
                     <tr key={syn}>
                       <td className="px-4 py-3 align-top">
@@ -98,10 +98,10 @@ agent(blue) start(3,1)`}</CodeBlock>
                           {swatch && <TileIcon type={swatch.type} color={swatch.color} meta={swatch.meta} />}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-mono text-[11px] text-zinc-800 align-top whitespace-nowrap">{syn}</td>
-                      <td className="px-4 py-3 text-zinc-600 text-xs leading-relaxed align-top">{desc}</td>
+                      <td className="px-4 py-3 font-mono text-[11px] text-zinc-200 align-top whitespace-nowrap">{syn}</td>
+                      <td className="px-4 py-3 text-zinc-400 text-xs leading-relaxed align-top">{desc}</td>
                       <td className="px-4 py-3 text-xs align-top">
-                        <span className={`font-mono ${pass === 'always' ? 'text-emerald-700' : pass === 'never' ? 'text-red-700/80' : 'text-orange-700'}`}>
+                        <span className={`font-mono ${pass === 'always' ? 'text-emerald-400' : pass === 'never' ? 'text-red-400/80' : 'text-orange-400'}`}>
                           {pass}
                         </span>
                       </td>
@@ -117,13 +117,13 @@ agent(blue) start(3,1)`}</CodeBlock>
 
           {/* Movement & rules */}
           <Section coord="0,3" title="movement and win condition">
-            <div className="space-y-4 text-zinc-600 text-[15px] leading-relaxed">
-              <p>Agents move one tile per step in four directions. A cell occupied by another active agent is <strong className="text-zinc-900 font-semibold">impassable</strong> — agents block each other, which makes ordering matter in multi-agent levels.</p>
-              <p>An agent finishes by stepping onto its goal tile (color must match for colored goals). The level is <strong className="text-zinc-900 font-semibold">solved</strong> when every agent that declares <Mono>reach()</Mono> has finished. Finished agents leave the board and no longer block.</p>
+            <div className="space-y-4 text-zinc-400 text-[15px] leading-relaxed">
+              <p>Agents move one tile per step in four directions. A cell occupied by another active agent is <strong className="text-zinc-100 font-semibold">impassable</strong> — agents block each other, which makes ordering matter in multi-agent levels.</p>
+              <p>An agent finishes by stepping onto its goal tile (color must match for colored goals). The level is <strong className="text-zinc-100 font-semibold">solved</strong> when every agent that declares <Mono>reach()</Mono> has finished. Finished agents leave the board and no longer block.</p>
               <p>Optional per-agent rules are appended in brackets:</p>
               <CodeBlock>{`agent(orange) start(1,4) and reach(6,3) [max-steps:20]`}</CodeBlock>
-              <ul className="space-y-1 text-zinc-600 text-sm font-mono pl-4">
-                <li><span className="text-zinc-900">max-steps:N</span> — the agent fails if it takes more than N moves</li>
+              <ul className="space-y-1 text-zinc-400 text-sm font-mono pl-4">
+                <li><span className="text-zinc-100">max-steps:N</span> — the agent fails if it takes more than N moves</li>
               </ul>
             </div>
           </Section>
@@ -156,9 +156,9 @@ agent(blue) start(3,1)`}</CodeBlock>
 
           {/* Coordinates */}
           <Section coord="0,5" title="coordinate system">
-            <div className="text-zinc-600 text-[15px] leading-relaxed space-y-3">
+            <div className="text-zinc-400 text-[15px] leading-relaxed space-y-3">
               <p>
-                Origin <Mono>(0,0)</Mono> is the <strong className="text-zinc-900 font-semibold">top-left</strong> corner. X increases rightward, Y increases downward — the same convention the move log and the playback overlay use.
+                Origin <Mono>(0,0)</Mono> is the <strong className="text-zinc-100 font-semibold">top-left</strong> corner. X increases rightward, Y increases downward — the same convention the move log and the playback overlay use.
               </p>
               <CodeBlock>{`# 5×3 grid — positions:
 # (0,0) (1,0) (2,0) (3,0) (4,0)
@@ -176,9 +176,9 @@ level "My Level" 6x6`}</CodeBlock>
 
         </div>
 
-        <div className="mt-20 border-t-2 border-zinc-900 pt-8">
-          <p className="text-zinc-600 text-sm mb-3">The fastest way to learn the format is to draw a level and watch the source update live.</p>
-          <Link to="/designer" className="inline-flex items-center gap-2 font-mono text-sm text-orange-600 hover:text-orange-500 transition-colors">
+        <div className="mt-20 border-t-2 border-zinc-700 pt-8">
+          <p className="text-zinc-400 text-sm mb-3">The fastest way to learn the format is to draw a level and watch the source update live.</p>
+          <Link to="/designer" className="inline-flex items-center gap-2 font-mono text-sm text-orange-400 hover:text-orange-300 transition-colors">
             open the designer <ArrowRight size={14} />
           </Link>
         </div>
@@ -211,8 +211,8 @@ const TILE_ROWS: Array<{
 function Section({ coord, title, children }: { coord: string; title: string; children: React.ReactNode }) {
   return (
     <section>
-      <div className="border-t-2 border-zinc-900 pt-4 mb-8 flex items-baseline justify-between gap-4">
-        <h2 className="font-mono text-sm font-bold text-zinc-900 lowercase tracking-wide">{title}</h2>
+      <div className="border-t-2 border-zinc-700 pt-4 mb-8 flex items-baseline justify-between gap-4">
+        <h2 className="font-mono text-sm font-bold text-zinc-100 lowercase tracking-wide">{title}</h2>
         <span className="font-mono text-xs text-zinc-400">({coord})</span>
       </div>
       {children}
@@ -222,19 +222,19 @@ function Section({ coord, title, children }: { coord: string; title: string; chi
 
 function Clause({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="border-l-2 border-zinc-900/15 pl-5">
-      <p className="font-mono text-sm font-bold text-zinc-900 mb-2">{label}</p>
+    <div className="border-l-2 border-white/15 pl-5">
+      <p className="font-mono text-sm font-bold text-zinc-100 mb-2">{label}</p>
       {children}
     </div>
   );
 }
 
 function Note({ children }: { children: React.ReactNode }) {
-  return <p className="text-zinc-600 text-sm mt-3 leading-relaxed">{children}</p>;
+  return <p className="text-zinc-400 text-sm mt-3 leading-relaxed">{children}</p>;
 }
 
 function Mono({ children }: { children: React.ReactNode }) {
-  return <code className="font-mono text-[12px] text-zinc-900 bg-zinc-900/8 border border-zinc-900/10 px-1.5 py-0.5 rounded">{children}</code>;
+  return <code className="font-mono text-[12px] text-zinc-100 bg-white/[0.07] border border-white/10 px-1.5 py-0.5 rounded">{children}</code>;
 }
 
 function CodeBlock({ children, name }: { children: string; name?: string }) {

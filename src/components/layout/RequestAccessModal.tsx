@@ -7,24 +7,24 @@ interface Props {
 export function RequestAccessModal({ onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-zinc-900/50" onClick={onClose} />
-      <div className="relative bg-paper border-2 border-zinc-900 rounded-lg w-full max-w-md p-6 shadow-2xl">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative bg-paper border-2 border-zinc-700 rounded-lg w-full max-w-md p-6 shadow-2xl">
 
-        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 transition-colors">
+        <button onClick={onClose} className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-100 transition-colors">
           <X size={18} />
         </button>
 
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 bg-blue-500/15 border border-blue-500/30 rounded flex items-center justify-center">
-            <Mail size={15} className="text-blue-600" />
+            <Mail size={15} className="text-blue-400" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-zinc-900">Request beta access</h2>
+            <h2 className="text-base font-bold text-zinc-100">Request beta access</h2>
             <p className="text-xs text-zinc-500">Managed account — no API key needed</p>
           </div>
         </div>
 
-        <div className="space-y-4 text-sm text-zinc-600 leading-relaxed">
+        <div className="space-y-4 text-sm text-zinc-400 leading-relaxed">
           <p>
             Beta accounts get a managed API budget, puzzle storage, and access to the full evaluation pipeline including the leaderboard once it launches.
           </p>
@@ -33,7 +33,7 @@ export function RequestAccessModal({ onClose }: Props) {
           </p>
           <a
             href="mailto:access@loreval.ai"
-            className="flex items-center gap-2 font-mono text-orange-600 hover:text-orange-500 transition-colors"
+            className="flex items-center gap-2 font-mono text-orange-400 hover:text-orange-300 transition-colors"
           >
             <Mail size={14} /> access@loreval.ai
           </a>
@@ -44,7 +44,7 @@ export function RequestAccessModal({ onClose }: Props) {
 
         <button
           onClick={onClose}
-          className="mt-6 w-full py-2 bg-zinc-900 hover:bg-zinc-700 text-paper text-sm font-medium rounded transition-colors"
+          className="mt-6 w-full py-2 bg-zinc-100 hover:bg-zinc-300 text-paper text-sm font-medium rounded transition-colors"
         >
           Got it
         </button>

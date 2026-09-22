@@ -555,8 +555,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
   if (cloudLoading) {
     return (
-      <div className="flex h-screen graph-paper items-center justify-center">
-        <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+      <div className="flex h-screen page-ground items-center justify-center">
+        <div className="w-6 h-6 border-2 border-zinc-700 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -581,13 +581,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   })();
 
   return (
-    <div className="flex h-screen graph-paper text-ink font-sans overflow-hidden">
+    <div className="flex h-screen page-ground text-ink font-sans overflow-hidden">
       {/* Sidebar */}
-      <div className="w-80 bg-paper border-r-2 border-zinc-900 flex flex-col">
+      <div className="w-80 bg-paper border-r-2 border-zinc-700 flex flex-col">
         {/* Header — same h-14 band as the top bar so the rules align */}
-        <div className="h-14 px-4 flex items-center justify-between border-b-2 border-zinc-900 shrink-0">
+        <div className="h-14 px-4 flex items-center justify-between border-b-2 border-zinc-700 shrink-0">
           <div className="flex items-baseline gap-2 min-w-0">
-            <h1 className="font-mono text-base font-bold text-zinc-900 truncate">
+            <h1 className="font-mono text-base font-bold text-zinc-100 truncate">
               {playOnly ? level.name : 'loreval'}
             </h1>
             <p className="font-mono text-[11px] text-zinc-500 truncate">
@@ -596,7 +596,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
           </div>
           <Link
             to={playOnly ? '/play' : '/'}
-            className="p-1.5 rounded border border-zinc-900/20 text-zinc-500 hover:text-zinc-900 hover:border-zinc-900 transition-colors shrink-0"
+            className="p-1.5 rounded border border-white/15 text-zinc-500 hover:text-zinc-100 hover:border-zinc-500 transition-colors shrink-0"
             title={playOnly ? 'Back to Levels' : 'Back to Home'}
           >
             <Home size={16} />
@@ -607,29 +607,29 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         {!playOnly && mode === 'design' && designTab === 'visual' && (
           <div className="p-4 space-y-2">
             <div className="flex gap-2">
-              <button onClick={handleSave} disabled={saveStatus === 'saving'} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-900 hover:bg-zinc-700 text-paper rounded text-xs font-medium transition-colors disabled:opacity-50">
+              <button onClick={handleSave} disabled={saveStatus === 'saving'} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-100 hover:bg-zinc-300 text-paper rounded text-xs font-medium transition-colors disabled:opacity-50">
                 {saveStatus === 'saving' ? <Loader2 size={14} className="animate-spin" /> : saveStatus === 'saved' ? <Check size={14} /> : user ? <Cloud size={14} /> : <Save size={14} />}
                 {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
               </button>
               {user && (
-                <button onClick={handleShare} className="flex-1 flex items-center justify-center gap-2 py-2 border border-zinc-900/20 text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 rounded text-xs transition-colors">
+                <button onClick={handleShare} className="flex-1 flex items-center justify-center gap-2 py-2 border border-white/15 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 rounded text-xs transition-colors">
                   <Share2 size={14} /> {shareUrl ? 'Copy Link' : 'Share'}
                 </button>
               )}
             </div>
             <div className="flex gap-2">
-              <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 border border-zinc-900/20 text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 rounded text-xs transition-colors">
+              <button onClick={handleLoad} className="flex-1 flex items-center justify-center gap-2 py-2 border border-white/15 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 rounded text-xs transition-colors">
                 <Settings size={14} /> Load
               </button>
-              <button onClick={handleClear} className="flex-1 flex items-center justify-center gap-2 py-2 border border-zinc-900/20 text-zinc-600 hover:text-red-600 hover:border-red-600 rounded text-xs transition-colors">
+              <button onClick={handleClear} className="flex-1 flex items-center justify-center gap-2 py-2 border border-white/15 text-zinc-400 hover:text-red-400 hover:border-red-500/50 rounded text-xs transition-colors">
                 <Trash2 size={14} /> Clear
               </button>
             </div>
-            <button onClick={handleExport} className="w-full flex items-center justify-center gap-2 py-2 border border-zinc-900/20 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 rounded text-xs transition-colors">
+            <button onClick={handleExport} className="w-full flex items-center justify-center gap-2 py-2 border border-white/15 text-zinc-400 hover:border-zinc-500 hover:text-zinc-100 rounded text-xs transition-colors">
               <CloudOff size={14} /> Export .lrev
             </button>
             {saveStatus === 'error' && (
-              <p className="text-xs text-red-600 text-center">Save failed. Try again.</p>
+              <p className="text-xs text-red-400 text-center">Save failed. Try again.</p>
             )}
             {!user && (
               <p className="text-xs text-zinc-500 text-center">
@@ -674,12 +674,12 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     <div
                       className={`w-9 h-9 rounded border-2 transition-all ${
                         (level.theme ?? 'dungeon') === t.id
-                          ? 'border-zinc-900 scale-110'
-                          : 'border-zinc-900/20 hover:border-zinc-900/60'
+                          ? 'border-zinc-700 scale-110'
+                          : 'border-white/15 hover:border-white/25'
                       }`}
                       style={{ backgroundColor: t.wallPreview }}
                     />
-                    <span className="text-[9px] text-zinc-500 group-hover:text-zinc-900 transition-colors">{t.label}</span>
+                    <span className="text-[9px] text-zinc-500 group-hover:text-zinc-100 transition-colors">{t.label}</span>
                   </button>
                 ))}
               </div>
@@ -687,10 +687,10 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* Entity Properties Panel */}
             {selectedEntityId && (
-              <div className="bg-white/60 p-4 rounded-md border border-orange-500/40 animate-in fade-in slide-in-from-right-4">
+              <div className="bg-surface/60 p-4 rounded-md border border-orange-500/40 animate-in fade-in slide-in-from-right-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-orange-700">Agent</h3>
-                  <button onClick={() => setSelectedEntityId(null)} className="text-zinc-400 hover:text-zinc-900">
+                  <h3 className="text-sm font-bold text-orange-400">Agent</h3>
+                  <button onClick={() => setSelectedEntityId(null)} className="text-zinc-400 hover:text-zinc-100">
                     <Ban size={14} />
                   </button>
                 </div>
@@ -712,7 +712,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                                 key={c}
                                 onClick={() => updateEntityColor(entity.id, c)}
                                 disabled={takenByOther}
-                                className={`w-6 h-6 rounded-full border-2 ${entity.color === c ? 'border-zinc-900 scale-110' : takenByOther ? 'border-transparent opacity-20 cursor-not-allowed' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                className={`w-6 h-6 rounded-full border-2 ${entity.color === c ? 'border-zinc-700 scale-110' : takenByOther ? 'border-transparent opacity-20 cursor-not-allowed' : 'border-transparent opacity-60 hover:opacity-100'}`}
                                 style={{ backgroundColor: c }}
                                 title={takenByOther ? `Already used by another agent` : c}
                               />
@@ -734,26 +734,26 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
               </div>
             )}
 
-            <div className="bg-white/60 p-4 rounded-md border border-zinc-900/15">
+            <div className="bg-surface/60 p-4 rounded-md border border-white/15">
               <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Instructions</h3>
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-zinc-400">
                 Click grid to place items. Select items to edit properties (Color, Rules).
                 <br /><br />
-                <span className="text-orange-700 font-medium">Doors</span> block unless color matches.
+                <span className="text-orange-400 font-medium">Doors</span> block unless color matches.
                 <br />
-                <span className="text-orange-700 font-medium">Paint</span> changes character color.
+                <span className="text-orange-400 font-medium">Paint</span> changes character color.
                 <br />
-                <span className="text-amber-700 font-medium">Switches</span> toggle doors of matching color.
+                <span className="text-amber-400 font-medium">Switches</span> toggle doors of matching color.
                 <br />
-                <span className="text-amber-700 font-medium">One-way</span> tiles only allow entry from one direction.
+                <span className="text-amber-400 font-medium">One-way</span> tiles only allow entry from one direction.
               </p>
             </div>
             {/* Tile Properties Panel */}
             {selectedTilePos && (
-              <div className="bg-white/60 p-4 rounded-md border border-emerald-600/40 animate-in fade-in slide-in-from-right-4">
+              <div className="bg-surface/60 p-4 rounded-md border border-emerald-600/40 animate-in fade-in slide-in-from-right-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-emerald-700">Tile Properties</h3>
-                  <button onClick={() => setSelectedTilePos(null)} className="text-zinc-400 hover:text-zinc-900">
+                  <h3 className="text-sm font-bold text-emerald-400">Tile Properties</h3>
+                  <button onClick={() => setSelectedTilePos(null)} className="text-zinc-400 hover:text-zinc-100">
                     <Ban size={14} />
                   </button>
                 </div>
@@ -764,8 +764,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
                   return (
                     <div className="space-y-4">
-                      <div className="text-xs text-zinc-600">
-                        Type: <span className="text-zinc-900 capitalize">{tile.type}</span>
+                      <div className="text-xs text-zinc-400">
+                        Type: <span className="text-zinc-100 capitalize">{tile.type}</span>
                       </div>
 
                       {/* Color Picker - for types that use color */}
@@ -777,7 +777,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                               <button
                                 key={c}
                                 onClick={() => updateTileColor(selectedTilePos.x, selectedTilePos.y, c)}
-                                className={`w-6 h-6 rounded-full border-2 ${tile.color === c ? 'border-zinc-900 scale-110' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                className={`w-6 h-6 rounded-full border-2 ${tile.color === c ? 'border-zinc-700 scale-110' : 'border-transparent opacity-60 hover:opacity-100'}`}
                                 style={{ backgroundColor: c }}
                               />
                             ))}
@@ -795,8 +795,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                                 key={dir}
                                 onClick={() => updateTileDirection(selectedTilePos.x, selectedTilePos.y, dir)}
                                 className={`w-8 h-8 rounded flex items-center justify-center border-2 transition-all ${tile.meta?.direction === dir
-                                    ? 'border-amber-600 bg-amber-500/15 text-amber-700'
-                                    : 'border-zinc-900/15 bg-white/60 text-zinc-400 hover:text-zinc-900'
+                                    ? 'border-amber-600 bg-amber-500/15 text-amber-400'
+                                    : 'border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100'
                                   }`}
                               >
                                 <ArrowUp
@@ -829,7 +829,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 className={`flex-1 py-2 rounded text-sm font-medium transition-colors ${
                   playMode === 'human'
                     ? 'bg-emerald-700 text-white'
-                    : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'
+                    : 'bg-surface/60 border border-white/15 text-zinc-500 hover:text-zinc-100'
                 }`}
               >
                 Human
@@ -838,8 +838,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 onClick={() => { aiPlayback.stop(); setPlayMode('ai'); }}
                 className={`flex-1 py-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
                   playMode === 'ai'
-                    ? 'bg-zinc-900 text-paper'
-                    : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'
+                    ? 'bg-zinc-100 text-paper'
+                    : 'bg-surface/60 border border-white/15 text-zinc-500 hover:text-zinc-100'
                 }`}
               >
                 <Sparkles size={13} /> AI
@@ -848,7 +848,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* AI playback status */}
             {playMode === 'ai' && (
-              <div className="bg-white/60 p-3 rounded-md border border-zinc-900/15 space-y-2">
+              <div className="bg-surface/60 p-3 rounded-md border border-white/15 space-y-2">
 
                 {/* Model picker */}
                 {(aiPlayback.status === 'idle' || aiPlayback.status === 'done' || aiPlayback.status === 'error') && (
@@ -861,7 +861,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       <select
                         value={activeSolveModel}
                         onChange={e => setAiModel(e.target.value)}
-                        className="flex-1 bg-white/60 border border-zinc-900/15 rounded px-2 py-1 text-[11px] text-zinc-700 focus:outline-none focus:border-zinc-900"
+                        className="flex-1 bg-surface/60 border border-white/15 rounded px-2 py-1 text-[11px] text-zinc-300 focus:outline-none focus:border-zinc-400"
                       >
                         {models.map(m => (
                           <option key={modelKey(m.providerId, m.id)} value={modelKey(m.providerId, m.id)}>
@@ -877,7 +877,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 {aiPlayback.status === 'idle' && (
                   <button
                     onClick={() => void aiPlayback.startSolving(gameState, undefined, activeSolveModel)}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-zinc-900 hover:bg-zinc-700 text-paper text-sm font-medium transition-colors"
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded bg-zinc-100 hover:bg-zinc-300 text-paper text-sm font-medium transition-colors"
                   >
                     <Play size={14} /> Play
                   </button>
@@ -885,7 +885,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
                 {/* Solving */}
                 {aiPlayback.status === 'solving' && (
-                  <div className="flex items-center gap-2 text-sm text-zinc-700">
+                  <div className="flex items-center gap-2 text-sm text-zinc-300">
                     <Loader2 size={14} className="animate-spin" />
                     AI Thinking...
                   </div>
@@ -896,11 +896,11 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                   <>
                     {/* Progress bar */}
                     <div className="space-y-1">
-                      <div className="flex justify-between font-mono text-xs text-zinc-600">
+                      <div className="flex justify-between font-mono text-xs text-zinc-400">
                         <span>{aiPlayback.status === 'paused' ? 'Paused' : 'Playing'}</span>
                         <span>{aiPlayback.currentMoveIndex} / {aiPlayback.totalMoves}</span>
                       </div>
-                      <div className="h-1 bg-zinc-900/10 rounded-full overflow-hidden">
+                      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-orange-500 rounded-full transition-all"
                           style={{ width: `${aiPlayback.totalMoves ? (aiPlayback.currentMoveIndex / aiPlayback.totalMoves) * 100 : 0}%` }}
@@ -918,7 +918,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                             aiPlayback.changeSpeed(s === 'slow' ? 800 : s === 'fast' ? 120 : 400);
                           }}
                           className={`flex-1 py-1 rounded text-xs transition-colors ${
-                            aiSpeed === s ? 'bg-zinc-900 text-paper' : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'
+                            aiSpeed === s ? 'bg-zinc-100 text-paper' : 'bg-surface/60 border border-white/15 text-zinc-500 hover:text-zinc-100'
                           }`}
                         >
                           {s === 'slow' ? '0.5×' : s === 'fast' ? '2×' : '1×'}
@@ -931,7 +931,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       {aiPlayback.status === 'playing' ? (
                         <button
                           onClick={aiPlayback.pause}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors"
                         >
                           <Pause size={12} /> Pause
                         </button>
@@ -940,21 +940,21 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                           <button
                             onClick={aiPlayback.stepBack}
                             disabled={aiPlayback.currentMoveIndex === 0}
-                            className="px-3 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors disabled:opacity-30"
+                            className="px-3 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors disabled:opacity-30"
                             title="Step back (←)"
                           >
                             ←
                           </button>
                           <button
                             onClick={aiPlayback.resume}
-                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded bg-zinc-900 text-paper text-xs transition-colors hover:bg-zinc-700"
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded bg-zinc-100 text-paper text-xs transition-colors hover:bg-zinc-300"
                           >
                             <Play size={12} /> Resume
                           </button>
                           <button
                             onClick={aiPlayback.step}
                             disabled={aiPlayback.currentMoveIndex >= aiPlayback.totalMoves}
-                            className="px-3 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors disabled:opacity-30"
+                            className="px-3 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors disabled:opacity-30"
                             title="Step forward (→)"
                           >
                             →
@@ -963,7 +963,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       )}
                       <button
                         onClick={aiPlayback.stop}
-                        className="px-3 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
+                        className="px-3 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors"
                       >
                         Stop
                       </button>
@@ -974,27 +974,27 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 {/* Done */}
                 {aiPlayback.status === 'done' && (
                   <>
-                    <div className={`text-sm font-medium ${aiPlayback.solved ? 'text-emerald-700' : 'text-zinc-600'}`}>
+                    <div className={`text-sm font-medium ${aiPlayback.solved ? 'text-emerald-400' : 'text-zinc-400'}`}>
                       {aiPlayback.solved
                         ? `✓ Solved in ${aiPlayback.totalMoves} moves!`
                         : `✗ Couldn't solve it (${aiPlayback.totalMoves} moves tried)`}
                     </div>
                     <button
                       onClick={aiPlayback.rewind}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors"
                     >
                       ↩ Watch again  <span className="text-zinc-500 ml-1">← → to scrub</span>
                     </button>
                     <div className="flex gap-2">
                       <button
                         onClick={resetPlayState}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors"
                       >
                         <Play size={12} /> Play myself
                       </button>
                       <button
                         onClick={() => { setAiFeedback(''); aiPlayback.retry(activeSolveModel); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors"
                       >
                         <RotateCcw size={12} /> Retry
                       </button>
@@ -1011,13 +1011,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     <div className="flex gap-2">
                       <button
                         onClick={resetPlayState}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors"
                       >
                         <Play size={12} /> Play myself
                       </button>
                       <button
                         onClick={() => { setAiFeedback(''); aiPlayback.retry(activeSolveModel); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 text-xs transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 text-xs transition-colors"
                       >
                         <RotateCcw size={12} /> Retry
                       </button>
@@ -1030,8 +1030,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* AI Step List */}
             {playMode === 'ai' && aiPlayback.moveLog.length > 0 && (
-              <div className="bg-white/60 rounded-md border border-zinc-900/15 overflow-hidden">
-                <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-2.5 pb-1.5 border-b border-zinc-900/10">
+              <div className="bg-surface/60 rounded-md border border-white/15 overflow-hidden">
+                <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-2.5 pb-1.5 border-b border-white/10">
                   Steps
                 </p>
                 <div
@@ -1048,13 +1048,13 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         data-active={isActive ? 'true' : undefined}
                         className={`px-3 py-0.5 font-mono text-[11px] leading-5 ${
                           isActive
-                            ? 'bg-orange-500/15 text-zinc-900'
+                            ? 'bg-orange-500/15 text-zinc-100'
                             : isDone
                             ? 'text-zinc-400'
-                            : 'text-zinc-600'
+                            : 'text-zinc-400'
                         }`}
                       >
-                        {isActive && <span className="text-orange-600 mr-1">▶</span>}
+                        {isActive && <span className="text-orange-400 mr-1">▶</span>}
                         {line}
                       </div>
                     );
@@ -1063,8 +1063,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
               </div>
             )}
 
-            <div className="bg-white/60 p-4 rounded-md border border-zinc-900/15">
-              <h3 className="text-sm font-bold text-zinc-800 mb-3">Agents</h3>
+            <div className="bg-surface/60 p-4 rounded-md border border-white/15">
+              <h3 className="text-sm font-bold text-zinc-200 mb-3">Agents</h3>
               <div className="space-y-2">
                 {gameState.entities.map((entity) => {
                   const original = level.entities.find(e => e.id === entity.id);
@@ -1076,16 +1076,16 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       onClick={() => !isFinished && setGameState(prev => ({ ...prev, selectedEntityId: entity.id }))}
                       disabled={isFinished}
                       className={`w-full text-left p-2 rounded transition-colors ${isFinished
-                          ? 'bg-zinc-900/5 opacity-40 cursor-default'
+                          ? 'bg-white/5 opacity-40 cursor-default'
                           : gameState.selectedEntityId === entity.id
                             ? 'bg-orange-500/10 border border-orange-500/50'
-                            : 'bg-white/60 border border-zinc-900/10 hover:border-zinc-900/40'
+                            : 'bg-surface/60 border border-white/10 hover:border-white/25'
                         }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <EntityIcon type={entity.type} className="w-5 h-5" />
-                          <span className={`text-sm capitalize ${isFinished ? 'line-through text-zinc-600' : ''}`}>{entity.color || 'agent'}</span>
+                          <span className={`text-sm capitalize ${isFinished ? 'line-through text-zinc-400' : ''}`}>{entity.color || 'agent'}</span>
                         </div>
                         <div className="text-xs font-mono text-zinc-500">
                           {isFinished ? 'Done' : `${gameState.moves[entity.id]} steps`}
@@ -1109,20 +1109,20 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {gameState.message && (
               <div className="bg-orange-500/10 border border-orange-500/30 p-4 rounded-md">
-                <p className="text-orange-800 text-sm">{gameState.message}</p>
+                <p className="text-orange-300 text-sm">{gameState.message}</p>
               </div>
             )}
 
             <button
               onClick={resetPlayState}
-              className="w-full flex items-center justify-center gap-2 py-2 border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 rounded text-sm transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2 border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 rounded text-sm transition-colors"
             >
               <Trash2 size={14} /> Reset
             </button>
 
-            <div className="bg-white/60 p-4 rounded-md border border-zinc-900/15">
+            <div className="bg-surface/60 p-4 rounded-md border border-white/15">
               <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Controls</h3>
-              <div className="space-y-1 font-mono text-xs text-zinc-600">
+              <div className="space-y-1 font-mono text-xs text-zinc-400">
                 <p>arrow keys — move</p>
                 <p>1, 2, 3 — select character</p>
               </div>
@@ -1131,7 +1131,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             {onFork && (
               <button
                 onClick={onFork}
-                className="w-full flex items-center justify-center gap-2 py-2 border border-zinc-900/20 bg-white/60 text-zinc-600 hover:text-zinc-900 hover:border-zinc-900 rounded text-sm transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2 border border-white/15 bg-surface/60 text-zinc-400 hover:text-zinc-100 hover:border-zinc-500 rounded text-sm transition-colors"
               >
                 <GitFork size={14} /> Edit a copy
               </button>
@@ -1142,46 +1142,46 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         {/* Code Mode Sidebar */}
         {mode === 'design' && designTab === 'code' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <div className="bg-white/60 p-4 rounded-md border border-zinc-900/15">
+            <div className="bg-surface/60 p-4 rounded-md border border-white/15">
               <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">DSL Syntax</h3>
-              <div className="space-y-3 text-xs text-zinc-600 font-mono">
+              <div className="space-y-3 text-xs text-zinc-400 font-mono">
                 <div>
-                  <p className="text-zinc-900 mb-1">Header</p>
+                  <p className="text-zinc-100 mb-1">Header</p>
                   <p className="text-zinc-500">level "Name" 8x6</p>
                 </div>
                 <div>
-                  <p className="text-zinc-900 mb-1">Grid</p>
+                  <p className="text-zinc-100 mb-1">Grid</p>
                   <p className="text-zinc-500">grid = [</p>
                   <p className="text-zinc-500 ml-2">W W R R . .,</p>
                   <p className="text-zinc-500">]</p>
                 </div>
                 <div>
-                  <p className="text-zinc-900 mb-1">Built-in chars</p>
+                  <p className="text-zinc-100 mb-1">Built-in chars</p>
                   <p className="text-zinc-500">. = empty</p>
                   <p className="text-zinc-500">W = wall</p>
                   <p className="text-zinc-500">R = road</p>
                 </div>
                 <div>
-                  <p className="text-zinc-900 mb-1">Tiles</p>
+                  <p className="text-zinc-100 mb-1">Tiles</p>
                   <p className="text-zinc-500">tile D = tiles.door(blue)</p>
                   <p className="text-zinc-500">tile G = tiles.goal(orange)</p>
                 </div>
                 <div>
-                  <p className="text-zinc-900 mb-1">Agents</p>
+                  <p className="text-zinc-100 mb-1">Agents</p>
                   <p className="text-zinc-500">agent(orange) start(2,3)</p>
                   <p className="text-zinc-500 ml-2">and reach(7,1)</p>
                   <p className="text-zinc-500 ml-2">[max-steps:10]</p>
                 </div>
                 <div>
-                  <p className="text-zinc-900 mb-1">Comments</p>
+                  <p className="text-zinc-100 mb-1">Comments</p>
                   <p className="text-zinc-500"># This is a comment</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white/60 p-4 rounded-md border border-zinc-900/15">
+            <div className="bg-surface/60 p-4 rounded-md border border-white/15">
               <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Tile types</h3>
-              <div className="grid grid-cols-2 gap-1 text-xs text-zinc-600">
+              <div className="grid grid-cols-2 gap-1 text-xs text-zinc-400">
                 <span>wall</span><span>floor-white</span>
                 <span>goal</span><span>door</span>
                 <span>switch</span><span>paint</span>
@@ -1189,9 +1189,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
               </div>
             </div>
 
-            <div className="bg-white/60 p-4 rounded-md border border-zinc-900/15">
+            <div className="bg-surface/60 p-4 rounded-md border border-white/15">
               <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Arrows</h3>
-              <div className="grid grid-cols-2 gap-1 text-xs text-zinc-600 font-mono">
+              <div className="grid grid-cols-2 gap-1 text-xs text-zinc-400 font-mono">
                 <span>^ = one-way up</span>
                 <span>v = one-way down</span>
                 <span>&lt; = one-way left</span>
@@ -1206,27 +1206,27 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Mode Toggle Tabs */}
         {!playOnly && (
-          <div className="flex items-center justify-between px-4 h-14 bg-paper border-b-2 border-zinc-900 shrink-0">
+          <div className="flex items-center justify-between px-4 h-14 bg-paper border-b-2 border-zinc-700 shrink-0">
             {(() => {
               const agentsWithoutGoal = level.entities.filter(e => !e.rules.some(r => r.type === 'reach-goal'));
               return (
                 <div className="flex items-center gap-2">
-                  <div className="flex bg-white/60 border border-zinc-900/15 p-1 rounded-md">
+                  <div className="flex bg-surface/60 border border-white/15 p-1 rounded-md">
                     <button
                       onClick={() => setMode('design')}
-                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'design' ? 'bg-zinc-900 text-paper' : 'text-zinc-500 hover:text-zinc-900'}`}
+                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'design' ? 'bg-zinc-100 text-paper' : 'text-zinc-500 hover:text-zinc-100'}`}
                     >
                       <Grid3X3 size={15} /> Design
                     </button>
                     <button
                       onClick={() => setMode('play')}
-                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-700 text-white' : 'text-zinc-500 hover:text-zinc-900'}`}
+                      className={`flex items-center gap-2 px-4 py-1.5 rounded-md transition-all text-sm ${mode === 'play' ? 'bg-emerald-700 text-white' : 'text-zinc-500 hover:text-zinc-100'}`}
                     >
                       <Play size={15} /> Play
                     </button>
                   </div>
                   {agentsWithoutGoal.length > 0 && mode === 'design' && (
-                    <span className="font-mono text-xs text-amber-700">
+                    <span className="font-mono text-xs text-amber-400">
                       {agentsWithoutGoal.map(e => e.color).join(', ')} agent{agentsWithoutGoal.length > 1 ? 's have' : ' has'} no goal
                     </span>
                   )}
@@ -1235,10 +1235,10 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             })()}
 
             {mode === 'design' && (
-              <div className="flex bg-white/60 border border-zinc-900/15 p-1 rounded-md">
+              <div className="flex bg-surface/60 border border-white/15 p-1 rounded-md">
                 <button
                   onClick={() => setDesignTab('visual')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all text-sm ${designTab === 'visual' ? 'bg-zinc-900 text-paper' : 'text-zinc-500 hover:text-zinc-900'}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all text-sm ${designTab === 'visual' ? 'bg-zinc-100 text-paper' : 'text-zinc-500 hover:text-zinc-100'}`}
                 >
                   <Grid3X3 size={13} /> Visual
                 </button>
@@ -1247,7 +1247,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                     setDslCode(serializeDSL(level));
                     setDesignTab('code');
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all text-sm ${designTab === 'code' ? 'bg-zinc-900 text-paper' : 'text-zinc-500 hover:text-zinc-900'}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all text-sm ${designTab === 'code' ? 'bg-zinc-100 text-paper' : 'text-zinc-500 hover:text-zinc-100'}`}
                 >
                   <Code2 size={13} /> Code
                 </button>
@@ -1259,8 +1259,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                 onClick={() => setShowGenerate(!showGenerate)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition-all text-sm font-medium ${
                   showGenerate
-                    ? 'bg-zinc-900 text-paper'
-                    : 'border border-zinc-900/20 bg-white/60 text-zinc-700 hover:border-zinc-900'
+                    ? 'bg-zinc-100 text-paper'
+                    : 'border border-white/15 bg-surface/60 text-zinc-300 hover:border-zinc-500'
                 }`}
               >
                 <Wand2 size={14} /> Generate
@@ -1295,7 +1295,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
                 <div className="flex flex-col" style={{ gap: 6 }}>
                   <div
-                    className="relative bg-zinc-950 rounded-md border-2 border-zinc-900 p-px"
+                    className="relative bg-zinc-950 rounded-md border-2 border-zinc-700 p-px"
                     style={{
                       width: level.width * TILE_SIZE + level.width + 1,
                       height: level.height * TILE_SIZE + level.height + 1
@@ -1347,7 +1347,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                           </div>
                         )}
 
-                        <span className="absolute top-0.5 left-0.5 text-[8px] text-zinc-700 select-none pointer-events-none opacity-0 hover:opacity-100">
+                        <span className="absolute top-0.5 left-0.5 text-[8px] text-zinc-300 select-none pointer-events-none opacity-0 hover:opacity-100">
                           {x},{y}
                         </span>
                       </div>
@@ -1409,25 +1409,25 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* Generate panel — vertical panel beside the grid */}
             {mode === 'design' && showGenerate && (
-              <div className="w-72 self-stretch flex flex-col border-l-2 border-zinc-900 bg-paper overflow-hidden">
+              <div className="w-72 self-stretch flex flex-col border-l-2 border-zinc-700 bg-paper overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-900/15 shrink-0">
-                  <span className="font-mono text-xs font-bold text-zinc-900 flex items-center gap-1.5">
-                    <Wand2 size={13} className="text-orange-600" /> Generate
+                <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/15 shrink-0">
+                  <span className="font-mono text-xs font-bold text-zinc-100 flex items-center gap-1.5">
+                    <Wand2 size={13} className="text-orange-400" /> Generate
                   </span>
                   <button
                     onClick={() => { setShowGenerate(false); aiGeneration.reset(); setGenSettingsOpen(true); }}
-                    className="text-zinc-400 hover:text-zinc-900 transition-colors"
+                    className="text-zinc-400 hover:text-zinc-100 transition-colors"
                   >
                     <X size={14} />
                   </button>
                 </div>
 
                 {/* Settings — collapsible */}
-                <div className="shrink-0 border-b border-zinc-900/15">
+                <div className="shrink-0 border-b border-white/15">
                   <button
                     onClick={() => setGenSettingsOpen(o => !o)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-xs text-zinc-600 hover:text-zinc-900 transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs text-zinc-400 hover:text-zinc-100 transition-colors"
                   >
                     <span className="font-medium">Settings</span>
                     <span className="text-zinc-400">{genSettingsOpen ? '▲' : '▼'}</span>
@@ -1441,7 +1441,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         onChange={(e) => setGenPrompt(e.target.value)}
                         placeholder="Describe your level…"
                         rows={3}
-                        className="w-full bg-white border border-zinc-900/20 rounded px-2.5 py-2 text-xs text-zinc-900 placeholder-zinc-400 resize-none focus:outline-none focus:border-zinc-900 transition-colors"
+                        className="w-full bg-surface border border-white/15 rounded px-2.5 py-2 text-xs text-zinc-100 placeholder-zinc-600 resize-none focus:outline-none focus:border-zinc-400 transition-colors"
                       />
 
                       {/* Size */}
@@ -1450,7 +1450,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         <div className="grid grid-cols-4 gap-1">
                           {PRESET_SIZES.map((s) => (
                             <button key={s.label} onClick={() => setGenSize({ width: s.width, height: s.height })}
-                              className={`py-1 rounded text-[11px] font-medium transition-colors ${genSize.width === s.width ? 'bg-zinc-900 text-paper' : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'}`}>
+                              className={`py-1 rounded text-[11px] font-medium transition-colors ${genSize.width === s.width ? 'bg-zinc-100 text-paper' : 'bg-surface/60 border border-white/15 text-zinc-500 hover:text-zinc-100'}`}>
                               {s.label}
                             </button>
                           ))}
@@ -1463,7 +1463,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                         <div className="grid grid-cols-3 gap-1">
                           {DIFFICULTIES.map((d) => (
                             <button key={d} onClick={() => setGenDifficulty(d)}
-                              className={`py-1 rounded text-[11px] capitalize transition-colors ${genDifficulty === d ? 'bg-zinc-900 text-paper' : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'}`}>
+                              className={`py-1 rounded text-[11px] capitalize transition-colors ${genDifficulty === d ? 'bg-zinc-100 text-paper' : 'bg-surface/60 border border-white/15 text-zinc-500 hover:text-zinc-100'}`}>
                               {d}
                             </button>
                           ))}
@@ -1479,7 +1479,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                             return (
                               <button key={f.id}
                                 onClick={() => setGenFeatures((prev) => active ? prev.filter((x) => x !== f.id) : [...prev, f.id])}
-                                className={`px-2 py-0.5 rounded-full text-[11px] transition-colors border ${active ? 'bg-orange-500/15 text-orange-700 border-orange-500/50' : 'bg-white/60 text-zinc-500 hover:text-zinc-900 border-zinc-900/15'}`}>
+                                className={`px-2 py-0.5 rounded-full text-[11px] transition-colors border ${active ? 'bg-orange-500/15 text-orange-400 border-orange-500/50' : 'bg-surface/60 text-zinc-500 hover:text-zinc-100 border-white/15'}`}>
                                 {f.label}
                               </button>
                             );
@@ -1495,7 +1495,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                             const key = modelKey(m.providerId, m.id);
                             return (
                               <button key={key} onClick={() => setGenModel(key)} title={`${m.providerLabel} · ${m.id}`}
-                                className={`py-1 px-1 rounded text-[11px] truncate transition-colors ${activeGenModel === key ? 'bg-zinc-900 text-paper' : 'bg-white/60 border border-zinc-900/15 text-zinc-500 hover:text-zinc-900'}`}>
+                                className={`py-1 px-1 rounded text-[11px] truncate transition-colors ${activeGenModel === key ? 'bg-zinc-100 text-paper' : 'bg-surface/60 border border-white/15 text-zinc-500 hover:text-zinc-100'}`}>
                                 {m.label}
                               </button>
                             );
@@ -1518,7 +1518,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                             <button
                               onClick={() => { setGenMode('update'); aiGeneration.generate(opts, currentDsl); }}
                               disabled={disabled}
-                              className="flex items-center justify-center gap-1 py-2 border border-zinc-900/20 bg-white/60 hover:border-zinc-900 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-700 rounded text-[11px] font-medium transition-colors"
+                              className="flex items-center justify-center gap-1 py-2 border border-white/15 bg-surface/60 hover:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-300 rounded text-[11px] font-medium transition-colors"
                               title="Modify the current level based on your prompt"
                             >
                               {generating && genMode === 'update' ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
@@ -1527,7 +1527,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                             <button
                               onClick={() => { setGenMode('new'); aiGeneration.generate(opts); }}
                               disabled={disabled}
-                              className="flex items-center justify-center gap-1 py-2 bg-zinc-900 hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed text-paper rounded text-[11px] font-medium transition-colors"
+                              className="flex items-center justify-center gap-1 py-2 bg-zinc-100 hover:bg-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed text-paper rounded text-[11px] font-medium transition-colors"
                               title="Generate a brand new level"
                             >
                               {generating && genMode === 'new' ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
@@ -1551,7 +1551,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       {aiGeneration.chatHistory.map((msg, i) => (
                         <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[92%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
-                            msg.role === 'user' ? 'bg-zinc-900 text-paper' : 'bg-white/70 border border-zinc-900/10 text-zinc-700'
+                            msg.role === 'user' ? 'bg-zinc-100 text-paper' : 'bg-surface/70 border border-white/10 text-zinc-300'
                           }`}>
                             {aiGeneration.status === 'generating' && i === aiGeneration.chatHistory.length - 1 && msg.role === 'user'
                               ? <span className="flex items-center gap-1.5"><Loader2 size={10} className="animate-spin shrink-0" />{msg.content}</span>
@@ -1564,7 +1564,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
                     {/* Feedback input */}
                     {(aiGeneration.status === 'ready' || aiGeneration.status === 'error') && (
-                      <div className="shrink-0 p-3 border-t border-zinc-900/15 space-y-2">
+                      <div className="shrink-0 p-3 border-t border-white/15 space-y-2">
                         <textarea
                           value={genFeedback}
                           onChange={(e) => setGenFeedback(e.target.value)}
@@ -1577,12 +1577,12 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                           }}
                           placeholder="Make it harder, add switches… (Enter to send)"
                           rows={3}
-                          className="w-full bg-white border border-zinc-900/20 rounded px-2.5 py-2 text-xs text-zinc-900 placeholder-zinc-400 resize-none focus:outline-none focus:border-zinc-900"
+                          className="w-full bg-surface border border-white/15 rounded px-2.5 py-2 text-xs text-zinc-100 placeholder-zinc-600 resize-none focus:outline-none focus:border-zinc-400"
                         />
                         {genFeedback.trim() && (
                           <button
                             onClick={() => { aiGeneration.refine(genFeedback); setGenFeedback(''); }}
-                            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-zinc-900 hover:bg-zinc-700 text-paper text-xs transition-colors"
+                            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-zinc-100 hover:bg-zinc-300 text-paper text-xs transition-colors"
                           >
                             <Sparkles size={11} /> Refine level
                           </button>
@@ -1596,7 +1596,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* AI Chat — vertical panel beside the grid */}
             {mode === 'play' && playMode === 'ai' && aiPlayback.status !== 'idle' && (
-              <div className="w-56 self-stretch flex flex-col border-l-2 border-zinc-900 bg-paper">
+              <div className="w-56 self-stretch flex flex-col border-l-2 border-zinc-700 bg-paper">
                 <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-3 pb-1 shrink-0">
                   Conversation
                 </p>
@@ -1608,14 +1608,14 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                   style={{ scrollbarWidth: 'thin', scrollbarColor: '#c4c0b4 transparent' }}
                 >
                   {aiPlayback.status === 'solving' && aiPlayback.chatHistory.length === 0 && (
-                    <p className="text-[11px] text-zinc-600 text-center mt-4">Waiting for Claude...</p>
+                    <p className="text-[11px] text-zinc-400 text-center mt-4">Waiting for Claude...</p>
                   )}
                   {aiPlayback.chatHistory.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[92%] rounded-xl px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words ${
                         msg.role === 'user'
-                          ? 'bg-zinc-900 text-paper'
-                          : 'bg-white/70 border border-zinc-900/10 text-zinc-700 font-mono'
+                          ? 'bg-zinc-100 text-paper'
+                          : 'bg-surface/70 border border-white/10 text-zinc-300 font-mono'
                       }`}>
                         {msg.content}
                       </div>
@@ -1625,7 +1625,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
                 {/* Input area */}
                 {(aiPlayback.status === 'done' || aiPlayback.status === 'error') && (
-                  <div className="shrink-0 p-3 border-t border-zinc-900/15 space-y-2">
+                  <div className="shrink-0 p-3 border-t border-white/15 space-y-2">
                     <textarea
                       value={aiFeedback}
                       onChange={e => setAiFeedback(e.target.value)}
@@ -1638,12 +1638,12 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                       }}
                       placeholder="Tell Claude what went wrong... (Enter to send)"
                       rows={6}
-                      className="w-full bg-white border border-zinc-900/20 rounded px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 resize-none focus:outline-none focus:border-zinc-900"
+                      className="w-full bg-surface border border-white/15 rounded px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 resize-none focus:outline-none focus:border-zinc-400"
                     />
                     {aiFeedback.trim() && (
                       <button
                         onClick={() => { aiPlayback.retryWithFeedback(aiFeedback); setAiFeedback(''); }}
-                        className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-zinc-900 hover:bg-zinc-700 text-paper text-xs transition-colors"
+                        className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-zinc-100 hover:bg-zinc-300 text-paper text-xs transition-colors"
                       >
                         <Sparkles size={12} /> Send
                       </button>

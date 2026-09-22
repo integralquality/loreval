@@ -11,10 +11,10 @@ export default function PlayLevelPage() {
 
   if (!campaign) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen graph-paper text-center px-6">
-        <h1 className="text-2xl font-bold text-zinc-900 mb-3">Level not found</h1>
+      <div className="flex flex-col items-center justify-center min-h-screen page-ground text-center px-6">
+        <h1 className="text-2xl font-bold text-zinc-100 mb-3">Level not found</h1>
         <p className="text-zinc-500 mb-6">This level doesn't exist yet.</p>
-        <Link to="/play" className="font-mono text-orange-600 hover:text-orange-500 text-sm">
+        <Link to="/play" className="font-mono text-orange-400 hover:text-orange-300 text-sm">
           back to levels
         </Link>
       </div>

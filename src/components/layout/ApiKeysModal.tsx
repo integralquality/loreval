@@ -16,7 +16,7 @@ interface Props {
 }
 
 const inputCls =
-  'w-full bg-white border border-zinc-900/20 rounded px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 font-mono focus:outline-none focus:border-zinc-900 transition-colors';
+  'w-full bg-surface border border-white/15 rounded px-3 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 font-mono focus:outline-none focus:border-zinc-400 transition-colors';
 
 export function ApiKeysModal({ onClose, onSave }: Props) {
   const [store, setStore] = useState<CredentialStore>(() => getCredentials());
@@ -88,21 +88,21 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-zinc-900/50" onClick={onClose} />
-      <div className="relative bg-paper border-2 border-zinc-900 rounded-lg w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+      <div className="relative bg-paper border-2 border-zinc-700 rounded-lg w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-900 transition-colors"
+          className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-100 transition-colors"
         >
           <X size={18} />
         </button>
 
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 bg-orange-500/15 border border-orange-500/30 rounded flex items-center justify-center">
-            <Key size={15} className="text-orange-600" />
+            <Key size={15} className="text-orange-400" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-zinc-900">API keys</h2>
+            <h2 className="text-base font-bold text-zinc-100">API keys</h2>
             <p className="text-xs text-zinc-500">
               {configuredCount === 0
                 ? 'Stored locally in your browser only'
@@ -122,11 +122,11 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
                 onClick={() => selectProvider(p.id)}
                 className={`py-2 px-2 rounded text-xs font-medium transition-all border flex items-center justify-center gap-1 ${
                   active
-                    ? 'bg-zinc-900 border-zinc-900 text-paper'
-                    : 'bg-white/60 border-zinc-900/20 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900'
+                    ? 'bg-zinc-100 border-zinc-100 text-paper'
+                    : 'bg-surface/60 border-white/15 text-zinc-400 hover:border-zinc-500 hover:text-zinc-100'
                 }`}
               >
-                {hasKey && <Check size={11} className={active ? 'text-green-400' : 'text-green-600'} />}
+                {hasKey && <Check size={11} className={active ? 'text-green-400' : 'text-green-400'} />}
                 {p.label}
               </button>
             );
@@ -136,13 +136,13 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs text-zinc-600">API key</label>
+              <label className="text-xs text-zinc-400">API key</label>
               {provider.keysUrl && (
                 <a
                   href={provider.keysUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[11px] text-zinc-500 hover:text-zinc-900 flex items-center gap-1 transition-colors"
+                  className="text-[11px] text-zinc-500 hover:text-zinc-100 flex items-center gap-1 transition-colors"
                 >
                   Get a key <ExternalLink size={10} />
                 </a>
@@ -162,7 +162,7 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
               />
               <button
                 onClick={() => setVisible(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-100 transition-colors"
               >
                 {visible ? <EyeOff size={14} /> : <Eye size={14} />}
               </button>
@@ -171,7 +171,7 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
 
           {provider.editableBaseUrl && (
             <div>
-              <label className="block text-xs text-zinc-600 mb-1.5">Base URL</label>
+              <label className="block text-xs text-zinc-400 mb-1.5">Base URL</label>
               <input
                 type="text"
                 value={urlDraft}
@@ -190,13 +190,13 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
 
           {/* Models this provider contributes to the picker */}
           <div>
-            <label className="block text-xs text-zinc-600 mb-1.5">Models</label>
+            <label className="block text-xs text-zinc-400 mb-1.5">Models</label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {provider.models.map(m => (
                 <span
                   key={m.id}
                   title={m.id}
-                  className="px-2 py-1 rounded bg-white/60 border border-zinc-900/15 text-[11px] text-zinc-600"
+                  className="px-2 py-1 rounded bg-surface/60 border border-white/15 text-[11px] text-zinc-400"
                 >
                   {m.label}
                 </span>
@@ -204,7 +204,7 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
               {customModels.map(id => (
                 <span
                   key={id}
-                  className="px-2 py-1 rounded bg-orange-500/10 border border-orange-500/30 text-[11px] text-zinc-700 font-mono flex items-center gap-1"
+                  className="px-2 py-1 rounded bg-orange-500/10 border border-orange-500/30 text-[11px] text-zinc-300 font-mono flex items-center gap-1"
                 >
                   {id}
                   <button
@@ -212,7 +212,7 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
                       removeCustomModel(providerId, id);
                       refresh();
                     }}
-                    className="text-zinc-400 hover:text-red-600 transition-colors"
+                    className="text-zinc-400 hover:text-red-400 transition-colors"
                   >
                     <Trash2 size={10} />
                   </button>
@@ -237,7 +237,7 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
               />
               <button
                 onClick={handleAddModel}
-                className="px-3 border border-zinc-900/20 rounded text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+                className="px-3 border border-white/15 rounded text-zinc-400 hover:border-zinc-500 hover:text-zinc-100 transition-colors"
                 title="Add model"
               >
                 <Plus size={14} />
@@ -245,7 +245,7 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
             </div>
           </div>
 
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-400">{error}</p>}
 
           <p className="text-xs text-zinc-500 leading-relaxed">
             Keys are saved in <code className="font-mono">localStorage</code> and sent directly to
@@ -255,14 +255,14 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleSave}
-              className="flex-1 py-2 bg-zinc-900 hover:bg-zinc-700 text-paper text-sm font-medium rounded transition-colors"
+              className="flex-1 py-2 bg-zinc-100 hover:bg-zinc-300 text-paper text-sm font-medium rounded transition-colors"
             >
               {saved ? 'Update key' : 'Save key'}
             </button>
             {saved && (
               <button
                 onClick={handleRemove}
-                className="px-4 py-2 border border-zinc-900/20 text-zinc-500 hover:border-red-600 hover:text-red-600 text-sm rounded transition-colors"
+                className="px-4 py-2 border border-white/15 text-zinc-500 hover:border-red-500/50 hover:text-red-400 text-sm rounded transition-colors"
               >
                 Remove
               </button>

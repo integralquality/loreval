@@ -14,8 +14,8 @@ export default function PlayPage() {
         transition={{ duration: 0.4 }}
       >
         <p className="font-mono text-[11px] text-zinc-500 mb-4">benchmark / test suite</p>
-        <h1 className="text-3xl font-bold text-zinc-900 mb-3">Benchmark levels</h1>
-        <p className="text-zinc-600 text-sm max-w-xl mb-12 leading-relaxed">
+        <h1 className="text-3xl font-bold text-zinc-100 mb-3">Benchmark levels</h1>
+        <p className="text-zinc-400 text-sm max-w-xl mb-12 leading-relaxed">
           A curated set of puzzles for evaluating model performance. Each level tests a specific combination of mechanics — open one to run an AI model against it and inspect the move-by-move result.
         </p>
 
@@ -30,13 +30,13 @@ export default function PlayPage() {
                 <Link
                   key={num}
                   to={`/play/${num}`}
-                  className="group relative bg-white/60 border border-zinc-900/15 rounded-lg p-5 hover:border-zinc-900 transition-colors"
+                  className="group relative bg-surface/60 border border-white/15 rounded-lg p-5 hover:border-zinc-500 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-mono text-xs text-zinc-400">#{num}</span>
-                    <ArrowRight size={13} className="text-orange-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowRight size={13} className="text-orange-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <h3 className="text-sm font-bold text-zinc-900 mb-1.5">
+                  <h3 className="text-sm font-bold text-zinc-100 mb-1.5">
                     {campaign.name}
                   </h3>
                   <p className="text-xs text-zinc-500 leading-relaxed">{campaign.description}</p>
@@ -47,7 +47,7 @@ export default function PlayPage() {
             return (
               <div
                 key={num}
-                className="relative border border-dashed border-zinc-900/15 rounded-lg p-5"
+                className="relative border border-dashed border-white/15 rounded-lg p-5"
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-mono text-xs text-zinc-400">#{num}</span>
@@ -60,11 +60,11 @@ export default function PlayPage() {
           })}
         </div>
 
-        <div className="mt-12 pt-8 border-t-2 border-zinc-900">
+        <div className="mt-12 pt-8 border-t-2 border-zinc-700">
           <p className="text-zinc-500 text-xs font-mono mb-3">or start from a blank level</p>
           <Link
             to="/designer"
-            className="inline-flex items-center gap-2 font-mono text-sm text-orange-600 hover:text-orange-500 transition-colors"
+            className="inline-flex items-center gap-2 font-mono text-sm text-orange-400 hover:text-orange-300 transition-colors"
           >
             open the designer <ArrowRight size={13} />
           </Link>

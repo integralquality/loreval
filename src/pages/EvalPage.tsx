@@ -18,7 +18,7 @@ import {
 } from '../lib/eval/stats';
 import type { EvalAttempt, EvalModelSpec, EvalSession } from '../lib/eval/types';
 
-const card = 'bg-paper border-2 border-zinc-900 rounded-lg p-5';
+const card = 'bg-paper border-2 border-zinc-700 rounded-lg p-5';
 const label = 'text-[10px] text-zinc-500 uppercase tracking-wide mb-2';
 
 interface NavState {
@@ -125,7 +125,7 @@ export default function EvalPage() {
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
       <header className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-900 mb-1">Eval</h1>
+        <h1 className="text-2xl font-bold text-zinc-100 mb-1">Eval</h1>
         <p className="text-sm text-zinc-500">
           Give several models the same puzzle. Every answer is replayed through the game engine,
           so the verdict is the engine's, not a model's.
@@ -144,8 +144,8 @@ export default function EvalPage() {
                   onClick={() => setSource(s)}
                   className={`flex-1 py-1.5 rounded text-xs transition-colors border ${
                     source === s
-                      ? 'bg-zinc-900 border-zinc-900 text-paper'
-                      : 'bg-white/60 border-zinc-900/15 text-zinc-500 hover:text-zinc-900'
+                      ? 'bg-zinc-100 border-zinc-100 text-paper'
+                      : 'bg-surface/60 border-white/15 text-zinc-500 hover:text-zinc-100'
                   }`}
                 >
                   {s === 'campaign' ? 'Campaign' : 'Paste DSL'}
@@ -157,7 +157,7 @@ export default function EvalPage() {
               <select
                 value={campaignIndex}
                 onChange={e => setCampaignIndex(Number(e.target.value))}
-                className="w-full bg-white border border-zinc-900/20 rounded px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-zinc-900"
+                className="w-full bg-surface border border-white/15 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-zinc-400"
               >
                 {CAMPAIGN_LEVELS.map((c, i) => (
                   <option key={c.level.id} value={i}>
@@ -171,18 +171,18 @@ export default function EvalPage() {
                 onChange={e => setCustomDsl(e.target.value)}
                 rows={8}
                 placeholder={'level "My Level" 5x5\n\ngrid = [\n  ...\n]'}
-                className="w-full bg-white border border-zinc-900/20 rounded px-3 py-2 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-900"
+                className="w-full bg-surface border border-white/15 rounded px-3 py-2 text-xs font-mono text-zinc-100 focus:outline-none focus:border-zinc-400"
               />
             )}
 
             {parseError ? (
-              <p className="mt-2 text-xs text-red-600 flex items-start gap-1.5">
+              <p className="mt-2 text-xs text-red-400 flex items-start gap-1.5">
                 <AlertTriangle size={13} className="mt-0.5 shrink-0" />
                 {parseError}
               </p>
             ) : (
               parsed.level && (
-                <div className="mt-3 flex justify-center bg-white/60 border border-zinc-900/10 rounded p-3">
+                <div className="mt-3 flex justify-center bg-surface/60 border border-white/10 rounded p-3">
                   <LevelPreview level={parsed.level} maxWidth={280} />
                 </div>
               )
@@ -206,13 +206,13 @@ export default function EvalPage() {
                       onClick={() => toggleModel(key)}
                       className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-xs transition-colors border ${
                         on
-                          ? 'bg-zinc-900 border-zinc-900 text-paper'
-                          : 'bg-white/60 border-zinc-900/15 text-zinc-600 hover:border-zinc-900'
+                          ? 'bg-zinc-100 border-zinc-100 text-paper'
+                          : 'bg-surface/60 border-white/15 text-zinc-400 hover:border-zinc-500'
                       }`}
                     >
                       <span
                         className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center shrink-0 ${
-                          on ? 'bg-orange-500 border-orange-500' : 'border-zinc-900/30'
+                          on ? 'bg-orange-500 border-orange-500' : 'border-white/15'
                         }`}
                       >
                         {on && <Check size={10} className="text-white" />}
@@ -237,8 +237,8 @@ export default function EvalPage() {
                   onClick={() => setRuns(n)}
                   className={`flex-1 py-1.5 rounded text-xs transition-colors border ${
                     runs === n
-                      ? 'bg-zinc-900 border-zinc-900 text-paper'
-                      : 'bg-white/60 border-zinc-900/15 text-zinc-500 hover:text-zinc-900'
+                      ? 'bg-zinc-100 border-zinc-100 text-paper'
+                      : 'bg-surface/60 border-white/15 text-zinc-500 hover:text-zinc-100'
                   }`}
                 >
                   {n}×
@@ -254,7 +254,7 @@ export default function EvalPage() {
             <button
               onClick={handleRun}
               disabled={!canRun}
-              className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-700 disabled:opacity-40 disabled:hover:bg-zinc-900 text-paper text-sm font-medium rounded transition-colors flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 bg-zinc-100 hover:bg-zinc-300 disabled:opacity-40 disabled:hover:bg-zinc-100 text-paper text-sm font-medium rounded transition-colors flex items-center justify-center gap-2"
             >
               <Play size={14} />
               {running ? 'Running…' : `Run eval${totalCalls > 0 ? ` (${totalCalls} calls)` : ''}`}
@@ -263,13 +263,13 @@ export default function EvalPage() {
               <button
                 onClick={() => abortRef.current?.abort()}
                 title="Stop after the calls already in flight"
-                className="px-4 py-2.5 border border-zinc-900/20 text-zinc-500 hover:border-red-600 hover:text-red-600 text-sm rounded transition-colors"
+                className="px-4 py-2.5 border border-white/15 text-zinc-500 hover:border-red-500/50 hover:text-red-400 text-sm rounded transition-colors"
               >
                 Stop
               </button>
             )}
           </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-400">{error}</p>}
         </div>
 
         {/* ── Results ───────────────────────────────────────── */}
@@ -286,7 +286,7 @@ export default function EvalPage() {
               <div className={card}>
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-base font-bold text-zinc-900">{session.levelName}</h2>
+                    <h2 className="text-base font-bold text-zinc-100">{session.levelName}</h2>
                     <p className="text-xs text-zinc-500">
                       {totals.completed}/{totals.attempts} attempts ·{' '}
                       {formatPercent(totals.solveRate)} solved
@@ -295,7 +295,7 @@ export default function EvalPage() {
                   </div>
                   <button
                     onClick={handleExport}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-zinc-900/20 rounded text-xs text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-white/15 rounded text-xs text-zinc-400 hover:border-zinc-500 hover:text-zinc-100 transition-colors"
                   >
                     <Download size={12} /> CSV
                   </button>
@@ -304,7 +304,7 @@ export default function EvalPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-zinc-500 border-b border-zinc-900/15">
+                      <tr className="text-zinc-500 border-b border-white/15">
                         <th className="text-left font-medium py-2 pr-3">Model</th>
                         <th className="text-right font-medium py-2 px-2">Solved</th>
                         <th className="text-right font-medium py-2 px-2">Rate</th>
@@ -328,35 +328,35 @@ export default function EvalPage() {
                     </thead>
                     <tbody>
                       {stats.map(row => (
-                        <tr key={row.modelKey} className="border-b border-zinc-900/5 last:border-0">
+                        <tr key={row.modelKey} className="border-b border-white/10 last:border-0">
                           <td className="py-2 pr-3">
-                            <span className="text-zinc-900 font-medium">{row.label}</span>
+                            <span className="text-zinc-100 font-medium">{row.label}</span>
                             <span className="text-zinc-400 ml-1.5 text-[10px]">{row.providerId}</span>
                             {row.parseFailures > 0 && (
                               <span
-                                className="ml-1.5 text-[10px] text-amber-600"
+                                className="ml-1.5 text-[10px] text-amber-400"
                                 title="Responses with no parsable move list"
                               >
                                 {row.parseFailures} unparsed
                               </span>
                             )}
                           </td>
-                          <td className="py-2 px-2 text-right text-zinc-700">
+                          <td className="py-2 px-2 text-right text-zinc-300">
                             {row.solved}/{row.completed}
                           </td>
-                          <td className="py-2 px-2 text-right font-medium text-zinc-900">
+                          <td className="py-2 px-2 text-right font-medium text-zinc-100">
                             {formatPercent(row.solveRate)}
                           </td>
-                          <td className="py-2 px-2 text-right text-zinc-600">
+                          <td className="py-2 px-2 text-right text-zinc-400">
                             {formatNumber(row.avgProposed)}
                           </td>
-                          <td className="py-2 px-2 text-right text-zinc-600">
+                          <td className="py-2 px-2 text-right text-zinc-400">
                             {formatPercent(row.illegalRate)}
                           </td>
-                          <td className="py-2 px-2 text-right text-zinc-600">
+                          <td className="py-2 px-2 text-right text-zinc-400">
                             {formatNumber(row.bestMovesToWin)}
                           </td>
-                          <td className="py-2 px-2 text-right text-zinc-600">
+                          <td className="py-2 px-2 text-right text-zinc-400">
                             {formatDuration(row.avgDurationMs)}
                           </td>
                           <td className="py-2 pl-2 text-right text-zinc-500 whitespace-nowrap">
@@ -377,7 +377,7 @@ export default function EvalPage() {
                 <div className="space-y-2">
                   {session.models.map(model => (
                     <div key={model.key} className="flex items-center gap-3">
-                      <span className="text-xs text-zinc-600 w-40 shrink-0 truncate" title={model.modelId}>
+                      <span className="text-xs text-zinc-400 w-40 shrink-0 truncate" title={model.modelId}>
                         {model.label}
                       </span>
                       <div className="flex gap-1 flex-wrap">
@@ -410,14 +410,14 @@ export default function EvalPage() {
                   return (
                     <div
                       key={s.id}
-                      className="flex items-center gap-2 text-xs py-1.5 border-b border-zinc-900/5 last:border-0"
+                      className="flex items-center gap-2 text-xs py-1.5 border-b border-white/10 last:border-0"
                     >
                       <button
                         onClick={() => {
                           setSession(s);
                           setOpenAttempt(null);
                         }}
-                        className="flex items-center gap-1.5 text-zinc-600 hover:text-zinc-900 transition-colors min-w-0"
+                        className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-100 transition-colors min-w-0"
                       >
                         <ChevronRight size={12} className="shrink-0" />
                         <span className="truncate">{s.levelName}</span>
@@ -435,7 +435,7 @@ export default function EvalPage() {
                           setHistory(listSessions());
                           if (session?.id === s.id) setSession(null);
                         }}
-                        className="text-zinc-300 hover:text-red-600 transition-colors shrink-0"
+                        className="text-zinc-300 hover:text-red-400 transition-colors shrink-0"
                       >
                         <Trash2 size={12} />
                       </button>
@@ -464,7 +464,7 @@ function AttemptChip({
     'w-7 h-7 rounded flex items-center justify-center border transition-colors cursor-pointer';
 
   if (attempt.status === 'pending') {
-    return <span className={`${base} border-zinc-900/10 text-zinc-300`}><Minus size={11} /></span>;
+    return <span className={`${base} border-white/10 text-zinc-300`}><Minus size={11} /></span>;
   }
   if (attempt.status === 'running') {
     return (
@@ -475,7 +475,7 @@ function AttemptChip({
   }
   if (attempt.status === 'error') {
     return (
-      <button onClick={onClick} title={attempt.error} className={`${base} border-red-500/40 bg-red-500/10 text-red-600 ${active ? 'ring-2 ring-zinc-900' : ''}`}>
+      <button onClick={onClick} title={attempt.error} className={`${base} border-red-500/40 bg-red-500/10 text-red-400 ${active ? 'ring-2 ring-zinc-100' : ''}`}>
         <AlertTriangle size={11} />
       </button>
     );
@@ -486,9 +486,9 @@ function AttemptChip({
       title={attempt.solved ? `Solved in ${attempt.movesToWin} moves` : 'Did not solve'}
       className={`${base} ${
         attempt.solved
-          ? 'border-green-600/40 bg-green-500/15 text-green-700'
-          : 'border-zinc-900/20 bg-white/60 text-zinc-400'
-      } ${active ? 'ring-2 ring-zinc-900' : ''}`}
+          ? 'border-green-600/40 bg-green-500/15 text-green-400'
+          : 'border-white/15 bg-surface/60 text-zinc-400'
+      } ${active ? 'ring-2 ring-zinc-100' : ''}`}
     >
       {attempt.solved ? <Check size={12} /> : <X size={12} />}
     </button>
@@ -497,17 +497,17 @@ function AttemptChip({
 
 const OUTCOME_STYLE: Record<string, string> = {
   moved: 'text-zinc-500',
-  'no-agent': 'text-amber-600',
-  blocked: 'text-amber-600',
-  illegal: 'text-red-600',
-  'bad-direction': 'text-red-600',
+  'no-agent': 'text-amber-400',
+  blocked: 'text-amber-400',
+  illegal: 'text-red-400',
+  'bad-direction': 'text-red-400',
 };
 
 function AttemptDetail({ attempt }: { attempt: EvalAttempt }) {
   if (attempt.status === 'error') {
     return (
-      <div className="mt-4 pt-4 border-t border-zinc-900/10">
-        <p className="text-xs text-red-600">{attempt.error}</p>
+      <div className="mt-4 pt-4 border-t border-white/10">
+        <p className="text-xs text-red-400">{attempt.error}</p>
       </div>
     );
   }
@@ -516,10 +516,10 @@ function AttemptDetail({ attempt }: { attempt: EvalAttempt }) {
   const outcomes = attempt.outcomes ?? [];
 
   return (
-    <div className="mt-4 pt-4 border-t border-zinc-900/10">
-      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-600 mb-3">
+    <div className="mt-4 pt-4 border-t border-white/10">
+      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-400 mb-3">
         <span>
-          <strong className="text-zinc-900">{attempt.label}</strong> · run {attempt.attempt}
+          <strong className="text-zinc-100">{attempt.label}</strong> · run {attempt.attempt}
         </span>
         <span>{attempt.solved ? 'Solved' : 'Not solved'}</span>
         <span>{attempt.proposed} proposed</span>
@@ -532,13 +532,13 @@ function AttemptDetail({ attempt }: { attempt: EvalAttempt }) {
       </div>
 
       {attempt.parseFailed && (
-        <p className="text-xs text-amber-600 mb-2">
+        <p className="text-xs text-amber-400 mb-2">
           No parsable move list in the response — scored as a format failure.
         </p>
       )}
 
       {moves.length > 0 && (
-        <div className="max-h-52 overflow-y-auto bg-white/60 border border-zinc-900/10 rounded p-2 font-mono text-[11px] leading-relaxed">
+        <div className="max-h-52 overflow-y-auto bg-surface/60 border border-white/10 rounded p-2 font-mono text-[11px] leading-relaxed">
           {moves.map((m, i) => {
             const outcome = outcomes[i];
             return (

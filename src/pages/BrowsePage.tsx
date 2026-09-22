@@ -27,11 +27,11 @@ export default function BrowsePage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <p className="font-mono text-[11px] text-zinc-500 mb-2">explore</p>
-            <h1 className="text-3xl font-bold text-zinc-900">All levels</h1>
+            <h1 className="text-3xl font-bold text-zinc-100">All levels</h1>
             <p className="text-zinc-500 text-sm mt-1">Puzzles available for AI evaluation</p>
           </div>
 
-          <div className="flex bg-white/60 border border-zinc-900/15 p-1 rounded-lg">
+          <div className="flex bg-surface/60 border border-white/15 p-1 rounded-lg">
             {([
               ['newest', 'Newest'],
               ['most_played', 'Most run'],
@@ -42,8 +42,8 @@ export default function BrowsePage() {
                 onClick={() => setSort(value)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                   sort === value
-                    ? 'bg-zinc-900 text-paper'
-                    : 'text-zinc-500 hover:text-zinc-900'
+                    ? 'bg-zinc-100 text-paper'
+                    : 'text-zinc-500 hover:text-zinc-100'
                 }`}
               >
                 {label}
@@ -54,14 +54,14 @@ export default function BrowsePage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+            <div className="w-6 h-6 border-2 border-zinc-700 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : levels.length === 0 ? (
-          <div className="text-center py-24 border border-dashed border-zinc-900/20 rounded-lg">
+          <div className="text-center py-24 border border-dashed border-white/15 rounded-lg">
             <p className="text-zinc-500 mb-4">No levels published yet</p>
             <Link
               to="/designer"
-              className="font-mono text-orange-600 hover:text-orange-500 text-sm"
+              className="font-mono text-orange-400 hover:text-orange-300 text-sm"
             >
               design one in the editor
             </Link>
@@ -74,7 +74,7 @@ export default function BrowsePage() {
                 <Link
                   key={level.id}
                   to={`/play/s/${level.short_id}`}
-                  className="bg-white/60 border border-zinc-900/15 rounded-lg overflow-hidden hover:border-zinc-900 transition-colors group"
+                  className="bg-surface/60 border border-white/15 rounded-lg overflow-hidden hover:border-zinc-500 transition-colors group"
                 >
                   {/* Preview — dark instrument well */}
                   <div className="p-4 bg-zinc-950 flex items-center justify-center min-h-[160px]">
@@ -83,7 +83,7 @@ export default function BrowsePage() {
 
                   {/* Info */}
                   <div className="p-4 space-y-2">
-                    <h3 className="text-zinc-900 font-bold truncate">
+                    <h3 className="text-zinc-100 font-bold truncate">
                       {level.name}
                     </h3>
 

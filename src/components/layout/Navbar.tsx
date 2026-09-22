@@ -16,7 +16,7 @@ export function LogoMark({ className = 'w-6 h-6' }: { className?: string }) {
     <div className={`grid grid-cols-2 gap-[3px] ${className}`}>
       <div className="rounded-[2px] bg-orange-500" />
       <div className="rounded-[2px] bg-blue-500" />
-      <div className="rounded-[2px] bg-zinc-900" />
+      <div className="rounded-[2px] bg-zinc-100" />
       <div className="rounded-[2px] bg-emerald-500" />
     </div>
   );
@@ -35,7 +35,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-paper/90 backdrop-blur-md border-b-2 border-zinc-900">
+      <nav className="sticky top-0 z-50 bg-paper/90 backdrop-blur-md border-b-2 border-zinc-700">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-between h-14">
 
@@ -44,8 +44,8 @@ export default function Navbar() {
               <div className="group-hover:rotate-90 transition-transform duration-300">
                 <LogoMark />
               </div>
-              <span className="font-mono text-sm font-bold text-zinc-900 tracking-tight hidden sm:block">
-                loreval<span className="text-orange-600">.</span>ai
+              <span className="font-mono text-sm font-bold text-zinc-100 tracking-tight hidden sm:block">
+                loreval<span className="text-orange-400">.</span>ai
               </span>
             </Link>
 
@@ -59,8 +59,8 @@ export default function Navbar() {
                     to={to}
                     className={`px-4 py-1.5 font-mono text-[13px] transition-colors border-b-2 ${
                       isActive
-                        ? 'text-zinc-900 border-orange-500'
-                        : 'text-zinc-500 border-transparent hover:text-zinc-900'
+                        ? 'text-zinc-100 border-orange-500'
+                        : 'text-zinc-500 border-transparent hover:text-zinc-100'
                     }`}
                   >
                     {label}
@@ -75,7 +75,7 @@ export default function Navbar() {
                 href="https://github.com/integral-quality/loreval"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-zinc-500 hover:text-zinc-900 transition-colors"
+                className="p-2 text-zinc-500 hover:text-zinc-100 transition-colors"
                 title="Loreval on GitHub"
               >
                 <Github size={17} />
@@ -85,8 +85,8 @@ export default function Navbar() {
                 onClick={() => setShowKeyModal(true)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-[13px] border transition-colors ${
                   keyActive
-                    ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-700 hover:bg-emerald-600/20'
-                    : 'border-zinc-400 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900'
+                    ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-400 hover:bg-emerald-600/20'
+                    : 'border-zinc-600 text-zinc-400 hover:border-zinc-500 hover:text-zinc-100'
                 }`}
               >
                 <Key size={13} />

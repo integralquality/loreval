@@ -4,19 +4,28 @@
 @theme {
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Lab-notebook surface palette. Marketing pages are paper; game surfaces
-     (grids, code, designer) are dark instrument panels sitting on it. */
-  --color-paper: #f5f2ea;
-  --color-ink: #21201c;
+  /* Dark palette. `paper` is the raised surface — panels, modals, cards, the
+     navbar — sitting one step above the page ground. `ink` is the text on it.
+     Game surfaces (grids, code, previews) stay the darkest layer at zinc-950,
+     so the stack reads ground < paper < surface, with instruments sunk back
+     below the ground. */
+  --color-paper: #1a1917;
+  --color-ink: #e7e5e0;
+  /* One step above `paper`: inputs, inner cards, table stripes. */
+  --color-surface: #232220;
+}
+
+@layer base {
+  /* Set on the root so overscroll and short routes never flash white. */
+  html {
+    background-color: #121110;
+    color-scheme: dark;
+  }
 }
 
 @layer utilities {
-  /* Paper with graph ruling at half-tile pitch (TILE_SIZE = 56). */
-  .graph-paper {
-    background-color: var(--color-paper);
-    background-image:
-      linear-gradient(rgba(33, 32, 28, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(33, 32, 28, 0.05) 1px, transparent 1px);
-    background-size: 28px 28px;
+  /* Flat page ground that full-height routes paint themselves with. */
+  .page-ground {
+    background-color: #121110;
   }
 }
