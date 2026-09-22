@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import type { Level } from '../types';
 import { serializeDSL } from '../dsl/serializer';
 import { parseDSL } from '../dsl/parser';
@@ -100,6 +100,7 @@ export async function unpublishLevel(id: string): Promise<{ error?: string }> {
 }
 
 export async function getMyLevels(): Promise<LevelRow[]> {
+  if (!isSupabaseConfigured) return [];
   const { data } = await supabase
     .from('levels')
     .select('*')
@@ -112,6 +113,7 @@ export async function getPublishedLevels(
   page = 0,
   pageSize = 20
 ): Promise<LevelWithMeta[]> {
+  if (!isSupabaseConfigured) return [];
   // Use the view for published levels with author info and like counts
   let query = supabase
     .from('levels_with_meta')
@@ -127,6 +129,7 @@ export async function getPublishedLevels(
 }
 
 export async function getLevelByShortId(shortId: string): Promise<LevelWithMeta | null> {
+  if (!isSupabaseConfigured) return null;
   // Fetch level with author info
   const { data: level } = await supabase
     .from('levels')
@@ -161,6 +164,7 @@ export async function getLevelByShortId(shortId: string): Promise<LevelWithMeta 
 }
 
 export async function getLevelById(id: string): Promise<LevelRow | null> {
+  if (!isSupabaseConfigured) return null;
   const { data } = await supabase
     .from('levels')
     .select('*')

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, SUPABASE_SETUP_MESSAGE } from '../lib/supabase';
 
 export interface Profile {
   id: string;
@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -38,6 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Without a Supabase project there is no session to restore; the rest of
+    // the app (designer, campaign, eval) runs signed-out.
+    if (!isSupabaseConfigured) return;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
@@ -57,23 +61,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchProfile]);
 
   const signUp = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) return { error: SUPABASE_SETUP_MESSAGE };
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
     return {};
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) return { error: SUPABASE_SETUP_MESSAGE };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
     return {};
   };
 
   const signOut = async () => {
+    if (!isSupabaseConfigured) return;
     await supabase.auth.signOut();
     setProfile(null);
   };
 
   const deleteAccount = async () => {
+    if (!isSupabaseConfigured) return { error: SUPABASE_SETUP_MESSAGE };
     const { error } = await supabase.rpc('delete_own_account');
     if (error) return { error: error.message };
     await supabase.auth.signOut();
@@ -83,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
+    if (!isSupabaseConfigured) return { error: SUPABASE_SETUP_MESSAGE };
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
@@ -91,13 +100,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updatePassword = async (password: string) => {
+    if (!isSupabaseConfigured) return { error: SUPABASE_SETUP_MESSAGE };
     const { error } = await supabase.auth.updateUser({ password });
     if (error) return { error: error.message };
     return {};
   };
 
   const updateUsername = async (username: string) => {
-    if (!user) return;
+    if (!user || !isSupabaseConfigured) return;
     const { error } = await supabase
       .from('profiles')
       .update({ username })
