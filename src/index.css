@@ -13,6 +13,11 @@
   --color-ink: #e7e5e0;
   /* One step above `paper`: inputs, inner cards, table stripes. */
   --color-surface: #232220;
+
+  /* One shared page width, as `max-w-page`. The eval table carries a dozen
+     columns, so the old 6xl (72rem) squeezed it; everything that frames a
+     page uses this token so the gutters stay aligned across routes. */
+  --container-page: 88rem;
 }
 
 @layer base {

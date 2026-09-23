@@ -16,7 +16,7 @@ export function CookieBanner() {
 
   return (
     <div className="border-t border-white/15 bg-paper px-4 py-4">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-page">
         {!showDetails ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-zinc-400">

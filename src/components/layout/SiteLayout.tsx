@@ -12,7 +12,7 @@ export default function SiteLayout() {
       </main>
       <CookieBanner />
       <footer className="border-t-2 border-zinc-700 py-10 mt-auto">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-page mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2.5">
               <LogoMark className="w-5 h-5" />

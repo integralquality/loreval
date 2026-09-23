@@ -390,7 +390,7 @@ export default function HomePage() {
     <div className="text-ink selection:bg-orange-500/20">
 
       {/* HERO */}
-      <section className="max-w-5xl mx-auto px-6 pt-16 pb-24">
+      <section className="max-w-page mx-auto px-6 pt-16 pb-24">
         {/* Meta strip */}
         <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] text-zinc-500 border-b border-white/15 pb-3 mb-14">
           <span>
@@ -436,7 +436,7 @@ export default function HomePage() {
       </section>
 
       {/* PUZZLE FORMAT */}
-      <section className="max-w-5xl mx-auto px-6 pb-24">
+      <section className="max-w-page mx-auto px-6 pb-24">
         <RuleHeader coord="0,1" title="the puzzle format" />
         <div className="grid lg:grid-cols-2 gap-14 items-start">
           <div>
@@ -462,7 +462,7 @@ export default function HomePage() {
       </section>
 
       {/* HOW A MODEL ATTEMPTS IT */}
-      <section className="max-w-5xl mx-auto px-6 pb-24">
+      <section className="max-w-page mx-auto px-6 pb-24">
         <RuleHeader coord="0,2" title="how a model attempts it" />
         <div className="grid lg:grid-cols-2 gap-14 items-start">
           <div>
@@ -496,7 +496,7 @@ export default function HomePage() {
       </section>
 
       {/* INSPECTING AN ATTEMPT */}
-      <section className="max-w-5xl mx-auto px-6 pb-24">
+      <section className="max-w-page mx-auto px-6 pb-24">
         <RuleHeader coord="0,3" title="inspecting a solve attempt" />
         <div className="grid lg:grid-cols-2 gap-14 items-start">
 
@@ -564,7 +564,7 @@ export default function HomePage() {
       </section>
 
       {/* HOW IT GETS EVALUATED */}
-      <section className="max-w-5xl mx-auto px-6 pb-24">
+      <section className="max-w-page mx-auto px-6 pb-24">
         <RuleHeader coord="0,4" title="how it gets evaluated" />
         <div className="grid lg:grid-cols-2 gap-14 items-start">
           <div>
@@ -643,7 +643,7 @@ export default function HomePage() {
       </section>
 
       {/* CLOSING */}
-      <section className="max-w-5xl mx-auto px-6 pb-28">
+      <section className="max-w-page mx-auto px-6 pb-28">
         <div className="border-t-2 border-zinc-700 pt-12">
           <p className="text-zinc-300 text-xl leading-relaxed max-w-2xl mb-8">
             The same puzzle can be handed to multiple models. The same model can be asked to solve a puzzle it just designed. Both directions are informative.

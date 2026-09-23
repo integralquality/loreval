@@ -36,7 +36,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="sticky top-0 z-50 bg-paper/90 backdrop-blur-md border-b-2 border-zinc-700">
-        <div className="max-w-6xl mx-auto px-6">
+        <div className="max-w-page mx-auto px-6">
           <div className="flex items-center justify-between h-14">
 
             {/* Logo */}
@@ -49,7 +49,9 @@ export default function Navbar() {
               </span>
             </Link>
 
-            {/* Nav links */}
+            {/* Everything else sits together on the right, so the logo owns
+                the left edge and the width of the bar is dead space rather
+                than a gap between two clusters of controls. */}
             <div className="flex items-center gap-1">
               {navLinks.map(({ to, label }) => {
                 const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
@@ -67,10 +69,10 @@ export default function Navbar() {
                   </Link>
                 );
               })}
-            </div>
 
-            {/* Right side */}
-            <div className="flex items-center gap-1">
+              {/* Separates navigation from the account-ish controls */}
+              <span className="w-px h-5 bg-white/15 mx-2" aria-hidden="true" />
+
               <a
                 href="https://github.com/integral-quality/loreval"
                 target="_blank"

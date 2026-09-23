@@ -1,3 +1,11 @@
+import {
+  clearPrice,
+  formatCost,
+  getPrice,
+  isOverridden,
+  setPrice,
+  type ModelPrice,
+} from '../lib/eval/pricing';
 import { useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Play, Download, Trash2, ChevronRight, AlertTriangle, Check, X, Minus } from 'lucide-react';
@@ -13,13 +21,51 @@ import {
   formatDuration,
   formatNumber,
   formatPercent,
+  dominantFailure,
+  formatInterval,
+  formatRatio,
+  OUTCOME_LABELS,
   sessionTotals,
   summarize,
 } from '../lib/eval/stats';
+import type { OutcomeCounts, Spread } from '../lib/eval/stats';
+import type { MoveOutcome } from '../lib/eval/replay';
 import type { EvalAttempt, EvalModelSpec, EvalSession } from '../lib/eval/types';
 
 const card = 'bg-paper border-2 border-zinc-700 rounded-lg p-5';
 const label = 'text-[10px] text-zinc-500 uppercase tracking-wide mb-2';
+
+// ─── Tooltip text for the statistics table ───────────────────────────────
+
+/** The whole pass@k curve, since only the interval fits in the column. */
+function passAtKLabel(curve: number[]): string | undefined {
+  if (curve.length === 0) return undefined;
+  return curve.map((v, i) => `pass@${i + 1} ${Math.round(v * 100)}%`).join(' · ');
+}
+
+function spreadLabel(spread: Spread | null): string | undefined {
+  if (!spread) return undefined;
+  return `range ${spread.min}–${spread.max}, sd ${formatNumber(spread.stdDev)}`;
+}
+
+function durationSpreadLabel(spread: Spread | null): string | undefined {
+  if (!spread) return undefined;
+  return `range ${formatDuration(spread.min)}–${formatDuration(spread.max)}`;
+}
+
+/** Every failure mode with a non-zero count, for the column's tooltip. */
+function outcomeBreakdown(outcomes: OutcomeCounts): string | undefined {
+  const parts = (Object.keys(outcomes) as MoveOutcome[])
+    .filter(o => o !== 'moved' && outcomes[o] > 0)
+    .sort((a, b) => outcomes[b] - outcomes[a])
+    .map(o => `${outcomes[o]} ${OUTCOME_LABELS[o]}`);
+  return parts.length > 0 ? parts.join(' · ') : undefined;
+}
+
+function dominantFailureLabel(outcomes: OutcomeCounts): string {
+  const worst = dominantFailure(outcomes);
+  return worst ? OUTCOME_LABELS[worst] : '—';
+}
 
 interface NavState {
   dsl?: string;
@@ -119,11 +165,32 @@ export default function EvalPage() {
     URL.revokeObjectURL(url);
   };
 
-  const stats = session ? summarize(session.attempts) : [];
+  // Editing a rate has to redraw the cost column, but prices live in
+  // localStorage rather than React state, so bump a counter to re-run the memo.
+  const [pricingVersion, setPricingVersion] = useState(0);
+
+  const handlePriceChange = (
+    model: EvalModelSpec,
+    field: keyof ModelPrice,
+    raw: string,
+  ) => {
+    const parsed = Number(raw);
+    if (raw !== '' && (!isFinite(parsed) || parsed < 0)) return;
+    const current = getPrice(model.providerId, model.modelId) ?? { input: 0, output: 0 };
+    setPrice(model.providerId, model.modelId, { ...current, [field]: raw === '' ? 0 : parsed });
+    setPricingVersion(v => v + 1);
+  };
+
+  const stats = useMemo(
+    () => (session ? summarize(session.attempts, session.optimalMoves) : []),
+    // pricingVersion is the dependency that matters: summarize() reads rates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session, pricingVersion],
+  );
   const totals = session ? sessionTotals(session.attempts) : null;
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-10">
+    <div className="max-w-page mx-auto px-6 py-10">
       <header className="mb-8">
         <h1 className="text-2xl font-bold text-zinc-100 mb-1">Eval</h1>
         <p className="text-sm text-zinc-500">
@@ -291,6 +358,32 @@ export default function EvalPage() {
                       {totals.completed}/{totals.attempts} attempts ·{' '}
                       {formatPercent(totals.solveRate)} solved
                       {totals.errors > 0 && ` · ${totals.errors} failed to run`}
+                      {totals.costUsd !== null && (
+                        <>
+                          {` · ${formatCost(totals.costUsd)}`}
+                          {totals.unpricedModels > 0 &&
+                            ` (${totals.unpricedModels} model${
+                              totals.unpricedModels === 1 ? '' : 's'
+                            } unpriced)`}
+                        </>
+                      )}
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      {session.optimalStatus === 'solved' && (
+                        <span className="text-emerald-400">
+                          optimal {session.optimalMoves} moves
+                        </span>
+                      )}
+                      {session.optimalStatus === 'unsolvable' && (
+                        <span className="text-red-400">
+                          no solution exists — this level cannot be scored fairly
+                        </span>
+                      )}
+                      {session.optimalStatus === 'undetermined' && (
+                        <span className="text-amber-400">
+                          optimum not determined (search limit reached)
+                        </span>
+                      )}
                     </p>
                   </div>
                   <button
@@ -308,7 +401,22 @@ export default function EvalPage() {
                         <th className="text-left font-medium py-2 pr-3">Model</th>
                         <th className="text-right font-medium py-2 px-2">Solved</th>
                         <th className="text-right font-medium py-2 px-2">Rate</th>
-                        <th className="text-right font-medium py-2 px-2" title="Average moves proposed">
+                        <th
+                          className="text-right font-medium py-2 px-2"
+                          title="95% Wilson interval on the solve rate — what the sample actually supports"
+                        >
+                          95% CI
+                        </th>
+                        <th
+                          className="text-right font-medium py-2 px-2"
+                          title="Typical winning length divided by the optimum. 1.00× is perfect play."
+                        >
+                          vs opt
+                        </th>
+                        <th
+                          className="text-right font-medium py-2 px-2"
+                          title="Mean moves to a win, with the best run in brackets"
+                        >
                           Moves
                         </th>
                         <th
@@ -317,12 +425,29 @@ export default function EvalPage() {
                         >
                           Illegal
                         </th>
-                        <th className="text-right font-medium py-2 px-2" title="Fewest moves to a win">
-                          Best
+                        <th
+                          className="text-right font-medium py-2 px-2"
+                          title="Most common reason a move was rejected"
+                        >
+                          Fails as
                         </th>
-                        <th className="text-right font-medium py-2 px-2">Time</th>
-                        <th className="text-right font-medium py-2 pl-2" title="Input / output tokens">
+                        <th
+                          className="text-right font-medium py-2 px-2"
+                          title="Median index of the first rejected move — how far a plan survives"
+                        >
+                          Dies at
+                        </th>
+                        <th className="text-right font-medium py-2 px-2" title="Mean attempt duration">
+                          Time
+                        </th>
+                        <th className="text-right font-medium py-2 px-2" title="Input / output tokens">
                           Tokens
+                        </th>
+                        <th
+                          className="text-right font-medium py-2 pl-2"
+                          title="Total spend; hover for cost per successful solve"
+                        >
+                          Cost
                         </th>
                       </tr>
                     </thead>
@@ -347,28 +472,148 @@ export default function EvalPage() {
                           <td className="py-2 px-2 text-right font-medium text-zinc-100">
                             {formatPercent(row.solveRate)}
                           </td>
-                          <td className="py-2 px-2 text-right text-zinc-400">
-                            {formatNumber(row.avgProposed)}
+                          <td
+                            className="py-2 px-2 text-right text-zinc-500 whitespace-nowrap"
+                            title={passAtKLabel(row.passAtK)}
+                          >
+                            {formatInterval(row.solveRateInterval)}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-right ${
+                              row.excessRatio !== null && row.excessRatio <= 1.05
+                                ? 'text-emerald-400'
+                                : 'text-zinc-400'
+                            }`}
+                          >
+                            {formatRatio(row.excessRatio)}
+                          </td>
+                          <td
+                            className="py-2 px-2 text-right text-zinc-400 whitespace-nowrap"
+                            title={spreadLabel(row.movesToWinSpread)}
+                          >
+                            {formatNumber(row.avgMovesToWin)}
+                            {row.bestMovesToWin !== null &&
+                              row.bestMovesToWin !== row.avgMovesToWin && (
+                                <span className="text-zinc-600 text-[10px] ml-1">
+                                  ({row.bestMovesToWin})
+                                </span>
+                              )}
                           </td>
                           <td className="py-2 px-2 text-right text-zinc-400">
                             {formatPercent(row.illegalRate)}
                           </td>
-                          <td className="py-2 px-2 text-right text-zinc-400">
-                            {formatNumber(row.bestMovesToWin)}
+                          <td
+                            className="py-2 px-2 text-right text-zinc-400 whitespace-nowrap"
+                            title={outcomeBreakdown(row.outcomes)}
+                          >
+                            {dominantFailureLabel(row.outcomes)}
                           </td>
                           <td className="py-2 px-2 text-right text-zinc-400">
+                            {formatNumber(row.medianFirstFailure)}
+                          </td>
+                          <td
+                            className="py-2 px-2 text-right text-zinc-400 whitespace-nowrap"
+                            title={durationSpreadLabel(row.durationSpread)}
+                          >
                             {formatDuration(row.avgDurationMs)}
                           </td>
-                          <td className="py-2 pl-2 text-right text-zinc-500 whitespace-nowrap">
+                          <td
+                            className="py-2 px-2 text-right text-zinc-500 whitespace-nowrap"
+                            title={
+                              row.reasoningTokens > 0
+                                ? `${row.reasoningTokens} of the output tokens were reasoning`
+                                : undefined
+                            }
+                          >
                             {row.inputTokens + row.outputTokens > 0
                               ? `${row.inputTokens}/${row.outputTokens}`
                               : '—'}
+                          </td>
+                          <td
+                            className="py-2 pl-2 text-right text-zinc-400 whitespace-nowrap"
+                            title={
+                              row.costUsd === null
+                                ? 'No rate set for this model — add one under Pricing'
+                                : `${formatCost(row.costPerSolve)} per solve`
+                            }
+                          >
+                            {formatCost(row.costUsd)}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
+
+                {/* Rates are local and editable: published prices change, and
+                    a stale number in the bundle would quietly skew every cost
+                    in the table. Models with no rate simply show a dash. */}
+                <details className="mt-4 border-t border-white/10 pt-3">
+                  <summary className="text-[10px] text-zinc-500 uppercase tracking-wide cursor-pointer hover:text-zinc-300">
+                    Pricing — $ per million tokens
+                    {totals.costUsd === null && (
+                      <span className="ml-2 normal-case tracking-normal text-amber-400">
+                        set rates to see cost
+                      </span>
+                    )}
+                  </summary>
+                  <p className="mt-2 text-[11px] text-zinc-500 leading-5">
+                    No rates ship with the app — published prices change and vary by
+                    account, and a stale number here would skew every cost in the table.
+                    Enter your own; they are stored in this browser only.
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {session.models.map(model => {
+                      const price = getPrice(model.providerId, model.modelId);
+                      return (
+                        <div key={model.key} className="flex items-center gap-2">
+                          <span
+                            className="text-xs text-zinc-400 flex-1 truncate"
+                            title={model.modelId}
+                          >
+                            {model.label}
+                          </span>
+                          <label className="text-[10px] text-zinc-500">in</label>
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={price?.input ?? ''}
+                            placeholder="—"
+                            onChange={e =>
+                              handlePriceChange(model, 'input', e.target.value)
+                            }
+                            className="w-20 bg-surface border border-white/15 rounded px-2 py-1 text-xs font-mono text-zinc-100 focus:outline-none focus:border-zinc-400"
+                          />
+                          <label className="text-[10px] text-zinc-500">out</label>
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={price?.output ?? ''}
+                            placeholder="—"
+                            onChange={e =>
+                              handlePriceChange(model, 'output', e.target.value)
+                            }
+                            className="w-20 bg-surface border border-white/15 rounded px-2 py-1 text-xs font-mono text-zinc-100 focus:outline-none focus:border-zinc-400"
+                          />
+                          {isOverridden(model.providerId, model.modelId) && (
+                            <button
+                              onClick={() => {
+                                clearPrice(model.providerId, model.modelId);
+                                setPricingVersion(v => v + 1);
+                              }}
+                              className="text-[10px] text-zinc-500 hover:text-zinc-200 transition-colors"
+                              title="Reset to the built-in rate"
+                            >
+                              reset
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
               </div>
 
               {/* Attempt grid — one chip per run, click to inspect */}
