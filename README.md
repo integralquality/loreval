@@ -4,6 +4,13 @@
 
 Loreval measures how well language models do **logic and reasoning** on grid-based spatial puzzles. It's a web app for playing and designing puzzles, plus the harness that hands the same puzzles to an LLM and scores what comes back — no rubric, no judge model. A puzzle is either solved or it isn't.
 
+<img width="1047" height="326" alt="image" src="https://github.com/user-attachments/assets/6c0de273-45d3-4643-8022-fcc13324adf1" />
+
+<img width="1044" height="323" alt="image" src="https://github.com/user-attachments/assets/916459ef-89be-4bed-99d5-84e65bc5759f" />
+
+<img width="1055" height="728" alt="image" src="https://github.com/user-attachments/assets/58f1953a-c8c9-4c9c-b807-8b832de7536e" />
+
+
 Two tasks:
 
 - **Solving** — given a puzzle as text, can the model produce a valid move sequence? Doors need switches hit first, agents block each other, one-way tiles and color-changing paint force ordering, not just pathfinding.
