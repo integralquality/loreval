@@ -58,6 +58,12 @@ interface CallParams {
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
+  /**
+   * Thinking/reasoning tokens where the provider reports them. The Anthropic
+   * API folds thinking into `output_tokens` and publishes no separate count,
+   * so this is left undefined there rather than estimated.
+   */
+  reasoningTokens?: number;
 }
 
 export type CallResult =
@@ -129,7 +135,7 @@ export const OPENAI_MAX_TOKENS = 8000;
  * all of it thinking and returned no text. Paired with `DEFAULT_EFFORT`, this
  * leaves the answer plenty of room.
  */
-export const ANTHROPIC_MAX_TOKENS = 16000;
+export const ANTHROPIC_MAX_TOKENS = 32000;
 
 // ─── Anthropic API call ───────────────────────────────────────────────────────
 
@@ -265,6 +271,7 @@ async function callOpenAI(params: {
     usage: {
       inputTokens: data.usage?.prompt_tokens ?? 0,
       outputTokens: data.usage?.completion_tokens ?? 0,
+      ...(reasoningTokens > 0 ? { reasoningTokens } : {}),
     },
   };
 }

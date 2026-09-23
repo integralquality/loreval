@@ -10,6 +10,7 @@ import {
 } from './store';
 import type { EvalSession } from './types';
 import { installFailingLocalStorage, installLocalStorageStub } from '../../test/local-storage';
+import { setPrice } from './pricing';
 
 function session(id: string, createdAt: number, over: Partial<EvalSession> = {}): EvalSession {
   return {
@@ -133,5 +134,43 @@ describe('sessionToCsv', () => {
     const s = session('a', 1000);
     s.attempts = [{ ...s.attempts[0], status: 'error', error: 'bad request, retry' }];
     expect(sessionToCsv(s)).toContain('"bad request, retry"');
+  });
+
+  it('carries the optimum and excess ratio so the baseline survives export', () => {
+    const s = session('a', 1000, { optimalMoves: 4, optimalStatus: 'solved' });
+    const [header, row] = sessionToCsv(s).split('\n');
+    expect(header).toContain('optimal_moves,excess_over_optimal');
+    // 5 moves to win against an optimum of 4.
+    expect(row).toContain('4,1.250');
+  });
+
+  it('leaves the excess blank without a baseline', () => {
+    const [, row] = sessionToCsv(session('a', 1000)).split('\n');
+    expect(row).toContain(',,,');
+  });
+
+  it('breaks the outcomes out into their own columns', () => {
+    const s = session('a', 1000);
+    s.attempts = [
+      { ...s.attempts[0], outcomes: ['moved', 'moved', 'blocked', 'no-agent'] },
+    ];
+    const [header, row] = sessionToCsv(s).split('\n');
+    expect(header).toContain('moved,blocked,illegal,no_agent,bad_direction');
+    expect(row).toContain('2,1,0,1,0');
+  });
+
+  it('prices an attempt once the user has supplied a rate', () => {
+    installLocalStorageStub();
+    setPrice('anthropic', 'claude-opus-5', { input: 5, output: 25 });
+    // 900 input at $5/MTok + 60 output at $25/MTok.
+    const expected = (900 * 5 + 60 * 25) / 1_000_000;
+    expect(sessionToCsv(session('a', 1000))).toContain(expected.toFixed(6));
+  });
+
+  it('leaves the cost column blank when no rate is set', () => {
+    installLocalStorageStub();
+    const [, row] = sessionToCsv(session('a', 1000)).split('\n');
+    // Trailing empty cost field, then the empty error field.
+    expect(row.endsWith(',,')).toBe(true);
   });
 });

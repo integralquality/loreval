@@ -4,6 +4,13 @@ import type { MoveOutcome } from './replay';
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
+  /**
+   * Thinking/reasoning tokens, when the provider reports them separately.
+   * OpenAI-compatible providers expose `reasoning_tokens`; the Anthropic API
+   * folds thinking into `output_tokens` and publishes no separate count, so
+   * this stays undefined there rather than being guessed at.
+   */
+  reasoningTokens?: number;
 }
 
 /** One model entered into an eval session. */
@@ -54,6 +61,14 @@ export interface EvalSession {
   levelName: string;
   /** The exact DSL sent to every model — the session is reproducible from this. */
   dsl: string;
+  /**
+   * Fewest moves that win, from the deterministic solver. Null when the level
+   * is unsolvable or the search hit its node limit — both mean "no baseline",
+   * so excess-over-optimal is simply not reported.
+   */
+  optimalMoves?: number | null;
+  /** Why `optimalMoves` is null, for the UI to explain rather than hide. */
+  optimalStatus?: 'solved' | 'unsolvable' | 'undetermined';
   models: EvalModelSpec[];
   runsPerModel: number;
   attempts: EvalAttempt[];

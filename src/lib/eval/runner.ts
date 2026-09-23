@@ -5,6 +5,7 @@
 import { parseDSL } from '../../dsl/parser';
 import { solveLevel } from '../ai-solver';
 import { initialStateFor, replayMoves } from './replay';
+import { solveOptimalAsync } from './solver';
 import { buildAttempts, type EvalAttempt, type EvalModelSpec, type EvalSession } from './types';
 
 export interface RunSessionOptions {
@@ -39,11 +40,19 @@ export async function runEvalSession(opts: RunSessionOptions): Promise<EvalSessi
   }
   const level = parsed.level;
 
+  // Establish the baseline before spending anything on models: an unsolvable
+  // level is a broken test item, and without an optimum a winning move count
+  // has nothing to be measured against.
+  const optimal = await solveOptimalAsync(level);
+
   const session: EvalSession = {
     id: newSessionId(),
     createdAt: Date.now(),
     levelName,
     dsl,
+    optimalMoves: optimal.optimal,
+    optimalStatus:
+      optimal.optimal !== null ? 'solved' : optimal.solvable === false ? 'unsolvable' : 'undetermined',
     models,
     runsPerModel,
     attempts: buildAttempts(models, runsPerModel),

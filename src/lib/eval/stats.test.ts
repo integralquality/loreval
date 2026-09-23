@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { formatDuration, formatNumber, formatPercent, sessionTotals, summarize } from './stats';
+import {
+  dominantFailure,
+  formatDuration,
+  formatInterval,
+  formatNumber,
+  formatPercent,
+  formatRatio,
+  passAtK,
+  sessionTotals,
+  summarize,
+  wilsonInterval,
+} from './stats';
 import { buildAttempts } from './types';
 import type { EvalAttempt, EvalModelSpec } from './types';
 
@@ -119,7 +130,7 @@ describe('summarize', () => {
     expect(stats.map(s => s.modelKey)).toEqual([MODEL_B.key, MODEL_A.key]);
   });
 
-  it('breaks a solve-rate tie by fewest moves to win', () => {
+  it('breaks a solve-rate tie by typical moves to win', () => {
     const stats = summarize([
       done(MODEL_A, 1, { solved: true, movesToWin: 20 }),
       done(MODEL_B, 1, { solved: true, movesToWin: 9 }),
@@ -181,5 +192,185 @@ describe('formatters', () => {
     expect(formatDuration(420)).toBe('420ms');
     expect(formatDuration(1500)).toBe('1.5s');
     expect(formatDuration(null)).toBe('—');
+  });
+});
+
+describe('wilsonInterval', () => {
+  /**
+   * The reason this exists: a table showing "2/2 = 100%" implies a certainty
+   * the sample cannot support. The interval says so out loud.
+   */
+  it('does not claim certainty from two successes out of two', () => {
+    const interval = wilsonInterval(2, 2)!;
+    expect(interval.high).toBe(1);
+    expect(interval.low).toBeGreaterThan(0.3);
+    expect(interval.low).toBeLessThan(0.4);
+  });
+
+  it('narrows as the sample grows', () => {
+    const few = wilsonInterval(5, 10)!;
+    const many = wilsonInterval(50, 100)!;
+    expect(many.high - many.low).toBeLessThan(few.high - few.low);
+  });
+
+  it('stays inside [0,1] at the extremes', () => {
+    const none = wilsonInterval(0, 3)!;
+    const all = wilsonInterval(3, 3)!;
+    expect(none.low).toBe(0);
+    expect(all.high).toBe(1);
+  });
+
+  it('returns null with no trials', () => {
+    expect(wilsonInterval(0, 0)).toBeNull();
+  });
+});
+
+describe('passAtK', () => {
+  it('starts at the per-attempt rate', () => {
+    expect(passAtK(1, 4)[0]).toBeCloseTo(0.25);
+  });
+
+  it('reaches certainty once k covers every failure', () => {
+    // 1 success in 4: any sample of 4 must include it.
+    expect(passAtK(1, 4)[3]).toBe(1);
+  });
+
+  it('stays at zero when nothing succeeded', () => {
+    expect(passAtK(0, 3)).toEqual([0, 0, 0]);
+  });
+
+  it('is monotonically non-decreasing in k', () => {
+    const curve = passAtK(2, 5);
+    for (let i = 1; i < curve.length; i++) {
+      expect(curve[i]).toBeGreaterThanOrEqual(curve[i - 1]);
+    }
+  });
+
+  it('uses the unbiased estimator, not 1-(1-rate)^k', () => {
+    // 1 success in 2 attempts. The naive form gives 0.75 at k=2; the true
+    // answer is 1, because a sample of 2 from 2 always contains the success.
+    expect(passAtK(1, 2)[1]).toBe(1);
+  });
+});
+
+describe('failure taxonomy', () => {
+  it('counts how each move was rejected, not just how many', () => {
+    const stats = summarize([
+      done(MODEL_A, 1, {
+        outcomes: ['moved', 'blocked', 'no-agent', 'no-agent'],
+      }),
+      done(MODEL_A, 2, { outcomes: ['illegal', 'moved'] }),
+    ]);
+    expect(stats[0].outcomes).toEqual({
+      moved: 2,
+      blocked: 1,
+      'no-agent': 2,
+      illegal: 1,
+      'bad-direction': 0,
+    });
+  });
+
+  it('names the dominant failure mode', () => {
+    expect(dominantFailure({ moved: 9, blocked: 1, 'no-agent': 4, illegal: 0, 'bad-direction': 0 }))
+      .toBe('no-agent');
+  });
+
+  it('ignores successes when naming the dominant failure', () => {
+    // `moved` is the largest count but is not a failure.
+    expect(dominantFailure({ moved: 99, blocked: 2, 'no-agent': 0, illegal: 0, 'bad-direction': 0 }))
+      .toBe('blocked');
+  });
+
+  it('reports no dominant failure for a clean run', () => {
+    expect(dominantFailure({ moved: 5, blocked: 0, 'no-agent': 0, illegal: 0, 'bad-direction': 0 }))
+      .toBeNull();
+  });
+
+  it('takes the median first failure over attempts that had one', () => {
+    const stats = summarize([
+      done(MODEL_A, 1, { firstFailureIndex: 2 }),
+      done(MODEL_A, 2, { firstFailureIndex: 20 }),
+      done(MODEL_A, 3, { firstFailureIndex: 8 }),
+      done(MODEL_A, 4, { firstFailureIndex: null, solved: true, movesToWin: 5 }),
+    ]);
+    expect(stats[0].medianFirstFailure).toBe(8);
+  });
+});
+
+describe('excess over optimal', () => {
+  it('measures typical play against the baseline', () => {
+    const stats = summarize(
+      [
+        done(MODEL_A, 1, { solved: true, movesToWin: 22 }),
+        done(MODEL_A, 2, { solved: true, movesToWin: 18 }),
+      ],
+      20,
+    );
+    // Mean of 22 and 18 is 20, exactly optimal.
+    expect(stats[0].excessRatio).toBeCloseTo(1);
+  });
+
+  it('uses the mean rather than the best run', () => {
+    const stats = summarize(
+      [
+        done(MODEL_A, 1, { solved: true, movesToWin: 10 }),
+        done(MODEL_A, 2, { solved: true, movesToWin: 30 }),
+      ],
+      10,
+    );
+    // Best would flatter this model at 1.0; typical play is twice optimal.
+    expect(stats[0].excessRatio).toBeCloseTo(2);
+    expect(stats[0].bestMovesToWin).toBe(10);
+  });
+
+  it('is null without a baseline', () => {
+    const stats = summarize([done(MODEL_A, 1, { solved: true, movesToWin: 12 })]);
+    expect(stats[0].excessRatio).toBeNull();
+  });
+
+  it('is null when nothing solved', () => {
+    expect(summarize([done(MODEL_A, 1, { solved: false })], 20)[0].excessRatio).toBeNull();
+  });
+
+  it('ranks closer-to-optimal first when solve rates tie', () => {
+    const stats = summarize(
+      [
+        done(MODEL_A, 1, { solved: true, movesToWin: 40 }),
+        done(MODEL_B, 1, { solved: true, movesToWin: 21 }),
+      ],
+      20,
+    );
+    expect(stats[0].modelKey).toBe(MODEL_B.key);
+  });
+});
+
+describe('spread', () => {
+  it('reports the range and deviation of winning lengths', () => {
+    const stats = summarize([
+      done(MODEL_A, 1, { solved: true, movesToWin: 10 }),
+      done(MODEL_A, 2, { solved: true, movesToWin: 20 }),
+    ]);
+    expect(stats[0].movesToWinSpread).toEqual({ min: 10, max: 20, stdDev: 5 });
+  });
+
+  it('reports zero deviation for a single sample', () => {
+    const stats = summarize([done(MODEL_A, 1, { durationMs: 274600 })]);
+    expect(stats[0].durationSpread).toEqual({ min: 274600, max: 274600, stdDev: 0 });
+  });
+
+  it('is null when nothing solved', () => {
+    expect(summarize([done(MODEL_A, 1, { solved: false })])[0].movesToWinSpread).toBeNull();
+  });
+});
+
+describe('formatters for the new columns', () => {
+  it('renders an interval as a percentage band', () => {
+    expect(formatInterval({ low: 0.342, high: 1 })).toBe('34–100%');
+    expect(formatInterval(null)).toBe('—');
+  });
+
+  it('renders excess as a multiplier', () => {
+    expect(formatRatio(1.0588)).toBe('1.06×');
+    expect(formatRatio(null)).toBe('—');
   });
 });
