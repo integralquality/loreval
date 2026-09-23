@@ -1,3 +1,23 @@
+import { useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { Play, Download, Trash2, ChevronRight, AlertTriangle, Check, X, Minus } from 'lucide-react';
+import { CAMPAIGN_LEVELS } from '../levels';
+import { parseDSL } from '../dsl/parser';
+import { serializeDSL } from '../dsl/serializer';
+import { LevelPreview } from '../components/game/LevelPreview';
+import { DslTextarea } from '../components/game/DslTextarea';
+import {
+  CostChart,
+  DurationChart,
+  ExcessChart,
+  FailureChart,
+  SolveRateChart,
+  SurvivalChart,
+  TokenChart,
+} from '../components/eval/charts';
+import { useAvailableModels } from '../hooks/useAvailableModels';
+import { modelKey } from '../lib/providers';
+import { runEvalSession } from '../lib/eval/runner';
 import {
   clearPrice,
   formatCost,
@@ -6,16 +26,7 @@ import {
   setPrice,
   type ModelPrice,
 } from '../lib/eval/pricing';
-import { useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Play, Download, Trash2, ChevronRight, AlertTriangle, Check, X, Minus } from 'lucide-react';
-import { CAMPAIGN_LEVELS } from '../levels';
-import { parseDSL } from '../dsl/parser';
-import { serializeDSL } from '../dsl/serializer';
-import { LevelPreview } from '../components/game/LevelPreview';
-import { useAvailableModels } from '../hooks/useAvailableModels';
-import { modelKey } from '../lib/providers';
-import { runEvalSession } from '../lib/eval/runner';
+import { costLabel } from '../lib/eval/labels';
 import { deleteSession, listSessions, saveSession, sessionToCsv } from '../lib/eval/store';
 import {
   formatDuration,
@@ -53,13 +64,26 @@ function durationSpreadLabel(spread: Spread | null): string | undefined {
   return `range ${formatDuration(spread.min)}–${formatDuration(spread.max)}`;
 }
 
-/** Every failure mode with a non-zero count, for the column's tooltip. */
-function outcomeBreakdown(outcomes: OutcomeCounts): string | undefined {
-  const parts = (Object.keys(outcomes) as MoveOutcome[])
-    .filter(o => o !== 'moved' && outcomes[o] > 0)
-    .sort((a, b) => outcomes[b] - outcomes[a])
-    .map(o => `${outcomes[o]} ${OUTCOME_LABELS[o]}`);
-  return parts.length > 0 ? parts.join(' · ') : undefined;
+/**
+ * Tooltip for the failure column: how attempts first went wrong, and — for
+ * contrast — how many moves were rejected in total. The gap between the two
+ * is the cascade, since a rejected move leaves every later coordinate stale.
+ */
+function outcomeBreakdown(rootCauses: OutcomeCounts, outcomes: OutcomeCounts): string | undefined {
+  const named = (counts: OutcomeCounts) =>
+    (Object.keys(counts) as MoveOutcome[])
+      .filter(o => o !== 'moved' && counts[o] > 0)
+      .sort((a, b) => counts[b] - counts[a])
+      .map(o => `${counts[o]} ${OUTCOME_LABELS[o]}`);
+
+  const causes = named(rootCauses);
+  if (causes.length === 0) return undefined;
+
+  const rejected = (Object.keys(outcomes) as MoveOutcome[])
+    .filter(o => o !== 'moved')
+    .reduce((total, o) => total + outcomes[o], 0);
+
+  return `first went wrong: ${causes.join(' · ')}\n${rejected} moves rejected in total, including the cascade`;
 }
 
 function dominantFailureLabel(outcomes: OutcomeCounts): string {
@@ -79,6 +103,7 @@ export default function EvalPage() {
   const [source, setSource] = useState<'campaign' | 'custom'>(navState.dsl ? 'custom' : 'campaign');
   const [campaignIndex, setCampaignIndex] = useState(0);
   const [customDsl, setCustomDsl] = useState(navState.dsl ?? '');
+  const [nameOverride, setNameOverride] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [runs, setRuns] = useState(1);
 
@@ -97,12 +122,21 @@ export default function EvalPage() {
     [source, campaignIndex, customDsl],
   );
 
-  const levelName =
+  const parsed = useMemo(() => parseDSL(dsl), [dsl]);
+
+  /**
+   * What to call this session in the results header and the history list.
+   *
+   * The DSL already names the level (`level "Paint Run" 9x7`), so a pasted
+   * puzzle is named after itself rather than defaulting to "Custom level".
+   * A typed name overrides that, for running the same board under different
+   * conditions and telling the saved sessions apart afterwards.
+   */
+  const derivedName =
     source === 'campaign'
       ? CAMPAIGN_LEVELS[campaignIndex].name
-      : navState.name || 'Custom level';
-
-  const parsed = useMemo(() => parseDSL(dsl), [dsl]);
+      : parsed.level?.name || navState.name || 'Custom level';
+  const levelName = nameOverride.trim() || derivedName;
   const parseError = parsed.level
     ? null
     : parsed.errors.map(e => e.message).join('; ') || 'Level could not be parsed';
@@ -233,12 +267,12 @@ export default function EvalPage() {
                 ))}
               </select>
             ) : (
-              <textarea
+              <DslTextarea
                 value={customDsl}
-                onChange={e => setCustomDsl(e.target.value)}
-                rows={8}
+                onChange={setCustomDsl}
+                rows={10}
+                invalid={customDsl.trim() !== '' && parseError !== null}
                 placeholder={'level "My Level" 5x5\n\ngrid = [\n  ...\n]'}
-                className="w-full bg-surface border border-white/15 rounded px-3 py-2 text-xs font-mono text-zinc-100 focus:outline-none focus:border-zinc-400"
               />
             )}
 
@@ -254,6 +288,18 @@ export default function EvalPage() {
                 </div>
               )
             )}
+
+            <label className="mt-3 block">
+              {/* `label` carries a bottom margin, which an inline span would drop */}
+              <span className={`${label} block`}>Session name</span>
+              <input
+                type="text"
+                value={nameOverride}
+                onChange={e => setNameOverride(e.target.value)}
+                placeholder={derivedName}
+                className="w-full bg-surface border border-white/15 rounded px-3 py-2 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-400"
+              />
+            </label>
           </div>
 
           <div>
@@ -354,13 +400,17 @@ export default function EvalPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h2 className="text-base font-bold text-zinc-100">{session.levelName}</h2>
+                    {/* Everything here is summed over every model in the
+                        session, which is not obvious from a bare figure —
+                        say so rather than leave "$1.67" to be guessed at. */}
                     <p className="text-xs text-zinc-500">
-                      {totals.completed}/{totals.attempts} attempts ·{' '}
-                      {formatPercent(totals.solveRate)} solved
+                      {totals.completed}/{totals.attempts} attempts across{' '}
+                      {session.models.length} model{session.models.length === 1 ? '' : 's'}
+                      {` · ${formatPercent(totals.solveRate)} solved overall`}
                       {totals.errors > 0 && ` · ${totals.errors} failed to run`}
                       {totals.costUsd !== null && (
                         <>
-                          {` · ${formatCost(totals.costUsd)}`}
+                          {` · ${formatCost(totals.costUsd)} total`}
                           {totals.unpricedModels > 0 &&
                             ` (${totals.unpricedModels} model${
                               totals.unpricedModels === 1 ? '' : 's'
@@ -427,7 +477,7 @@ export default function EvalPage() {
                         </th>
                         <th
                           className="text-right font-medium py-2 px-2"
-                          title="Most common reason a move was rejected"
+                          title="How attempts first go wrong — the root cause, before later moves cascade"
                         >
                           Fails as
                         </th>
@@ -445,7 +495,7 @@ export default function EvalPage() {
                         </th>
                         <th
                           className="text-right font-medium py-2 pl-2"
-                          title="Total spend; hover for cost per successful solve"
+                          title="Total spend, with cost per successful solve in brackets"
                         >
                           Cost
                         </th>
@@ -504,9 +554,9 @@ export default function EvalPage() {
                           </td>
                           <td
                             className="py-2 px-2 text-right text-zinc-400 whitespace-nowrap"
-                            title={outcomeBreakdown(row.outcomes)}
+                            title={outcomeBreakdown(row.rootCauses, row.outcomes)}
                           >
-                            {dominantFailureLabel(row.outcomes)}
+                            {dominantFailureLabel(row.rootCauses)}
                           </td>
                           <td className="py-2 px-2 text-right text-zinc-400">
                             {formatNumber(row.medianFirstFailure)}
@@ -537,7 +587,7 @@ export default function EvalPage() {
                                 : `${formatCost(row.costPerSolve)} per solve`
                             }
                           >
-                            {formatCost(row.costUsd)}
+                            {costLabel(row)}
                           </td>
                         </tr>
                       ))}
@@ -615,6 +665,25 @@ export default function EvalPage() {
                   </div>
                 </details>
               </div>
+
+              {/* Charts — the same numbers as the table, shaped so the
+                  comparisons the table makes you do in your head become
+                  visible: overlapping confidence intervals, distance from
+                  optimal, and which failure actually started each attempt. */}
+              {stats.length > 0 && (
+                <div className={card}>
+                  <p className={label}>Charts</p>
+                  <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                    <SolveRateChart stats={stats} />
+                    <ExcessChart stats={stats} />
+                    <FailureChart stats={stats} />
+                    <SurvivalChart stats={stats} />
+                    <DurationChart stats={stats} />
+                    <TokenChart stats={stats} />
+                    <CostChart stats={stats} />
+                  </div>
+                </div>
+              )}
 
               {/* Attempt grid — one chip per run, click to inspect */}
               <div className={card}>
