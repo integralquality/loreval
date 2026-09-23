@@ -178,3 +178,31 @@ describe('replayMoves', () => {
     expect(state.status).toBe('playing');
   });
 });
+
+describe('root cause of a failure', () => {
+  /**
+   * The cascade this exists to separate: a rejected move leaves the agent
+   * where it was, so every later coordinate in the plan is stale and reports
+   * 'no-agent'. Counting the mode over all outcomes names the echo; the first
+   * failure names the cause.
+   */
+  it('reports the outcome of the first failure, not the cascade', () => {
+    const result = replayMoves(CORRIDOR, initialStateFor(CORRIDOR), [
+      { x: 1, y: 1, direction: 'up' },     // into the wall above
+      { x: 2, y: 1, direction: 'right' },  // stale: the agent never moved
+      { x: 3, y: 1, direction: 'right' },  // stale
+    ]);
+
+    expect(result.firstFailureIndex).toBe(0);
+    expect(result.firstFailureOutcome).toBe('illegal');
+    // The tally is dominated by the cascade, which is exactly the problem.
+    expect(result.steps.filter(s => s.outcome === 'no-agent')).toHaveLength(2);
+  });
+
+  it('leaves the root cause null when every move lands', () => {
+    const result = replayMoves(CORRIDOR, initialStateFor(CORRIDOR), [
+      { x: 1, y: 1, direction: 'right' },
+    ]);
+    expect(result.firstFailureOutcome).toBeNull();
+  });
+});

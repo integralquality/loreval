@@ -80,6 +80,15 @@ export interface ModelStats {
   /** How each rejected move was rejected, summed over completed attempts. */
   outcomes: OutcomeCounts;
   /**
+   * How each attempt *first* went wrong — one entry per failed attempt.
+   *
+   * This is the honest basis for "what does this model get wrong". A rejected
+   * move leaves the agent in place while the plan assumes it moved, so the
+   * rest of the plan reports 'no-agent'; `outcomes` counts that cascade, and
+   * a mode taken over it names the echo rather than the cause.
+   */
+  rootCauses: OutcomeCounts;
+  /**
    * Median index of the first move the engine refused, over attempts that had
    * one. Separates "wrong from the first step" from "nearly had it".
    */
@@ -219,6 +228,11 @@ export function summarize(
       .map(a => a.firstFailureIndex)
       .filter((i): i is number => typeof i === 'number');
 
+    const rootCauses: OutcomeCounts = { ...EMPTY_OUTCOMES };
+    for (const attempt of done) {
+      if (attempt.firstFailureOutcome) rootCauses[attempt.firstFailureOutcome]++;
+    }
+
     const durations = group
       .map(a => a.durationMs)
       .filter((d): d is number => typeof d === 'number');
@@ -261,6 +275,7 @@ export function summarize(
           : null,
 
       outcomes,
+      rootCauses,
       medianFirstFailure: median(firstFailures),
 
       avgDurationMs: mean(durations),

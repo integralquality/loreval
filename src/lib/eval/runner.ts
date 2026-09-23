@@ -92,6 +92,7 @@ export async function runEvalSession(opts: RunSessionOptions): Promise<EvalSessi
     attempt.applied = replay.applied;
     attempt.failedMoves = replay.failed;
     attempt.firstFailureIndex = replay.firstFailureIndex;
+    attempt.firstFailureOutcome = replay.firstFailureOutcome;
     attempt.movesToWin = replay.movesToWin;
     attempt.outcomes = replay.steps.map(s => s.outcome);
     attempt.moves = result.moves;

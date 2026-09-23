@@ -374,3 +374,50 @@ describe('formatters for the new columns', () => {
     expect(formatRatio(null)).toBe('—');
   });
 });
+
+describe('root causes', () => {
+  /**
+   * Haiku's real session showed 75% of moves rejected, dominated by
+   * "no agent there" — but that was the cascade from one early mistake. The
+   * root cause is what the model actually got wrong.
+   */
+  it('counts one root cause per failed attempt, not per rejected move', () => {
+    const stats = summarize([
+      done(MODEL_A, 1, {
+        firstFailureOutcome: 'illegal',
+        outcomes: ['illegal', 'no-agent', 'no-agent', 'no-agent'],
+      }),
+      done(MODEL_A, 2, {
+        firstFailureOutcome: 'blocked',
+        outcomes: ['moved', 'blocked', 'no-agent'],
+      }),
+    ]);
+    expect(stats[0].rootCauses).toEqual({
+      moved: 0,
+      illegal: 1,
+      blocked: 1,
+      'no-agent': 0,
+      'bad-direction': 0,
+    });
+    // The full tally still shows the cascade, for contrast.
+    expect(stats[0].outcomes['no-agent']).toBe(4);
+  });
+
+  it('names a different dominant failure than the raw tally would', () => {
+    const stats = summarize([
+      done(MODEL_A, 1, {
+        firstFailureOutcome: 'illegal',
+        outcomes: ['illegal', 'no-agent', 'no-agent', 'no-agent'],
+      }),
+    ]);
+    expect(dominantFailure(stats[0].rootCauses)).toBe('illegal');
+    expect(dominantFailure(stats[0].outcomes)).toBe('no-agent');
+  });
+
+  it('records nothing for an attempt that never failed', () => {
+    const stats = summarize([
+      done(MODEL_A, 1, { solved: true, movesToWin: 5, firstFailureOutcome: null }),
+    ]);
+    expect(Object.values(stats[0].rootCauses).every(n => n === 0)).toBe(true);
+  });
+});

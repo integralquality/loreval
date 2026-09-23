@@ -74,6 +74,16 @@ export interface ReplayResult {
   failed: number;
   /** Index of the first move that failed, or null if every move landed. */
   firstFailureIndex: number | null;
+  /**
+   * How that first failure failed — the root cause.
+   *
+   * Worth separating from the tally of all outcomes: a rejected move leaves
+   * the agent where it was while the plan assumes it moved, so every later
+   * coordinate is stale and reports 'no-agent'. One real mistake cascades
+   * into a run of them, and counting the mode over all failures measures the
+   * echo rather than the cause.
+   */
+  firstFailureOutcome: MoveOutcome | null;
   /** 1-based count of moves consumed to reach the win, or null if unsolved. */
   movesToWin: number | null;
   /** Moves left unplayed because the level was already won. */
@@ -92,6 +102,7 @@ export function replayMoves(level: Level, initialState: GameState, moves: AiMove
   let applied = 0;
   let failed = 0;
   let firstFailureIndex: number | null = null;
+  let firstFailureOutcome: MoveOutcome | null = null;
   let movesToWin: number | null = null;
 
   for (let index = 0; index < moves.length; index++) {
@@ -107,7 +118,10 @@ export function replayMoves(level: Level, initialState: GameState, moves: AiMove
       if (state.status === 'won') movesToWin = index + 1;
     } else {
       failed++;
-      if (firstFailureIndex === null) firstFailureIndex = index;
+      if (firstFailureIndex === null) {
+        firstFailureIndex = index;
+        firstFailureOutcome = result.outcome;
+      }
     }
   }
 
@@ -117,6 +131,7 @@ export function replayMoves(level: Level, initialState: GameState, moves: AiMove
     applied,
     failed,
     firstFailureIndex,
+    firstFailureOutcome,
     movesToWin,
     trailing: moves.length - steps.length,
     steps,

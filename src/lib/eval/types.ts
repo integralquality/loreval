@@ -46,6 +46,8 @@ export interface EvalAttempt {
   applied?: number;
   failedMoves?: number;
   firstFailureIndex?: number | null;
+  /** Outcome of that first failure — the root cause, before any cascade. */
+  firstFailureOutcome?: MoveOutcome | null;
   movesToWin?: number | null;
   outcomes?: MoveOutcome[];
   moves?: AiMove[];
