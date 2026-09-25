@@ -2,7 +2,7 @@
 
 > **Experimental version - temporary AI generated docs**
 
-Loreval evaluates language models logic and reasoning on grid-based spatial puzzles.
+Loreval evaluates language models logic and reasoning on grid-based spatial logic puzzles.
 
 <img width="1047" height="326" alt="image" src="https://github.com/user-attachments/assets/6c0de273-45d3-4643-8022-fcc13324adf1" />
 
