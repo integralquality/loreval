@@ -11,13 +11,22 @@ const navLinks = [
   { to: '/docs',     label: 'docs'   },
 ];
 
+/**
+ * Four tiles, in the game's own agent colours.
+ *
+ * These are the literal hexes from TileIcon's colour map rather than the
+ * `orange-500`/`blue-500` utilities they used to be, because the UI palette
+ * is deliberately a step quieter than the game palette — drawn from chrome
+ * tokens the mark would have drifted muddy while the board stayed vivid.
+ */
+const MARK_COLORS = ['#fb923c', '#60a5fa', '#e8eaec', '#6ee7b7'];
+
 export function LogoMark({ className = 'w-6 h-6' }: { className?: string }) {
   return (
     <div className={`grid grid-cols-2 gap-[3px] ${className}`}>
-      <div className="rounded-[2px] bg-orange-500" />
-      <div className="rounded-[2px] bg-blue-500" />
-      <div className="rounded-[2px] bg-zinc-100" />
-      <div className="rounded-[2px] bg-emerald-500" />
+      {MARK_COLORS.map(hex => (
+        <div key={hex} className="rounded-[1px]" style={{ backgroundColor: hex }} />
+      ))}
     </div>
   );
 }
@@ -35,7 +44,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-paper/90 backdrop-blur-md border-b-2 border-zinc-700">
+      <nav className="sticky top-0 z-50 bg-paper/80 backdrop-blur-xl border-b border-zinc-800">
         <div className="max-w-page mx-auto px-6">
           <div className="flex items-center justify-between h-14">
 
@@ -59,19 +68,26 @@ export default function Navbar() {
                   <Link
                     key={to}
                     to={to}
-                    className={`px-4 py-1.5 font-mono text-[13px] transition-colors border-b-2 ${
-                      isActive
-                        ? 'text-zinc-100 border-orange-500'
-                        : 'text-zinc-500 border-transparent hover:text-zinc-100'
+                    className={`relative px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+                      isActive ? 'text-zinc-100' : 'text-zinc-500 hover:text-zinc-200'
                     }`}
                   >
                     {label}
+                    {/* A hairline tick under the label, inset to the word's
+                        width rather than the hit area, so the marker points at
+                        the link instead of underlining the padding. */}
+                    {isActive && (
+                      <span
+                        className="absolute left-3.5 right-3.5 -bottom-px h-px bg-orange-500"
+                        aria-hidden="true"
+                      />
+                    )}
                   </Link>
                 );
               })}
 
               {/* Separates navigation from the account-ish controls */}
-              <span className="w-px h-5 bg-white/15 mx-2" aria-hidden="true" />
+              <span className="w-px h-4 bg-zinc-700 mx-2.5" aria-hidden="true" />
 
               <a
                 href="https://github.com/integral-quality/loreval"
@@ -85,10 +101,10 @@ export default function Navbar() {
 
               <button
                 onClick={() => setShowKeyModal(true)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded font-mono text-[13px] border transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-[13px] font-medium border transition-colors ${
                   keyActive
                     ? 'border-emerald-600/40 bg-emerald-600/10 text-emerald-400 hover:bg-emerald-600/20'
-                    : 'border-zinc-600 text-zinc-400 hover:border-zinc-500 hover:text-zinc-100'
+                    : 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-100'
                 }`}
               >
                 <Key size={13} />

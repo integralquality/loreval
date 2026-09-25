@@ -116,7 +116,7 @@ export function SolveRateChart({ stats, width = 460 }: { stats: ModelStats[]; wi
                 width={Math.max(1, rate * plotWidth)}
                 height={BAR_HEIGHT}
                 rx={2}
-                fill={rate >= 1 ? '#34d399' : rate > 0 ? '#fb923c' : '#52525b'}
+                fill={rate >= 1 ? '#34d399' : rate > 0 ? '#fb923c' : '#444a52'}
               />
               {interval && (
                 <g className="text-zinc-400">
@@ -518,7 +518,7 @@ export function CostChart({ stats, width = 460 }: { stats: ModelStats[]; width?:
                 width={Math.max(1, scale(spend))}
                 height={BAR_HEIGHT}
                 rx={2}
-                fill={row.solved > 0 ? '#fbbf24' : '#52525b'}
+                fill={row.solved > 0 ? '#f0b849' : '#444a52'}
                 opacity={0.8}
               >
                 <title>{`${formatCost(spend)} total`}</title>
@@ -529,7 +529,7 @@ export function CostChart({ stats, width = 460 }: { stats: ModelStats[]; width?:
                   x2={LABEL_WIDTH + scale(row.costPerSolve)}
                   y1={y - 1}
                   y2={y + BAR_HEIGHT + 1}
-                  stroke="#f4f4f5"
+                  stroke="#e8eaec"
                   strokeWidth={1.5}
                 >
                   <title>{`${formatCost(row.costPerSolve)} per solve`}</title>

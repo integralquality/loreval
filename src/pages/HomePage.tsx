@@ -4,11 +4,13 @@ import { motion } from 'motion/react';
 import { ArrowRight, RotateCcw, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check, Github, Code2, Grid3X3 } from 'lucide-react';
 import { TileIcon } from '../components/game/TileIcon';
 import { EntityIcon } from '../components/game/EntityIcon';
+import { SolveRateChart, FailureChart } from '../components/eval/charts';
 import { parseDSL } from '../dsl/parser';
 import { executeMove } from '../gameLogic';
-import type { GameState, Level } from '../types';
+import type { ModelStats, OutcomeCounts } from '../lib/eval/stats';
+import type { GameState, Level, TileType } from '../types';
 
-// ─── Hero level ───────────────────────────────────────────────────────────────
+// ─── Hero level ───────────────────────────────────────────────────────
 // The playable hero grid and the DSL sample further down are the same level:
 // this string is parsed by the real parser and run by the real engine.
 
@@ -32,51 +34,26 @@ agent(orange) start(1,1) and reach(7,5)`;
 
 const HERO_OPTIMAL = 18; // verified by exhaustive search over the engine
 
-// The prompt excerpt is lifted from SOLVE_SYSTEM_PROMPT in api/_anthropic.ts —
-// the contract every solve attempt is actually sent. The moves below are the
-// engine-verified 18-move optimum for HERO_DSL, so the example on this page and
-// the number beside it cannot drift apart.
+// Lifted from SOLVE_SYSTEM_PROMPT in api/_anthropic.ts — the contract every
+// solve attempt is actually sent — and abridged to the part that bites.
 const PROMPT_RULES = [
-  'Tile types — passability is critical',
-  '  door   impassable UNLESS the agent color matches,',
-  '         or a matching switch has been stepped on',
-  '  paint  walkable; stepping on it changes the agent color',
-  '  goal   walkable; only a matching-color agent may claim it',
-  '…',
-  'Output format',
-  '  Each move line: (x,y) direction',
-  '  (x,y)     the agent position before this move',
-  '  direction one of: up down left right',
+  'door   impassable UNLESS the agent color matches,',
+  '       or a matching switch has been stepped on',
+  'paint  walkable; stepping on it changes the agent color',
+  'goal   walkable; only a matching-color agent may claim it',
+  '\u2026',
+  'Each move line: (x,y) direction, the position BEFORE the step',
 ];
 
-const PROMPT_LEVEL = [
-  'level "Paint Run" 9x7',
-  'grid = [',
-  '  W W W W W W W W W,',
-  '  W R R R W W W W W,',
-  '  …',
-  ']',
-  'agent(orange) start(1,1) and reach(7,5)',
-];
-
-const RESPONSE_PLAN = [
-  'The goal at (7,5) is orange and the agent starts orange —',
-  'but the green door at (6,4) sits in front of it, so the agent',
-  'has to be green to pass and orange again to claim the goal.',
-  'Order: blue switch → blue door → green paint → green door',
-  '→ orange paint → goal.',
-];
-
+// The engine-verified 18-move optimum, so the page and the number agree.
 const RESPONSE_MOVES = [
   '(1,1) right',
-  '(2,1) right',
-  '(3,1) down      ← blue switch at (3,2)',
-  '…',
-  '(5,4) up        ← green paint at (5,3)',
-  '(5,3) down',
-  '(5,4) right     ← through the green door',
-  '(6,4) right     ← orange paint at (7,4)',
-  '(7,4) down      ← goal',
+  '(3,1) down      \u2190 blue switch at (3,2)',
+  '\u2026',
+  '(5,4) up        \u2190 green paint at (5,3)',
+  '(5,4) right     \u2190 through the green door',
+  '(6,4) right     \u2190 orange paint at (7,4)',
+  '(7,4) down      \u2190 goal',
 ];
 
 // Outcome vocabulary from src/lib/eval/replay.ts. The failure shown is the one
@@ -86,9 +63,84 @@ const REPLAY_ROWS: { n: string; move: string; outcome: string; note?: string }[]
   { n: '02', move: '(1,2) down', outcome: 'moved' },
   { n: '03', move: '(1,3) down', outcome: 'moved' },
   { n: '04', move: '(1,4) right', outcome: 'blocked', note: 'blue door is shut' },
-  { n: '05', move: '(2,4) right', outcome: 'no-agent' },
-  { n: '06', move: '(3,4) right', outcome: 'no-agent' },
+  { n: '05', move: '(2,4) right', outcome: 'no-agent', note: 'cascade' },
+  { n: '06', move: '(3,4) right', outcome: 'no-agent', note: 'cascade' },
 ];
+
+// ─── Illustrative eval readout ──────────────────────────────────────
+// Rendered by the same chart components the eval page uses, so the shape of
+// the readout on this page cannot drift from the real one.
+//
+// The models are anonymised on purpose. Loreval ships no leaderboard: published
+// numbers would be stale within a release and would invite exactly the ranking
+// this instrument is too small a sample to support. These show what a session
+// looks like, not who wins.
+
+const NO_OUTCOMES: OutcomeCounts = {
+  moved: 0, 'no-agent': 0, 'bad-direction': 0, illegal: 0, blocked: 0,
+};
+
+function demoStat(o: {
+  label: string;
+  completed: number;
+  solved: number;
+  interval: [number, number];
+  illegalRate: number;
+  rootCauses: Partial<OutcomeCounts>;
+}): ModelStats {
+  const rate = o.solved / o.completed;
+  return {
+    modelKey: o.label,
+    providerId: 'demo',
+    modelId: o.label,
+    label: o.label,
+    total: o.completed,
+    completed: o.completed,
+    errors: 0,
+    parseFailures: 0,
+    solved: o.solved,
+    solveRate: rate,
+    avgProposed: null,
+    avgApplied: null,
+    avgFailedMoves: null,
+    illegalRate: o.illegalRate,
+    solveRateInterval: { low: o.interval[0], high: o.interval[1] },
+    passAtK: [],
+    bestMovesToWin: null,
+    avgMovesToWin: null,
+    movesToWinSpread: null,
+    excessRatio: null,
+    outcomes: NO_OUTCOMES,
+    rootCauses: { ...NO_OUTCOMES, ...o.rootCauses },
+    medianFirstFailure: null,
+    avgDurationMs: null,
+    durationSpread: null,
+    inputTokens: 0,
+    outputTokens: 0,
+    reasoningTokens: 0,
+    costUsd: null,
+    costPerSolve: null,
+  };
+}
+
+const DEMO_STATS: ModelStats[] = [
+  demoStat({ label: 'model-a', completed: 8, solved: 7, interval: [0.529, 0.978], illegalRate: 0.01, rootCauses: { blocked: 1 } }),
+  demoStat({ label: 'model-b', completed: 8, solved: 5, interval: [0.306, 0.863], illegalRate: 0.04, rootCauses: { blocked: 2, illegal: 1 } }),
+  demoStat({ label: 'model-c', completed: 8, solved: 2, interval: [0.071, 0.591], illegalRate: 0.17, rootCauses: { illegal: 4, 'no-agent': 1, blocked: 1 } }),
+];
+
+// The tile set, as shown beside the source. Same renderer as the board.
+const TILE_LEGEND: { type: TileType; color?: string; note: string }[] = [
+  { type: 'wall', note: 'never passable' },
+  { type: 'floor', note: 'always passable' },
+  { type: 'door', color: 'blue', note: 'matching color, or a switch' },
+  { type: 'switch', color: 'blue', note: 'toggles every door of its color' },
+  { type: 'paint', color: 'green', note: 'repaints the agent' },
+  { type: 'goal', color: 'orange', note: 'matching agent may claim it' },
+  { type: 'one-way', note: 'one direction of entry' },
+  { type: 'lock', color: 'red', note: 'opens once, for everyone' },
+];
+
 const HERO_LEVEL: Level | null = parseDSL(HERO_DSL).level;
 
 function freshState(level: Level): GameState {
@@ -109,6 +161,28 @@ const KEY_DELTAS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
   w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0],
 };
+
+/**
+ * The shared chrome for every instrument on this page.
+ *
+ * Instruments sit at `zinc-950` — below the page ground — so they read as
+ * recessed panels rather than raised cards. `panel-lit` supplies the edge:
+ * a hairline highlight along the top and a deep shadow beneath, so every
+ * panel on the site is lit from the same angle.
+ */
+const PANEL = 'rounded-lg bg-zinc-950 ring-1 ring-zinc-800 panel-lit overflow-hidden';
+
+function PanelHeader({ label, accent, right }: { label: string; accent: string; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-800/80">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-1.5 h-1.5 rounded-[1px] shrink-0" style={{ backgroundColor: accent }} />
+        <span className="eyebrow text-zinc-500 truncate">{label}</span>
+      </div>
+      {right}
+    </div>
+  );
+}
 
 function PlayableHero({ level }: { level: Level }) {
   const CELL = 40;
@@ -164,17 +238,16 @@ function PlayableHero({ level }: { level: Level }) {
   const agentHex = AGENT_HEX[agent?.color ?? 'orange'] ?? '#fb923c';
 
   return (
-    <div className="rounded-lg bg-zinc-950 border border-zinc-800 shadow-[0_12px_40px_-12px_rgba(33,32,28,0.45)] overflow-hidden">
-      {/* Panel header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-2 h-2 rounded-[2px] shrink-0" style={{ backgroundColor: agentHex }} />
-          <span className="font-mono text-xs text-zinc-400 truncate">paint-run.puzzle · you, solving</span>
-        </div>
-        <span className="font-mono text-xs text-zinc-500 shrink-0">
-          moves {moves} · optimal {HERO_OPTIMAL}
-        </span>
-      </div>
+    <div className={PANEL}>
+      <PanelHeader
+        label="paint-run.puzzle · you, solving"
+        accent={agentHex}
+        right={
+          <span className="font-mono text-[11px] text-zinc-500 shrink-0 tabular">
+            <span className="text-zinc-300">{moves}</span> moves · optimal {HERO_OPTIMAL}
+          </span>
+        }
+      />
 
       <div className="p-4 flex flex-col items-center">
         {showSource ? (
@@ -332,11 +405,11 @@ function PlayableHero({ level }: { level: Level }) {
   );
 }
 
-// ─── Shared bits ──────────────────────────────────────────────────────────────
+// ─── Shared bits ─────────────────────────────────────────────────────
 
 function DslBlock({ source }: { source: string }) {
   return (
-    <div className="bg-zinc-950 p-6 font-mono text-sm leading-7">
+    <div className="bg-zinc-950 px-5 py-4 font-mono text-[12.5px] leading-6">
       {source.split('\n').map((line, i) => {
         const kw = /^(level|grid|tile|agent)\b/.exec(line)?.[1];
         if (!kw) return <p key={i} className="text-zinc-500 whitespace-pre">{line || ' '}</p>;
@@ -351,23 +424,10 @@ function DslBlock({ source }: { source: string }) {
   );
 }
 
-/** Ledger-style section rule: heavy top line, title left, grid coordinate right. */
-function RuleHeader({ coord, title }: { coord: string; title: string }) {
-  return (
-    <div className="border-t-2 border-zinc-700 pt-4 mb-12 flex items-baseline justify-between gap-4">
-      <h2 className="font-mono text-sm font-bold text-zinc-100 lowercase tracking-wide">{title}</h2>
-      <span className="font-mono text-xs text-zinc-400">({coord})</span>
-    </div>
-  );
-}
-
 function DarkPanel({ label, accent, children }: { label: string; accent: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg bg-zinc-950 border border-zinc-800 shadow-[0_12px_40px_-12px_rgba(33,32,28,0.45)] overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800">
-        <div className="w-2 h-2 rounded-[2px]" style={{ backgroundColor: accent }} />
-        <span className="font-mono text-xs text-zinc-400">{label}</span>
-      </div>
+    <div className={PANEL}>
+      <PanelHeader label={label} accent={accent} />
       {children}
     </div>
   );
@@ -377,213 +437,189 @@ function DarkPanel({ label, accent, children }: { label: string; accent: string;
 function TranscriptBlock({ role, lines }: { role: string; lines: string[] }) {
   return (
     <div className="px-5 py-4 border-b border-zinc-800/60 last:border-b-0">
-      <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-600 mb-2">{role}</p>
+      <p className="eyebrow text-zinc-600 mb-2">{role}</p>
       <pre className="font-mono text-[12px] leading-6 text-zinc-400 whitespace-pre-wrap">{lines.join('\n')}</pre>
     </div>
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+/**
+ * A section opening: full-bleed rule, number, title, and one line of intro.
+ *
+ * There used to be two headings per section — a small band label and an h3
+ * below it, saying much the same thing — so neither carried the section. This
+ * is the only heading now, and it is sized to act like one.
+ *
+ * The rule runs the whole width of the viewport while the text sits on the
+ * page grid, which keeps the page reading as one continuous sheet rather than
+ * a stack of centred cards.
+ */
+function SectionHead({ n, title, intro }: { n: string; title: string; intro?: string }) {
+  return (
+    <div className="border-t border-zinc-800">
+      <div className="max-w-page mx-auto px-6 pt-8 pb-10">
+        <div className="flex items-baseline gap-4">
+          <span className="eyebrow text-orange-400 shrink-0 pt-1">{n}</span>
+          <h2 className="text-[clamp(1.5rem,2.4vw,2.125rem)] font-semibold text-zinc-100 leading-tight">
+            {title}
+          </h2>
+        </div>
+        {intro && <p className="text-[17px] text-zinc-400 max-w-2xl mt-4 ml-0 sm:ml-9">{intro}</p>}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A raised card, for content that is explanation rather than readout.
+ *
+ * Instruments sink below the page ground; these sit above it, so the two never
+ * get confused for one another at a glance.
+ */
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="h-full flex flex-col bg-paper ring-1 ring-zinc-800 rounded-lg p-6">
+      <h3 className="text-[1.0625rem] font-semibold text-zinc-100 mb-3">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+/** One cell of the figures band: a large mono number over a small caption. */
+function Figure({ value, unit, caption }: { value: string; unit?: string; caption: string }) {
+  return (
+    <div className="px-6 py-7 border-zinc-800 border-t md:border-t-0 md:border-l first:border-l-0 first:border-t-0">
+      <p className="font-mono text-[2.25rem] leading-none text-zinc-100 tabular">
+        {value}
+        {unit && <span className="text-[1rem] text-zinc-500 ml-1.5">{unit}</span>}
+      </p>
+      <p className="eyebrow text-zinc-500 mt-3">{caption}</p>
+    </div>
+  );
+}
+
+// ─── Page ────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   return (
     <div className="text-ink selection:bg-orange-500/20">
 
-      {/* HERO */}
-      <section className="max-w-page mx-auto px-6 pt-16 pb-24">
-        {/* Meta strip */}
-        <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] text-zinc-500 border-b border-white/15 pb-3 mb-14">
-          <span>
-            <span className="text-orange-400 font-bold">lo</span>gic and{' '}
-            <span className="text-orange-400 font-bold">re</span>asoning{' '}
-            <span className="text-orange-400 font-bold">eval</span>uation
-          </span>
-        </div>
-
-        <div className="flex flex-col lg:flex-row items-start gap-14">
-          <div className="flex-[1.2] pt-2">
-            <h1 className="text-[2.6rem] md:text-5xl font-bold text-zinc-100 leading-[1.1] tracking-tight mb-7">
-              Can a language model<br />solve this puzzle?
-            </h1>
-            <p className="text-base text-zinc-400 max-w-xl leading-relaxed mb-4">
-              Loreval measures LLM performance on grid-based spatial puzzles across two tasks: <strong className="text-zinc-100 font-semibold">solving</strong> a puzzle from its text description, and <strong className="text-zinc-100 font-semibold">designing</strong> a new one to a set of constraints.
+      {/* HERO — type carries this, not copy */}
+      <section className="max-w-page mx-auto px-6 pt-20 pb-16">
+        <div className="grid lg:grid-cols-12 gap-x-12 gap-y-14 items-start">
+          <div className="lg:col-span-7">
+            <p className="eyebrow text-zinc-500 mb-6">
+              <span className="text-orange-400">lo</span>gic and{' '}
+              <span className="text-orange-400">re</span>asoning{' '}
+              <span className="text-orange-400">eval</span>uation
             </p>
-            <p className="text-base text-zinc-400 max-w-xl leading-relaxed mb-10">
-              Outcomes are discrete and verifiable. A puzzle is either solved or it isn't — no rubric, no judge model. Try the one on the right; a model gets the exact same level, as text.
+            <h1 className="text-[clamp(2.5rem,6vw,4.75rem)] font-bold text-zinc-100 leading-[0.97] mb-8">
+              LLM evals on custom spatial logic puzzles
+            </h1>
+            <p className="text-[17px] text-zinc-400 max-w-lg mb-9">
+              Design a puzzle, hand it to any model, replay every move through the game
+              engine. Solved or it isn't — no rubric, no judge model.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link to="/designer" className="px-6 py-3 bg-zinc-100 hover:bg-zinc-300 text-paper text-sm font-semibold rounded transition-colors flex items-center gap-2">
-                Open designer <ArrowRight size={15} />
+              <Link to="/eval" className="px-5 py-2.5 bg-zinc-100 hover:bg-white text-paper text-sm font-display font-semibold rounded-sm transition-colors flex items-center gap-2">
+                Run an eval <ArrowRight size={15} />
+              </Link>
+              <Link to="/designer" className="px-5 py-2.5 border border-zinc-700 text-zinc-300 text-sm font-display font-medium rounded-sm hover:border-zinc-500 hover:text-zinc-100 transition-colors">
+                Open designer
               </Link>
               <a
                 href="https://github.com/integral-quality/loreval"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-6 py-3 border border-white/15 text-zinc-200 text-sm font-medium rounded hover:border-zinc-500 transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 border border-zinc-700 text-zinc-300 text-sm font-display font-medium rounded-sm hover:border-zinc-500 hover:text-zinc-100 transition-colors flex items-center gap-2"
               >
                 <Github size={15} /> GitHub
               </a>
             </div>
           </div>
 
-          <div className="flex-1 w-full max-w-md">
+          <div className="lg:col-span-5">
             {HERO_LEVEL && <PlayableHero level={HERO_LEVEL} />}
-            <p className="font-mono text-[11px] text-zinc-500 mt-3 leading-5">
-              real level, real engine. the switch opens the blue door — but the goal takes more than that. optimal verified by exhaustive search.
+            <p className="text-[12px] text-zinc-600 mt-3">
+              real level, real engine — play it
             </p>
           </div>
         </div>
       </section>
 
-      {/* PUZZLE FORMAT */}
-      <section className="max-w-page mx-auto px-6 pb-24">
-        <RuleHeader coord="0,1" title="the puzzle format" />
-        <div className="grid lg:grid-cols-2 gap-14 items-start">
-          <div>
-            <h3 className="text-2xl font-bold text-zinc-100 mb-5">Plain text, all the way down</h3>
-            <p className="text-zinc-400 text-[15px] leading-relaxed mb-4">
-              Levels are written in a small DSL: a grid of tile characters, a legend mapping characters to tile types and colors, and agent declarations with start positions and goals.
-            </p>
-            <p className="text-zinc-400 text-[15px] leading-relaxed mb-4">
-              The source on the right is the level at the top of this page — the one you can play. The same parser and the same engine that just ran your moves also score a model's attempt. There is no separate "eval version" of the game.
-            </p>
-            <p className="text-zinc-400 text-[15px] leading-relaxed mb-6">
-              The format is compact enough to fit in a prompt, which is exactly how a model receives it. Levels can be written by hand, drawn in the visual editor, or generated by a model — all three read and write the same text.
-            </p>
-            <Link to="/docs" className="inline-flex items-center gap-2 font-mono text-sm text-orange-400 hover:text-orange-300 transition-colors">
-              full DSL reference <ArrowRight size={14} />
-            </Link>
-          </div>
+      {/* FIGURES — full-bleed band, the page's first hard division */}
+      <div className="border-y border-zinc-800 bg-zinc-950/40">
+        <div className="max-w-page mx-auto px-0 md:px-6 grid grid-cols-1 md:grid-cols-4">
+          <Figure value="0" caption="judge models" />
+          <Figure value="5" caption="move outcomes" />
+          <Figure value="2" caption="tasks · solve, design" />
+          <Figure value="18" unit="moves" caption="optimum, proven by search" />
+        </div>
+      </div>
 
-          <DarkPanel label="paint-run.puzzle · source" accent="#60a5fa">
-            <DslBlock source={HERO_DSL} />
+      {/* 01 — the DSL */}
+      <section className="pt-20 pb-20">
+        <SectionHead
+          n="01"
+          title="Puzzles are written as plain text"
+          intro="A grid, a legend, and agent declarations. Compact enough to fit in a prompt, which is exactly how a model receives it."
+        />
+        <div className="max-w-page mx-auto px-6 grid lg:grid-cols-12 gap-6 items-stretch">
+          <div className="lg:col-span-5">
+            <DarkPanel label="paint-run.puzzle · source" accent="#60a5fa">
+              <DslBlock source={HERO_DSL} />
+            </DarkPanel>
+          </div>
+          <div className="lg:col-span-7">
+            <Card title="The tile set">
+              <ul className="grid sm:grid-cols-2 gap-x-6 gap-y-3 mt-4">
+                {TILE_LEGEND.map(({ type, color, note }) => (
+                  <li key={`${type}-${color ?? ''}`} className="flex items-center gap-3">
+                    <span className="w-5 h-5 shrink-0 rounded-sm bg-zinc-950 p-0.5">
+                      <TileIcon type={type} color={color} />
+                    </span>
+                    <span className="text-[13px] text-zinc-200 w-20 shrink-0">{type}</span>
+                    <span className="text-[13px] text-zinc-500 truncate">{note}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link to="/docs" className="inline-flex items-center gap-2 text-[13px] font-medium text-orange-400 hover:text-orange-300 transition-colors mt-auto pt-6">
+                Full DSL reference <ArrowRight size={14} />
+              </Link>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* 02 — prompt and reply */}
+      <section className="pb-20">
+        <SectionHead
+          n="02"
+          title="What the model receives, and what it returns"
+          intro="No image, no board renderer, no tool to try a move and see what happened. The model holds the grid in its head and returns a list of moves."
+        />
+        <div className="max-w-page mx-auto px-6 grid lg:grid-cols-2 gap-6 items-start">
+          <DarkPanel label="prompt · solve" accent="#60a5fa">
+            <TranscriptBlock role="system · abridged" lines={PROMPT_RULES} />
+          </DarkPanel>
+          <DarkPanel label="response · raw" accent="#6ee7b7">
+            <div className="px-5 py-4">
+              <p className="eyebrow text-zinc-600 mb-2">moves · 18 of 18</p>
+              <pre className="font-mono text-[12px] leading-6 text-zinc-300 whitespace-pre overflow-x-auto">{RESPONSE_MOVES.join('\n')}</pre>
+            </div>
           </DarkPanel>
         </div>
       </section>
 
-      {/* HOW A MODEL ATTEMPTS IT */}
-      <section className="max-w-page mx-auto px-6 pb-24">
-        <RuleHeader coord="0,2" title="how a model attempts it" />
-        <div className="grid lg:grid-cols-2 gap-14 items-start">
-          <div>
-            <h3 className="text-2xl font-bold text-zinc-100 mb-5">A prompt in, a move list out</h3>
-            <p className="text-zinc-400 text-[15px] leading-relaxed mb-4">
-              The model gets two things: the rules of the tile set, and the level as DSL text. No image, no board renderer, no tool it can call to try a move and see what happened. It has to hold the grid in its head.
-            </p>
-            <p className="text-zinc-400 text-[15px] leading-relaxed mb-4">
-              What comes back is plain text. Whatever reasoning it wants to show is fine, but the move sequence has to land in a fenced block, one <code className="font-mono text-[13px] text-zinc-200">(x,y) direction</code> per line, the coordinate being where the agent stands <em>before</em> the step. A reply with no parsable block is a format failure, counted apart from a wrong plan.
-            </p>
-            <p className="text-zinc-400 text-[15px] leading-relaxed">
-              This level is small but not flat: the orange goal sits behind a green door, so the agent has to pick up green paint to get through and orange paint to claim the exit. Getting it right is an ordering problem, not a pathfinding one.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            <DarkPanel label="prompt · solve" accent="#60a5fa">
-              <TranscriptBlock role="system · abridged" lines={PROMPT_RULES} />
-              <TranscriptBlock role="user" lines={PROMPT_LEVEL} />
-            </DarkPanel>
-
-            <DarkPanel label="response · raw" accent="#6ee7b7">
-              <TranscriptBlock role="assistant" lines={RESPONSE_PLAN} />
-              <div className="px-5 py-4">
-                <p className="font-mono text-[10px] uppercase tracking-widest text-zinc-600 mb-2">moves · 18 of 18</p>
-                <pre className="font-mono text-[12px] leading-6 text-zinc-300 whitespace-pre overflow-x-auto">{RESPONSE_MOVES.join('\n')}</pre>
-              </div>
-            </DarkPanel>
-          </div>
-        </div>
-      </section>
-
-      {/* INSPECTING AN ATTEMPT */}
-      <section className="max-w-page mx-auto px-6 pb-24">
-        <RuleHeader coord="0,3" title="inspecting a solve attempt" />
-        <div className="grid lg:grid-cols-2 gap-14 items-start">
-
-          <div className="space-y-9">
-            {[
-              {
-                title: 'Step-by-step playback',
-                body: 'The model\'s move sequence plays back one step at a time. Source and target tiles are highlighted; playback can be paused, stepped in either direction, or rewound.',
-              },
-              {
-                title: 'Move log',
-                body: 'Each move is listed as agent (x,y) → (x,y) direction. Moves the engine rejects — wrong agent position, blocked path — are annotated rather than silently dropped.',
-              },
-              {
-                title: 'Coordinate overlay',
-                body: 'Axis labels run along the grid edges, and highlighted tiles show their coordinates during playback, so the log can be cross-referenced without counting cells.',
-              },
-              {
-                title: 'Feedback loop',
-                body: 'After a failed attempt you can tell the model what went wrong, in plain language. Its previous moves and your note go back as context, and it retries.',
-              },
-            ].map(({ title, body }, i) => (
-              <div key={title} className="flex gap-5">
-                <span className="font-mono text-xs text-zinc-400 pt-1 select-none">{`0${i + 1}`}</span>
-                <div>
-                  <h4 className="text-base font-bold text-zinc-100 mb-1.5">{title}</h4>
-                  <p className="text-zinc-400 text-[15px] leading-relaxed">{body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="lg:sticky lg:top-20">
-            <DarkPanel label="move log · paused" accent="#fb923c">
-              <div className="p-6 font-mono text-sm leading-8 space-y-0.5">
-                {[
-                  'orange  (1,4) → (1,3)  up',
-                  'orange  (1,3) → (2,3)  right',
-                  'orange  (2,3) → (2,2)  up',
-                  'orange  (2,2) → (2,1)  up',
-                ].map((line, i) => (
-                  <p key={i} className="text-zinc-600">{line}</p>
-                ))}
-                <p className="bg-orange-500/10 border border-orange-500/25 rounded px-2 text-orange-300 my-1">
-                  ▶ orange  (2,1) → (3,1)  right
-                </p>
-                {[
-                  'orange  (3,1) → (4,1)  right',
-                  'orange  (4,1) → (4,2)  down',
-                  'orange  (4,2) → (4,3)  down',
-                  'orange  (4,3) → (5,3)  right',
-                  'orange  (5,3) → (6,3)  right',
-                ].map((line, i) => (
-                  <p key={i} className="text-zinc-700">{line}</p>
-                ))}
-                <div className="pt-4 border-t border-zinc-800 mt-3 flex justify-between text-zinc-500 text-sm">
-                  <span>move 5 / 10</span>
-                  <span className="text-emerald-500/80">✓ solved</span>
-                </div>
-              </div>
-            </DarkPanel>
-          </div>
-
-        </div>
-      </section>
-
-      {/* HOW IT GETS EVALUATED */}
-      <section className="max-w-page mx-auto px-6 pb-24">
-        <RuleHeader coord="0,4" title="how it gets evaluated" />
-        <div className="grid lg:grid-cols-2 gap-14 items-start">
-          <div>
-            <h3 className="text-2xl font-bold text-zinc-100 mb-5">The engine is the grader</h3>
-            <p className="text-zinc-400 text-[15px] leading-relaxed mb-4">
-              Every proposed move is fed back through the same function that moves your agent when you play. It returns one of five outcomes, and those outcomes are the whole score — there is no rubric and no judge model anywhere in the loop.
-            </p>
-            <p className="text-zinc-400 text-[15px] leading-relaxed mb-4">
-              That makes failures legible. A plan that walks into a shut door reports <code className="font-mono text-[13px] text-zinc-200">blocked</code> at the exact index where it went wrong, and the moves after it usually report <code className="font-mono text-[13px] text-zinc-200">no-agent</code> — the agent is no longer where the plan assumed it would be.
-            </p>
-            <p className="text-zinc-400 text-[15px] leading-relaxed mb-6">
-              Three kinds of failure stay apart on purpose: a request that never returned is a transport error and is excluded from the solve rate, a reply with no parsable move block is a format failure, and a parsable plan the engine rejects is a reasoning failure. Collapsing them lets one hide another.
-            </p>
-            <Link to="/eval" className="inline-flex items-center gap-2 font-mono text-sm text-orange-400 hover:text-orange-300 transition-colors">
-              run an eval <ArrowRight size={14} />
-            </Link>
-          </div>
-
-          <div className="space-y-4">
+      {/* 03 — scoring */}
+      <section className="pb-20">
+        <SectionHead
+          n="03"
+          title="Every move is replayed through the engine"
+          intro="Each one comes back as one of five outcomes, and those outcomes are the whole score."
+        />
+        <div className="max-w-page mx-auto px-6 grid lg:grid-cols-12 gap-6 items-stretch">
+          <div className="lg:col-span-7">
             <DarkPanel label="replay · one attempt" accent="#f87171">
               <div className="px-5 py-4 font-mono text-[12px] leading-7">
                 {REPLAY_ROWS.map(row => {
@@ -591,8 +627,8 @@ export default function HomePage() {
                   return (
                     <p key={row.n} className="flex gap-3">
                       <span className="text-zinc-700 w-5 shrink-0">{row.n}</span>
-                      <span className={`w-28 shrink-0 ${failed ? 'text-zinc-400' : 'text-zinc-500'}`}>{row.move}</span>
-                      <span className={`shrink-0 ${failed ? 'text-red-400' : 'text-emerald-500/80'}`}>{row.outcome}</span>
+                      <span className={`w-28 shrink-0 ${failed ? 'text-zinc-300' : 'text-zinc-500'}`}>{row.move}</span>
+                      <span className={`w-36 shrink-0 ${failed ? 'text-red-400' : 'text-emerald-500/80'}`}>{row.outcome}</span>
                       {row.note && <span className="text-zinc-600 truncate">{row.note}</span>}
                     </p>
                   );
@@ -603,56 +639,88 @@ export default function HomePage() {
                 </div>
               </div>
             </DarkPanel>
-
-            <DarkPanel label="session · 3 runs per model" accent="#fb923c">
-              <div className="px-5 py-4 font-mono text-[12px] overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-zinc-600">
-                      <th className="font-normal pb-2 pr-4">model</th>
-                      <th className="font-normal pb-2 pr-4">solved</th>
-                      <th className="font-normal pb-2 pr-4">illegal</th>
-                      <th className="font-normal pb-2">moves</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-zinc-400">
-                    {[
-                      ['model-a', '3/3', '0%', '18'],
-                      ['model-b', '2/3', '4%', '21'],
-                      ['model-c', '0/3', '17%', '—'],
-                    ].map(([model, solved, illegal, moves]) => (
-                      <tr key={model} className="border-t border-zinc-800/60">
-                        <td className="py-1.5 pr-4 text-zinc-300">{model}</td>
-                        <td className="py-1.5 pr-4">{solved}</td>
-                        <td className="py-1.5 pr-4">{illegal}</td>
-                        <td className="py-1.5">{moves}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="mt-3 pt-3 border-t border-zinc-800 text-zinc-600 leading-5">
-                  solve rate, illegal-move rate, and moves against the verified optimum — exportable as CSV
-                </p>
-              </div>
-            </DarkPanel>
-            <p className="font-mono text-[11px] text-zinc-500 leading-5">
-              the shape of the table, with the model names stood in for. loreval publishes no rankings — you run the eval with your own keys and get your own numbers.
-            </p>
+          </div>
+          <div className="lg:col-span-5">
+            <Card title="One mistake cascades">
+              <p className="text-[15px] text-zinc-400 mb-4">
+                A rejected move leaves the agent where it was while the plan assumes it moved,
+                so every later coordinate is stale.
+              </p>
+              <p className="text-[15px] text-zinc-400">
+                The statistics track the <strong className="text-zinc-200 font-semibold">first</strong> failure
+                separately. That's the root cause; the rest is echo.
+              </p>
+            </Card>
           </div>
         </div>
       </section>
 
-      {/* CLOSING */}
-      <section className="max-w-page mx-auto px-6 pb-28">
-        <div className="border-t-2 border-zinc-700 pt-12">
-          <p className="text-zinc-300 text-xl leading-relaxed max-w-2xl mb-8">
-            The same puzzle can be handed to multiple models. The same model can be asked to solve a puzzle it just designed. Both directions are informative.
+      {/* 04 — statistics */}
+      <section className="pb-24">
+        <SectionHead
+          n="04"
+          title="What a session measures"
+          intro="Solve rate with a confidence interval, and the root cause behind every failed attempt."
+        />
+        <div className="max-w-page mx-auto px-6">
+          <div className="grid lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-3">
+              <div className={PANEL}>
+                <PanelHeader label="session · 8 runs" accent="#fb923c" />
+                <div className="px-5 py-4 font-mono text-[12px] overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-zinc-600">
+                        <th className="font-normal pb-2 pr-4">model</th>
+                        <th className="font-normal pb-2 pr-4">solved</th>
+                        <th className="font-normal pb-2">illegal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-zinc-400">
+                      {DEMO_STATS.map(row => (
+                        <tr key={row.modelKey} className="border-t border-zinc-800/60">
+                          <td className="py-2 pr-4 text-zinc-300">{row.label}</td>
+                          <td className="py-2 pr-4">{row.solved}/{row.completed}</td>
+                          <td className="py-2">{Math.round((row.illegalRate ?? 0) * 100)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-4 text-zinc-300">
+              <SolveRateChart stats={DEMO_STATS} />
+            </div>
+            <div className="lg:col-span-5 text-zinc-300">
+              <FailureChart stats={DEMO_STATS} />
+            </div>
+          </div>
+
+          <p className="text-[16px] text-zinc-400 mt-10 max-w-2xl">
+            Seven out of eight is not a 93% model — the interval says 53–98%, and the chart
+            says so too. Transport errors, format failures and reasoning failures stay
+            apart, because collapsing them lets one hide another.
           </p>
-          <Link to="/designer" className="inline-flex items-center gap-2 font-mono text-sm text-orange-400 hover:text-orange-300 transition-colors group">
-            open the designer <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+          <p className="text-[12px] text-zinc-600 mt-4 max-w-2xl leading-5">
+            Illustrative session, models anonymised. Loreval publishes no rankings — run it
+            with your own keys and get your own numbers.
+          </p>
         </div>
       </section>
+
+      {/* CLOSING */}
+      <div className="border-t border-zinc-800">
+        <section className="max-w-page mx-auto px-6 py-16 flex flex-wrap items-baseline justify-between gap-6">
+          <p className="font-display text-zinc-300 text-[1.25rem] leading-snug max-w-xl">
+            Hand one puzzle to several models. Or ask a model to solve the puzzle it just designed.
+          </p>
+          <Link to="/eval" className="inline-flex items-center gap-2 text-[13px] font-medium text-orange-400 hover:text-orange-300 transition-colors group">
+            Run an eval <ArrowRight size={15} className="group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </section>
+      </div>
 
     </div>
   );

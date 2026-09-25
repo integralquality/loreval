@@ -40,7 +40,7 @@ import {
   FEATURES,
   PRESET_SIZES,
 } from '../../lib/ai-generator';
-import { THEMES } from '../../lib/themes';
+import { THEMES, DEFAULT_THEME } from '../../lib/themes';
 import type { Difficulty, LevelFeature } from '../../lib/ai-generator';
 import { TILE_SIZE } from '../../types';
 import { INITIAL_LEVEL } from '../../constants';
@@ -583,9 +583,9 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
   return (
     <div className="flex h-screen page-ground text-ink font-sans overflow-hidden">
       {/* Sidebar */}
-      <div className="w-80 bg-paper border-r-2 border-zinc-700 flex flex-col">
+      <div className="w-80 bg-paper border-r border-zinc-800 flex flex-col">
         {/* Header — same h-14 band as the top bar so the rules align */}
-        <div className="h-14 px-4 flex items-center justify-between border-b-2 border-zinc-700 shrink-0">
+        <div className="h-14 px-4 flex items-center justify-between border-b border-zinc-800 shrink-0">
           <div className="flex items-baseline gap-2 min-w-0">
             <h1 className="font-mono text-base font-bold text-zinc-100 truncate">
               {playOnly ? level.name : 'loreval'}
@@ -643,10 +643,10 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         {mode === 'design' && designTab === 'visual' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
             <div>
-              <p className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Tools</p>
+              <p className="eyebrow text-zinc-500 mb-2">Tools</p>
               <div className="grid grid-cols-4 gap-2">
-              <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='28' height='28' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='28' height='28' fill='%23351008'/%3E%3Crect x='0' y='0' width='26' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='0' y='14' width='12' height='12' fill='%239b3a10' rx='1'/%3E%3Crect x='14' y='14' width='14' height='12' fill='%239b3a10' rx='1'/%3E%3C/svg%3E")`, backgroundSize: '14px 14px' }} />} label="Brick" tooltip="Solid brick wall — nothing can pass through" />
-              <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<div className="w-6 h-6 rounded-sm" style={{ backgroundColor: 'rgba(120,113,108,0.4)' }} />} label="Road" tooltip="Walkable road tile" />
+              <ToolButton active={selectedTool === 'wall'} onClick={() => setSelectedTool('wall')} icon={<TileIcon type="wall" theme={level.theme} className="w-6 h-6" />} label="Brick" tooltip="Solid brick wall — nothing can pass through" />
+              <ToolButton active={selectedTool === 'floor-white'} onClick={() => setSelectedTool('floor-white')} icon={<TileIcon type="floor-white" theme={level.theme} className="w-6 h-6" />} label="Road" tooltip="Walkable road tile" />
               <ToolButton active={selectedTool === 'goal'} onClick={() => setSelectedTool('goal')} icon={<LogOut className="text-emerald-500" />} label="Exit" tooltip="Color exit — only the matching character can use it" />
               <ToolButton active={selectedTool === 'goal-universal'} onClick={() => setSelectedTool('goal-universal')} icon={<LogOut className="text-zinc-300" />} label="Open Exit" tooltip="Universal exit — any character can use it" />
               <ToolButton active={selectedTool === 'door'} onClick={() => setSelectedTool('door')} icon={<DoorOpen className="text-zinc-400" />} label="Door" tooltip="Blocks passage unless character color matches or a switch opens it" />
@@ -662,7 +662,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* Theme Picker */}
             <div>
-              <p className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Theme</p>
+              <p className="eyebrow text-zinc-500 mb-2">Theme</p>
               <div className="flex gap-2 flex-wrap">
                 {THEMES.map(t => (
                   <button
@@ -673,7 +673,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
                   >
                     <div
                       className={`w-9 h-9 rounded border-2 transition-all ${
-                        (level.theme ?? 'dungeon') === t.id
+                        (level.theme ?? DEFAULT_THEME) === t.id
                           ? 'border-zinc-700 scale-110'
                           : 'border-white/15 hover:border-white/25'
                       }`}
@@ -735,7 +735,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             )}
 
             <div className="bg-surface/60 p-4 rounded-md border border-white/15">
-              <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Instructions</h3>
+              <h3 className="eyebrow text-zinc-500 mb-2">Instructions</h3>
               <p className="text-sm text-zinc-400">
                 Click grid to place items. Select items to edit properties (Color, Rules).
                 <br /><br />
@@ -1031,7 +1031,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             {/* AI Step List */}
             {playMode === 'ai' && aiPlayback.moveLog.length > 0 && (
               <div className="bg-surface/60 rounded-md border border-white/15 overflow-hidden">
-                <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-2.5 pb-1.5 border-b border-white/10">
+                <p className="eyebrow text-zinc-500 px-3 pt-2.5 pb-1.5 border-b border-white/10">
                   Steps
                 </p>
                 <div
@@ -1121,7 +1121,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             </button>
 
             <div className="bg-surface/60 p-4 rounded-md border border-white/15">
-              <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Controls</h3>
+              <h3 className="eyebrow text-zinc-500 mb-2">Controls</h3>
               <div className="space-y-1 font-mono text-xs text-zinc-400">
                 <p>arrow keys — move</p>
                 <p>1, 2, 3 — select character</p>
@@ -1143,7 +1143,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
         {mode === 'design' && designTab === 'code' && (
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <div className="bg-surface/60 p-4 rounded-md border border-white/15">
-              <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">DSL Syntax</h3>
+              <h3 className="eyebrow text-zinc-500 mb-2">DSL Syntax</h3>
               <div className="space-y-3 text-xs text-zinc-400 font-mono">
                 <div>
                   <p className="text-zinc-100 mb-1">Header</p>
@@ -1180,7 +1180,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             </div>
 
             <div className="bg-surface/60 p-4 rounded-md border border-white/15">
-              <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Tile types</h3>
+              <h3 className="eyebrow text-zinc-500 mb-2">Tile types</h3>
               <div className="grid grid-cols-2 gap-1 text-xs text-zinc-400">
                 <span>wall</span><span>floor-white</span>
                 <span>goal</span><span>door</span>
@@ -1190,7 +1190,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
             </div>
 
             <div className="bg-surface/60 p-4 rounded-md border border-white/15">
-              <h3 className="font-mono text-xs font-bold text-zinc-500 uppercase mb-2">Arrows</h3>
+              <h3 className="eyebrow text-zinc-500 mb-2">Arrows</h3>
               <div className="grid grid-cols-2 gap-1 text-xs text-zinc-400 font-mono">
                 <span>^ = one-way up</span>
                 <span>v = one-way down</span>
@@ -1206,7 +1206,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Mode Toggle Tabs */}
         {!playOnly && (
-          <div className="flex items-center justify-between px-4 h-14 bg-paper border-b-2 border-zinc-700 shrink-0">
+          <div className="flex items-center justify-between px-4 h-14 bg-paper border-b border-zinc-800 shrink-0">
             {(() => {
               const agentsWithoutGoal = level.entities.filter(e => !e.rules.some(r => r.type === 'reach-goal'));
               return (
@@ -1295,7 +1295,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
                 <div className="flex flex-col" style={{ gap: 6 }}>
                   <div
-                    className="relative bg-zinc-950 rounded-md border-2 border-zinc-700 p-px"
+                    className="relative bg-zinc-950 rounded-md ring-1 ring-zinc-800 p-px"
                     style={{
                       width: level.width * TILE_SIZE + level.width + 1,
                       height: level.height * TILE_SIZE + level.height + 1
@@ -1409,7 +1409,7 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* Generate panel — vertical panel beside the grid */}
             {mode === 'design' && showGenerate && (
-              <div className="w-72 self-stretch flex flex-col border-l-2 border-zinc-700 bg-paper overflow-hidden">
+              <div className="w-72 self-stretch flex flex-col border-l border-zinc-800 bg-paper overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/15 shrink-0">
                   <span className="font-mono text-xs font-bold text-zinc-100 flex items-center gap-1.5">
@@ -1596,8 +1596,8 @@ export default function GameDesigner({ initialLevel, playOnly, levelId: propLeve
 
             {/* AI Chat — vertical panel beside the grid */}
             {mode === 'play' && playMode === 'ai' && aiPlayback.status !== 'idle' && (
-              <div className="w-56 self-stretch flex flex-col border-l-2 border-zinc-700 bg-paper">
-                <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider font-medium px-3 pt-3 pb-1 shrink-0">
+              <div className="w-56 self-stretch flex flex-col border-l border-zinc-800 bg-paper">
+                <p className="eyebrow text-zinc-500 px-3 pt-3 pb-1 shrink-0">
                   Conversation
                 </p>
 

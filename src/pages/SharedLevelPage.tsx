@@ -76,7 +76,7 @@ export default function SharedLevelPage() {
       <GameDesigner initialLevel={parsed} playOnly onFork={handleFork} />
 
       {/* Floating info bar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-5 py-2.5 bg-paper border-2 border-zinc-700 rounded-full shadow-xl">
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-5 py-2.5 bg-paper ring-1 ring-zinc-700 rounded-full shadow-xl">
         <span className="text-sm font-bold text-zinc-100">{levelData.name}</span>
         <span className="text-xs text-zinc-500 flex items-center gap-1">
           <User size={10} /> {levelData.author_name}

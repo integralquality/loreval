@@ -11,14 +11,14 @@ export default function SiteLayout() {
         <Outlet />
       </main>
       <CookieBanner />
-      <footer className="border-t-2 border-zinc-700 py-10 mt-auto">
+      <footer className="border-t border-zinc-800 py-10 mt-auto">
         <div className="max-w-page mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2.5">
-              <LogoMark className="w-5 h-5" />
-              <span className="font-mono text-sm font-bold text-zinc-100">loreval</span>
+              <LogoMark className="w-4 h-4" />
+              <span className="font-mono text-[13px] font-bold text-zinc-300 tracking-tight">loreval</span>
             </div>
-            <div className="flex gap-8 font-mono text-xs text-zinc-500">
+            <div className="flex gap-8 text-[13px] text-zinc-500">
               <Link to="/designer" className="hover:text-zinc-100 transition-colors">design</Link>
               <Link to="/docs" className="hover:text-zinc-100 transition-colors">docs</Link>
               <Link to="/privacy" className="hover:text-zinc-100 transition-colors">privacy</Link>
@@ -26,7 +26,7 @@ export default function SiteLayout() {
                 <Github size={12} /> github
               </a>
             </div>
-            <p className="font-mono text-[11px] text-zinc-400">© 2026 loreval</p>
+            <p className="text-[12px] text-zinc-600">© 2026 loreval</p>
           </div>
         </div>
       </footer>

@@ -11,17 +11,17 @@
  * `span()`, which escapes it.
  */
 
-const KEYWORD_COLOR = '#93c5fd';   // blue-300 — matches DSL keyword color on landing/docs
+const KEYWORD_COLOR = '#a5cdf5';   // blue-300 — matches DSL keyword color on landing/docs
 const STRING_COLOR = '#86efac';    // green-300
-const NUMBER_COLOR = '#fdba74';    // orange-300
+const NUMBER_COLOR = '#ffb684';    // orange-300
 const TYPE_COLOR = '#67e8f9';      // cyan-300
-const COMMENT_COLOR = '#71717a';   // zinc-500
-const OPERATOR_COLOR = '#a1a1aa';  // zinc-400
+const COMMENT_COLOR = '#61686f';   // zinc-500
+const OPERATOR_COLOR = '#878e98';  // zinc-400
 const GRID_WALL = '#f87171';       // red-400
-const GRID_ROAD = '#a1a1aa';       // zinc-400
-const GRID_EMPTY = '#52525b';      // zinc-600
-const ARROW_COLOR = '#fbbf24';     // amber-400
-const DEFAULT_COLOR = '#e4e4e7';   // zinc-200
+const GRID_ROAD = '#878e98';       // zinc-400
+const GRID_EMPTY = '#444a52';      // zinc-600
+const ARROW_COLOR = '#f0b849';     // amber-400
+const DEFAULT_COLOR = '#d0d4d9';   // zinc-200
 
 const TILE_TYPES = new Set([
   'wall', 'floor', 'floor-white', 'empty', 'goal', 'door',
@@ -31,7 +31,7 @@ const TILE_TYPES = new Set([
 const COLOR_MAP: Record<string, string> = {
   orange: '#fb923c', purple: '#c084fc', pink: '#f472b6',
   blue: '#60a5fa', green: '#6ee7b7', red: '#f87171',
-  none: '#71717a',
+  none: '#61686f',
 };
 
 function span(text: string, color: string): string {

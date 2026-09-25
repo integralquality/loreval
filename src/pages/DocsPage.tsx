@@ -10,7 +10,7 @@ export default function DocsPage() {
 
         {/* Header */}
         <div className="mb-16">
-          <p className="font-mono text-[11px] text-zinc-500 mb-4">docs / dsl-reference</p>
+          <p className="eyebrow text-zinc-500 mb-4">docs / dsl-reference</p>
           <h1 className="text-3xl font-bold text-zinc-100 mb-4">Puzzle DSL reference</h1>
           <p className="text-zinc-400 text-[15px] leading-relaxed max-w-2xl">
             Puzzles are defined in a small text-based domain-specific language. A level file specifies a grid, a tile legend, and agent declarations. The same format is used by the visual editor, the AI solver, and the AI generator — they all read and write the same text.
@@ -84,10 +84,10 @@ agent(blue) start(3,1)`}</CodeBlock>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/15 bg-white/5">
-                    <th className="text-left px-4 py-3 font-mono text-[11px] text-zinc-500 font-medium w-12">tile</th>
-                    <th className="text-left px-4 py-3 font-mono text-[11px] text-zinc-500 font-medium">syntax</th>
-                    <th className="text-left px-4 py-3 font-mono text-[11px] text-zinc-500 font-medium">behavior</th>
-                    <th className="text-left px-4 py-3 font-mono text-[11px] text-zinc-500 font-medium">passable</th>
+                    <th className="text-left px-4 py-3 eyebrow text-zinc-500 w-12">tile</th>
+                    <th className="text-left px-4 py-3 eyebrow text-zinc-500">syntax</th>
+                    <th className="text-left px-4 py-3 eyebrow text-zinc-500">behavior</th>
+                    <th className="text-left px-4 py-3 eyebrow text-zinc-500">passable</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
@@ -176,7 +176,7 @@ level "My Level" 6x6`}</CodeBlock>
 
         </div>
 
-        <div className="mt-20 border-t-2 border-zinc-700 pt-8">
+        <div className="mt-20 rule-strong pt-8">
           <p className="text-zinc-400 text-sm mb-3">The fastest way to learn the format is to draw a level and watch the source update live.</p>
           <Link to="/designer" className="inline-flex items-center gap-2 font-mono text-sm text-orange-400 hover:text-orange-300 transition-colors">
             open the designer <ArrowRight size={14} />
@@ -211,9 +211,9 @@ const TILE_ROWS: Array<{
 function Section({ coord, title, children }: { coord: string; title: string; children: React.ReactNode }) {
   return (
     <section>
-      <div className="border-t-2 border-zinc-700 pt-4 mb-8 flex items-baseline justify-between gap-4">
-        <h2 className="font-mono text-sm font-bold text-zinc-100 lowercase tracking-wide">{title}</h2>
-        <span className="font-mono text-xs text-zinc-400">({coord})</span>
+      <div className="rule-strong pt-4 mb-8 flex items-baseline justify-between gap-4">
+        <h2 className="text-[15px] font-semibold text-zinc-200 lowercase">{title}</h2>
+        <span className="eyebrow text-zinc-600">{coord}</span>
       </div>
       {children}
     </section>
@@ -222,7 +222,7 @@ function Section({ coord, title, children }: { coord: string; title: string; chi
 
 function Clause({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="border-l-2 border-white/15 pl-5">
+    <div className="border-l border-zinc-700 pl-5">
       <p className="font-mono text-sm font-bold text-zinc-100 mb-2">{label}</p>
       {children}
     </div>

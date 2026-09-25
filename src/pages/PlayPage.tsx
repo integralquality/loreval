@@ -60,7 +60,7 @@ export default function PlayPage() {
           })}
         </div>
 
-        <div className="mt-12 pt-8 border-t-2 border-zinc-700">
+        <div className="mt-12 pt-8 rule-strong">
           <p className="text-zinc-500 text-xs font-mono mb-3">or start from a blank level</p>
           <Link
             to="/designer"

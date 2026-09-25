@@ -1,36 +1,186 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Design system.
+
+   Two typefaces and one cold neutral ramp. Every surface and every piece of
+   text is drawn from the ramp, which is installed over Tailwind's built-in
+   `zinc-*` and `orange-*` scales rather than sitting beside them: the app
+   already had several hundred `text-zinc-400` and `border-zinc-800` call
+   sites, so overriding the scale retunes all of them at once and keeps one
+   source of truth, where a parallel set of tokens would have left two
+   palettes drifting apart.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @theme {
+  /* ── Type ────────────────────────────────────────────────────────────────
+     IBM Plex Sans carries both headings and prose. It was cut for technical
+     documentation, so it holds up at 11px in a dense table and at 64px in a
+     headline, and its skeleton agrees with JetBrains Mono — the two were
+     drawn to the same engineering brief, which is why the numbers in a chart
+     axis and the words beside them look related rather than merely adjacent.
+     Mono is every number, coordinate, tile character and code sample. */
+  --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  /* Dark palette. `paper` is the raised surface — panels, modals, cards, the
-     navbar — sitting one step above the page ground. `ink` is the text on it.
-     Game surfaces (grids, code, previews) stay the darkest layer at zinc-950,
-     so the stack reads ground < paper < surface, with instruments sunk back
-     below the ground. */
-  --color-paper: #1a1917;
-  --color-ink: #e7e5e0;
-  /* One step above `paper`: inputs, inner cards, table stripes. */
-  --color-surface: #232220;
+  /* ── Neutrals ────────────────────────────────────────────────────────────
+     Graphite: a cold ramp with a trace of blue in the shadows, which is what
+     keeps a near-black screen reading as an instrument rather than as paper.
+     The lightness steps match the `zinc-*` they replace so existing contrast
+     relationships survive the swap; only hue and chroma move.
+
+     Text uses four of these in practice: 100 for emphasis, 300 for headings
+     on dark, 400 for body, 500 for labels and captions. */
+  --color-zinc-50:  #f6f7f8;
+  --color-zinc-100: #e8eaec;
+  --color-zinc-200: #d0d4d9;
+  --color-zinc-300: #c4cad2;
+  --color-zinc-400: #9ba3ae;
+  --color-zinc-500: #78818b;   /* labels, captions */
+  --color-zinc-600: #576069;
+  --color-zinc-700: #2e333a;   /* structural rules */
+  --color-zinc-800: #1d2126;   /* hairlines, panel edges */
+  --color-zinc-900: #12151a;
+  --color-zinc-950: #07080a;   /* instruments — the deepest layer */
+
+  /* ── Accent ──────────────────────────────────────────────────────────────
+     One accent, and it stays warm on purpose. A single warm signal against a
+     cold graphite ground is the oldest trick in instrumentation — it is the
+     only hue on the page that means "look here", so it needs no help from a
+     second colour, and it ties the chrome to the agent you actually move. */
+  --color-orange-300: #ffb684;
+  --color-orange-400: #ff9857;
+  --color-orange-500: #f97c3c;
+  --color-orange-600: #dd6224;
+
+  /* ── Status ──────────────────────────────────────────────────────────────
+     Pass, fail, keyword, warn. Legible against the ground without tipping
+     into neon: these dress the interface, they are not the readout. */
+  --color-emerald-400: #5ad39a;
+  --color-emerald-500: #3fb87f;
+  --color-emerald-600: #2f9464;
+  --color-green-400:   #6fd68a;
+  --color-green-500:   #4eb96c;
+  --color-red-400:     #f4776f;
+  --color-red-500:     #e2574d;
+  --color-blue-300:    #a5cdf5;
+  --color-blue-400:    #74b0ee;
+  --color-blue-500:    #4f93dc;
+  --color-amber-400:   #f0b849;
+  --color-amber-500:   #d69b2c;
+
+  /* ── Surfaces ────────────────────────────────────────────────────────────
+     Four layers, in a deliberately tight range — on a dark interface the
+     steps between surfaces should be felt rather than seen. `paper` is the
+     raised one: panels, modals, cards, the navbar. `surface` is one step
+     above it: inputs, inner cards, table stripes. Instruments — grids, code,
+     previews, anything you read data off — sink to `zinc-950`, below the
+     page ground, so the stack reads instruments < ground < paper < surface. */
+  --color-paper: #131619;
+  --color-surface: #1b1f23;
+  --color-ink: #e8eaec;
 
   /* One shared page width, as `max-w-page`. The eval table carries a dozen
      columns, so the old 6xl (72rem) squeezed it; everything that frames a
      page uses this token so the gutters stay aligned across routes. */
   --container-page: 88rem;
+
+  /* Panels are tight, not pill-shaped — a 4px corner on an instrument reads
+     as machined, where Tailwind's default 8px reads as a consumer card. */
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.375rem;
 }
 
 @layer base {
   /* Set on the root so overscroll and short routes never flash white. */
   html {
-    background-color: #121110;
+    background-color: #0b0d0f;
     color-scheme: dark;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    /* Prose sits at 16px with an open measure. The previous 15px default
+       made every paragraph feel like fine print next to the mono panels. */
+    font-size: 16px;
+    line-height: 1.65;
+  }
+
+  /* Headings take the display face everywhere, without every call site
+     having to name it. Large type needs the tracking pulled in; the browser
+     default is set for body copy and looks slack at display sizes. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    letter-spacing: -0.035em;
+  }
+
+  /* Numerals should line up in columns wherever they are compared, which in
+     this app is nearly everywhere. */
+  table, .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 @layer utilities {
-  /* Flat page ground that full-height routes paint themselves with. */
+  /* Flat page ground that full-height routes paint themselves with. Flat is
+     the whole specification: no ruling, no grid, and no grain — a noise
+     texture behind body copy costs more in legibility than it buys back in
+     surface. */
   .page-ground {
-    background-color: #121110;
+    background-color: #0b0d0f;
+  }
+
+  /* Display face, for the rare non-heading that needs it (a stat, a figure). */
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  /* Micro-label: the tracked uppercase label used for section eyebrows, panel
+     roles and captions.
+
+     Deliberately the sans and not the mono. Monospace belongs to things you
+     read as data — code, coordinates, move logs, figures in a column — and
+     using it for every label as well spread a terminal texture over the whole
+     interface. The tracked uppercase shape is what makes these read as
+     instrument labels; the typeface was never doing that work. */
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+  }
+
+  /* Rules. A hairline at low contrast is the default separator; the dashed
+     variant marks a secondary or provisional division, borrowed from the
+     convention in a technical drawing. Both are 1px — the app used to draw
+     2px rules, which read as a table border rather than a structural line
+     and coarsened every section header on the page. */
+  .rule {
+    border-top: 1px solid var(--color-zinc-800);
+  }
+
+  .rule-strong {
+    border-top: 1px solid var(--color-zinc-700);
+  }
+
+  .rule-dashed {
+    border-top: 1px dashed var(--color-zinc-700);
+  }
+
+  /* A panel edge that reads as lit from above: a hairline highlight on the
+     top edge over the ring, the way a milled surface catches light. One
+     shared class so every instrument on the site is lit from the same angle. */
+  .panel-lit {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.04),
+      0 16px 50px -20px rgb(0 0 0 / 0.9);
   }
 }

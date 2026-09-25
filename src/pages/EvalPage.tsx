@@ -43,8 +43,8 @@ import type { OutcomeCounts, Spread } from '../lib/eval/stats';
 import type { MoveOutcome } from '../lib/eval/replay';
 import type { EvalAttempt, EvalModelSpec, EvalSession } from '../lib/eval/types';
 
-const card = 'bg-paper border-2 border-zinc-700 rounded-lg p-5';
-const label = 'text-[10px] text-zinc-500 uppercase tracking-wide mb-2';
+const card = 'bg-paper ring-1 ring-zinc-800 rounded-lg p-5';
+const label = 'eyebrow text-zinc-500 mb-2';
 
 // ─── Tooltip text for the statistics table ───────────────────────────────
 
