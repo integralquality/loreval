@@ -21,7 +21,7 @@ export interface ProviderDef {
   id: ProviderId;
   label: string;
   kind: ProviderKind;
-  /** Default API base. Empty for Anthropic — the proxy calls the native endpoint. */
+  /** Default API base. Empty for Anthropic — it uses its own native endpoint. */
   baseUrl: string;
   /** Whether the user may override baseUrl (true for self-hosted / gateways). */
   editableBaseUrl: boolean;

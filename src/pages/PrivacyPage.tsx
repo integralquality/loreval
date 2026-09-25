@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           <div>
             <h2 className="text-lg font-bold text-zinc-100 mb-2">Your API key</h2>
             <p>
-              If you add your own provider API key, it is stored in your browser's <code className="font-mono text-[13px]">localStorage</code> only. It is sent with your requests to reach the model provider and is never persisted on our servers.
+              If you add your own provider API key, it is stored in your browser's <code className="font-mono text-[13px]">localStorage</code> only. Requests to the model provider are made directly from your browser, so the key is never sent to us and never passes through our servers.
             </p>
           </div>
 

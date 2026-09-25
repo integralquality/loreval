@@ -1,6 +1,17 @@
 import { parseDSL } from '../dsl/parser';
 import type { Level } from '../types';
 import { defaultModelSelection, resolveModelSelection } from './credentials';
+import {
+  ANTHROPIC_MAX_TOKENS,
+  GENERATE_SYSTEM_PROMPT,
+  buildGenerateMessages,
+  callLLM,
+  describeEmptyResult,
+  extractDsl,
+  extractSummary,
+  normalizeGenerateRequest,
+  normalizeGenerateRetry,
+} from './llm';
 import type { ModelSelection } from './ai-solver';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -59,45 +70,44 @@ export async function generateLevel(opts: GenerateOptions): Promise<GenerateResu
     return { ok: false, error: `No API key for the selected model (${chosen}).` };
   }
 
-  let res: Response;
-  try {
-    res = await fetch('/api/generate-level', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...opts,
-        provider: resolved.providerId,
-        model: resolved.modelId,
-        apiKey: resolved.key,
-        baseUrl: resolved.baseUrl,
-      }),
-    });
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'Network error' };
+  const req = normalizeGenerateRequest(opts);
+  if (!req.prompt) {
+    return { ok: false, error: 'Describe the level you want before generating.' };
   }
 
-  const data = (await res.json()) as {
-    dsl?: string;
-    summary?: string;
-    error?: string;
-    raw?: string;
-  };
+  const result = await callLLM({
+    apiKey: resolved.key,
+    provider: resolved.providerId,
+    model: resolved.modelId,
+    baseUrl: resolved.baseUrl,
+    system: GENERATE_SYSTEM_PROMPT,
+    messages: buildGenerateMessages(req, normalizeGenerateRetry(opts.retryContext)),
+    // Generous, because a prompt like "make it complex and verify it" sends the
+    // model into a long reasoning preamble before the level itself.
+    maxTokens: ANTHROPIC_MAX_TOKENS,
+  });
 
-  if (!res.ok || !data.dsl) {
+  if (!result.ok) {
+    return { ok: false, error: result.message };
+  }
+
+  const dsl = extractDsl(result.text);
+  if (!dsl) {
     return {
       ok: false,
-      error: data.error ?? `Request failed (${res.status})`,
-      rawResponse: data.raw,
+      error: describeEmptyResult(result, 'the level', 'The model did not output a DSL code block'),
+      rawResponse: result.text,
     };
   }
 
-  const parsed = parseDSL(data.dsl);
+  const parsed = parseDSL(dsl);
   if (!parsed.level) {
     const errorMsg = parsed.errors.map((e) => e.message).join('; ');
-    return { ok: false, error: errorMsg, rawDsl: data.dsl };
+    return { ok: false, error: errorMsg, rawDsl: dsl };
   }
 
-  return { ok: true, level: parsed.level, dsl: data.dsl, summary: data.summary };
+  const summary = extractSummary(result.text);
+  return { ok: true, level: parsed.level, dsl, ...(summary && { summary }) };
 }
 
 export type { ModelSelection };

@@ -248,8 +248,8 @@ export function ApiKeysModal({ onClose, onSave }: Props) {
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <p className="text-xs text-zinc-500 leading-relaxed">
-            Keys are saved in <code className="font-mono">localStorage</code> and sent directly to
-            the provider through our proxy — we never store them.
+            Keys are saved in <code className="font-mono">localStorage</code> on this device and
+            sent from your browser straight to the provider. They never reach a server of ours.
           </p>
 
           <div className="flex gap-2 pt-1">

@@ -145,7 +145,13 @@ API keys via env vars. No Supabase dependency — the CLI must work fully offlin
 
 ## 6. `api/` — serverless layer
 
-**Evolves from** the current three functions. Role shrinks to what genuinely needs a server:
+> **Status (2026-09-25):** the three functions described here have been deleted.
+> Model calls now go browser → provider directly (`src/lib/llm.ts`), because an
+> unauthenticated proxy that forwarded a caller-supplied base URL was an open
+> relay. What follows is a greenfield design for a *new*, authenticated
+> serverless layer — not an evolution of code that still exists.
+
+**Would have evolved from** the three functions that used to live here. Role shrinks to what genuinely needs a server:
 
 - **LLM proxy** for the hosted playground (server-held key for demo quota, BYO guest keys as today). Internally calls `packages/eval` adapters instead of its own fetch code.
 - **Run orchestration** for hosted batch runs: enqueue a (suite, model, task) run, execute level-by-level within serverless limits (or fan out one invocation per level), persist incremental results to Supabase. Keeps the dashboard usable by people who won't run a CLI.

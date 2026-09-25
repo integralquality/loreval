@@ -1,8 +1,13 @@
 /**
- * Shared Anthropic API utilities.
- * Imported by all /api/* serverless functions and the Vite dev middleware.
+ * The model-calling layer: provider routing, prompts, and reply parsing.
  *
- * ⚠️  Node.js only — no browser APIs.
+ * Runs in the browser. The user's key goes straight from their tab to the
+ * provider, so there is no server in the path to hold a credential, meter a
+ * request, or be turned into an open proxy — which is exactly why the old
+ * /api/* functions were removed.
+ *
+ * Every provider here is reached over CORS, so a provider that serves no
+ * `Access-Control-Allow-Origin` simply cannot be called from the app.
  */
 
 // ─── Models ───────────────────────────────────────────────────────────────────
@@ -150,6 +155,11 @@ export async function callAnthropic(params: CallParams): Promise<CallResult> {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        // Without this the API returns no Access-Control-Allow-Origin and the
+        // browser blocks the response. It is named "dangerous" because it
+        // means the key lives in the page — which is the deal here: the key
+        // is the user's own, entered by them, and stored only on their device.
+        'anthropic-dangerous-direct-browser-access': 'true',
       },
       body: JSON.stringify({
         model,
@@ -449,6 +459,76 @@ export interface GenerateRetryContext {
   /** User-written feedback — used for intentional refinement. */
   userFeedback?: string;
 }
+
+// ─── Request hygiene ─────────────────────────────────────────────────────────
+//
+// These caps used to guard a public endpoint. Now that the call leaves the
+// user's own tab they guard the user instead: a runaway prompt or a 500×500
+// grid spends their money and their time, and the engine only renders grids
+// inside the dimension range below. Anyone determined to exceed them is
+// editing their own page to spend their own credits, which is their business.
+
+export const MAX_PROMPT_LENGTH = 500;
+/** Also the cap on a level pasted in for solving, and on a retry's prior DSL. */
+export const MAX_DSL_LENGTH = 5000;
+export const MAX_FEEDBACK_LENGTH = 500;
+export const MIN_DIMENSION = 4;
+export const MAX_DIMENSION = 16;
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, isFinite(n) ? n : min));
+}
+
+function cap(value: unknown, max: number): string | undefined {
+  return typeof value === 'string' ? value.slice(0, max) : undefined;
+}
+
+/** Coerce loose caller input into a request the generator prompt can use. */
+export function normalizeGenerateRequest(raw: {
+  prompt?: unknown;
+  width?: unknown;
+  height?: unknown;
+  difficulty?: unknown;
+  features?: unknown;
+}): GenerateRequest {
+  return {
+    prompt: (cap(raw.prompt, MAX_PROMPT_LENGTH) ?? '').trim(),
+    width: clamp(Number(raw.width) || 8, MIN_DIMENSION, MAX_DIMENSION),
+    height: clamp(Number(raw.height) || 8, MIN_DIMENSION, MAX_DIMENSION),
+    difficulty: (VALID_DIFFICULTIES as readonly string[]).includes(raw.difficulty as string)
+      ? (raw.difficulty as Difficulty)
+      : 'medium',
+    features: Array.isArray(raw.features)
+      ? raw.features.filter((f): f is LevelFeature =>
+          (VALID_FEATURES as readonly string[]).includes(f as string),
+        )
+      : [],
+  };
+}
+
+export function normalizeGenerateRetry(raw: unknown): GenerateRetryContext | undefined {
+  if (raw == null || typeof raw !== 'object') return undefined;
+  const rc = raw as Record<string, unknown>;
+  const previousDsl = cap(rc.previousDsl, MAX_DSL_LENGTH);
+  if (previousDsl === undefined) return undefined;
+  return {
+    previousDsl,
+    error: cap(rc.error, MAX_FEEDBACK_LENGTH),
+    userFeedback: cap(rc.userFeedback, MAX_FEEDBACK_LENGTH),
+  };
+}
+
+export function normalizeSolveRetry(raw: unknown): RetryContext | undefined {
+  if (raw == null || typeof raw !== 'object') return undefined;
+  const rc = raw as Record<string, unknown>;
+  const previousMovesText = cap(rc.previousMovesText, MAX_DSL_LENGTH);
+  if (previousMovesText === undefined) return undefined;
+  return {
+    previousMovesText,
+    userFeedback: cap(rc.userFeedback, MAX_FEEDBACK_LENGTH) ?? '',
+  };
+}
+
 
 export const GENERATE_SYSTEM_PROMPT = `You are a puzzle designer creating grid-based logic puzzles in a specific DSL. Your goal is to produce an interesting, solvable puzzle that matches the given specifications.
 

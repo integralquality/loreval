@@ -2,7 +2,7 @@ import path from 'path';
 import { defineConfig } from 'vitest/config';
 
 // Standalone from vite.config.ts: the unit suite covers pure logic only, so it
-// skips the React/Tailwind plugins and the dev-server API middleware entirely.
+// skips the React and Tailwind plugins entirely.
 export default defineConfig({
   resolve: {
     alias: {
@@ -11,6 +11,6 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts', 'api/**/*.test.ts'],
+    include: ['src/**/*.test.ts'],
   },
 });

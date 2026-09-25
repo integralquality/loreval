@@ -2,7 +2,7 @@
 
 > **Experimental version - temporary AI generated docs**
 
-Loreval measures how well language models do **logic and reasoning** on grid-based spatial puzzles. It's a web app for playing and designing puzzles, plus the harness that hands the same puzzles to an LLM and scores what comes back — no rubric, no judge model. A puzzle is either solved or it isn't.
+Loreval evaluates language models logic and reasoning on grid-based spatial puzzles.
 
 <img width="1047" height="326" alt="image" src="https://github.com/user-attachments/assets/6c0de273-45d3-4643-8022-fcc13324adf1" />
 
@@ -15,7 +15,7 @@ Two tasks:
 - **Solving** — given a puzzle as text, can the model produce a valid move sequence? Doors need switches hit first, agents block each other, one-way tiles and color-changing paint force ordering, not just pathfinding.
 - **Designing** — given a difficulty, grid size, and a set of mechanics, can the model produce a well-formed, solvable puzzle that actually uses them?
 
-Why grids: outcomes are verifiable by execution, fresh test items can be minted forever, and a failed attempt names the exact move where the plan broke.
+Outcomes are verifiable by execution, fresh test items can be minted forever, and a failed attempt names the exact move where the plan broke.
 
 ## The DSL
 
@@ -74,7 +74,7 @@ The search is exponential in the number of agents. It's bounded by a node cap an
 
 Pick a level, tick some models, choose how many runs each, hit Run. Attempts go out a couple at a time and land in the table as they finish.
 
-Keys are yours: Anthropic, OpenAI, Google, Groq, OpenRouter, or any OpenAI-compatible endpoint. They stay in your browser and are passed through to the provider — never persisted server-side. Custom model IDs are accepted, so a new model doesn't need a release here.
+Keys are yours: Anthropic, OpenAI, Google, Groq, OpenRouter, or any OpenAI-compatible endpoint. They stay in your browser and are sent only to the provider — never persisted server-side. Custom model IDs are accepted, so a new model doesn't need a release here.
 
 ## Statistics
 
@@ -95,29 +95,6 @@ Charts render the same numbers where a picture is faster — overlapping confide
 
 **Working:** the DSL and engine, a visual designer with a two-way code editor, model solve attempts with step-by-step playback and a retry loop, model-generated levels, the deterministic solver, and multi-provider eval sessions with statistics, charts and CSV export.
 
-**Not yet:** fixed benchmark suites, an interactive solve mode where the model sees the board after every move, logic gates and compound win conditions, and a CLI. Accounts and level sharing are built but unrouted until authentication ships.
+**Future:** fixed benchmark suites, an interactive solve mode where the model sees the board after every move, logic gates and compound win conditions, and a CLI. Accounts and level sharing are built but unrouted until authentication ships.
 
-**No model comparison numbers are published.** Run it with your own keys and get your own.
-
-The `roadmap/` folder holds the design notes, including the intended split into a shared core consumed by the web app, a generator, the eval harness and a CLI alike — so the app becomes one client among several rather than holding all the logic.
-
-## Development
-
-```bash
-npm install
-npm run dev       # Vite dev server
-npm run build     # typecheck + production build
-npm test
-npm run lint
-```
-
-No environment variables are needed to run the app — model calls use the key you enter in the UI, and the proxy holds no credentials of its own. Supabase powers accounts and level sharing; without it the app boots and says so, and the designer, campaign and eval pages work regardless. To enable it, put these in a local `.env` (gitignored):
-
-```
-VITE_SUPABASE_URL=...
-VITE_SUPABASE_ANON_KEY=...
-```
-
-Deploys to Vercel; the API routes are serverless functions.
-
-Stack: React 19 + TypeScript, Vite, Tailwind CSS v4, React Router, Vitest, Supabase, Motion.
+**No model comparison numbers are published yet.** Run it with your own keys and get your own.

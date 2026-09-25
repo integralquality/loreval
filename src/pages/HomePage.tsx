@@ -34,7 +34,7 @@ agent(orange) start(1,1) and reach(7,5)`;
 
 const HERO_OPTIMAL = 18; // verified by exhaustive search over the engine
 
-// Lifted from SOLVE_SYSTEM_PROMPT in api/_anthropic.ts — the contract every
+// Lifted from SOLVE_SYSTEM_PROMPT in src/lib/llm.ts — the contract every
 // solve attempt is actually sent — and abridged to the part that bites.
 const PROMPT_RULES = [
   'door   impassable UNLESS the agent color matches,',

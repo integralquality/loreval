@@ -1,9 +1,10 @@
 /**
  * Multi-provider API key store.
  *
- * Keys live in localStorage and are sent straight to the provider through our
- * proxy — never persisted server-side. One credential per provider, so a user
- * can hold an Anthropic key and an OpenAI key at once and evaluate both.
+ * Keys live in localStorage and go from the browser straight to the provider —
+ * there is no server in the path to persist them. One credential per provider,
+ * so a user can hold an Anthropic key and an OpenAI key at once and evaluate
+ * both.
  *
  * Supersedes the single-config `loreval_guest_config` store; anything found
  * under the old key is migrated on first read.

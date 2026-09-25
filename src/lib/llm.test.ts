@@ -14,7 +14,15 @@ import {
   extractDsl,
   extractSummary,
   parseMoves,
-} from './_anthropic';
+  MAX_DIMENSION,
+  MAX_DSL_LENGTH,
+  MAX_FEEDBACK_LENGTH,
+  MAX_PROMPT_LENGTH,
+  MIN_DIMENSION,
+  normalizeGenerateRequest,
+  normalizeGenerateRetry,
+  normalizeSolveRetry,
+} from './llm';
 
 const fence = (body: string) => '```\n' + body + '\n```';
 
@@ -575,5 +583,115 @@ describe('callLLM routing', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     const result = await callLLM({ ...base, provider: 'anthropic', baseUrl: '' });
     expect(result).toMatchObject({ ok: false, httpStatus: 503, message: 'offline' });
+  });
+});
+
+describe('direct browser access', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const okFetch = () =>
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn' }),
+    });
+
+  const headersOf = (spy: ReturnType<typeof vi.fn>) =>
+    (spy.mock.calls[0][1] as { headers: Record<string, string> }).headers;
+
+  // Without this header the API serves no Access-Control-Allow-Origin and the
+  // browser discards the response before we ever see it. Verified against the
+  // live endpoint: the header is what flips CORS on.
+  it('opts in to browser access on the Anthropic call', async () => {
+    const spy = okFetch();
+    vi.stubGlobal('fetch', spy);
+
+    await callLLM({
+      apiKey: 'k',
+      provider: 'anthropic',
+      model: 'claude-opus-5',
+      baseUrl: '',
+      system: 'sys',
+      messages: [{ role: 'user', content: 'hi' }],
+    });
+
+    expect(headersOf(spy)['anthropic-dangerous-direct-browser-access']).toBe('true');
+    expect(headersOf(spy)['x-api-key']).toBe('k');
+  });
+
+  // The OpenAI-compatible providers all serve CORS for a plain bearer token,
+  // so adding a vendor-specific header there would only break the preflight.
+  it('sends no Anthropic-specific header to an OpenAI-compatible provider', async () => {
+    const spy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: 'ok' } }] }),
+    });
+    vi.stubGlobal('fetch', spy);
+
+    await callLLM({
+      apiKey: 'k',
+      provider: 'openai',
+      model: 'gpt-4o',
+      baseUrl: 'https://api.openai.com/v1',
+      system: 'sys',
+      messages: [{ role: 'user', content: 'hi' }],
+    });
+
+    expect(headersOf(spy)).toEqual({
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer k',
+    });
+  });
+});
+
+describe('request hygiene', () => {
+  it('clamps dimensions into the range the engine renders', () => {
+    expect(normalizeGenerateRequest({ prompt: 'p', width: 999, height: 1 })).toMatchObject({
+      width: MAX_DIMENSION,
+      height: MIN_DIMENSION,
+    });
+    // Non-numeric input falls back rather than producing NaN.
+    expect(normalizeGenerateRequest({ prompt: 'p', width: 'wide' })).toMatchObject({ width: 8 });
+  });
+
+  it('truncates an oversized prompt instead of spending the budget on it', () => {
+    const req = normalizeGenerateRequest({ prompt: 'x'.repeat(5000) });
+    expect(req.prompt).toHaveLength(MAX_PROMPT_LENGTH);
+  });
+
+  it('drops an unknown difficulty and unknown features', () => {
+    const req = normalizeGenerateRequest({
+      prompt: 'p',
+      difficulty: 'impossible',
+      features: ['doors', 'lasers', 42],
+    });
+    expect(req.difficulty).toBe('medium');
+    expect(req.features).toEqual(['doors']);
+  });
+
+  it('caps a retry context and rejects one with no prior attempt', () => {
+    const rc = normalizeGenerateRetry({
+      previousDsl: 'd'.repeat(9000),
+      userFeedback: 'f'.repeat(9000),
+      error: 42,
+    });
+    expect(rc?.previousDsl).toHaveLength(MAX_DSL_LENGTH);
+    expect(rc?.userFeedback).toHaveLength(MAX_FEEDBACK_LENGTH);
+    expect(rc?.error).toBeUndefined();
+
+    expect(normalizeGenerateRetry(undefined)).toBeUndefined();
+    expect(normalizeGenerateRetry({ userFeedback: 'no prior dsl' })).toBeUndefined();
+  });
+
+  // The solve path used to cast this straight off the wire with no check at
+  // all, so a non-string would reach the prompt as "[object Object]".
+  it('caps a solve retry and ignores a non-string moves list', () => {
+    const rc = normalizeSolveRetry({ previousMovesText: 'm'.repeat(9000), userFeedback: 'try again' });
+    expect(rc?.previousMovesText).toHaveLength(MAX_DSL_LENGTH);
+    expect(rc?.userFeedback).toBe('try again');
+
+    expect(normalizeSolveRetry({ previousMovesText: { not: 'a string' } })).toBeUndefined();
+    expect(normalizeSolveRetry(null)).toBeUndefined();
   });
 });

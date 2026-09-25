@@ -1,5 +1,15 @@
 import { defaultModelSelection, resolveModelSelection } from './credentials';
 import { directionToDelta, type AiMove } from './moves';
+import {
+  ANTHROPIC_MAX_TOKENS,
+  MAX_DSL_LENGTH,
+  SOLVE_SYSTEM_PROMPT,
+  buildSolveMessages,
+  callLLM,
+  describeEmptyResult,
+  normalizeSolveRetry,
+  parseMoves,
+} from './llm';
 import type { TokenUsage } from './eval/types';
 
 export type { AiMove };
@@ -22,19 +32,15 @@ export interface SolveResult {
   raw?: string;
 }
 
-interface ApiResponse {
-  moves?: AiMove[];
-  error?: string;
-  raw?: string;
-  usage?: TokenUsage;
-}
-
 /**
  * Ask a model to solve a level.
  *
  * `selection` names which configured model to use; when omitted the first
  * available one is used. Credentials are resolved per call, so an eval can run
  * several providers side by side.
+ *
+ * The request goes from this tab straight to the provider — there is no
+ * intermediary, so nothing here can outlive the call or be metered by us.
  */
 export async function solveLevel(
   dsl: string,
@@ -51,40 +57,32 @@ export async function solveLevel(
     return { moves: [], error: `No API key for the selected model (${chosen}).` };
   }
 
-  let res: Response;
-  try {
-    res = await fetch('/api/solve-level', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        dsl,
-        retryContext,
-        provider: resolved.providerId,
-        model: resolved.modelId,
-        apiKey: resolved.key,
-        baseUrl: resolved.baseUrl,
-      }),
-    });
-  } catch (err) {
-    return { moves: [], error: err instanceof Error ? err.message : 'Network error' };
+  const result = await callLLM({
+    apiKey: resolved.key,
+    provider: resolved.providerId,
+    model: resolved.modelId,
+    baseUrl: resolved.baseUrl,
+    system: SOLVE_SYSTEM_PROMPT,
+    messages: buildSolveMessages(dsl.slice(0, MAX_DSL_LENGTH), normalizeSolveRetry(retryContext)),
+    maxTokens: ANTHROPIC_MAX_TOKENS,
+  });
+
+  if (!result.ok) {
+    return { moves: [], error: result.message };
   }
 
-  let data: ApiResponse;
-  try {
-    data = (await res.json()) as ApiResponse;
-  } catch {
-    return { moves: [], error: `Request failed (${res.status})` };
+  const moves = parseMoves(result.text);
+  if (!moves) {
+    // The model answered but produced no parsable move list — a format
+    // failure, which the caller scores separately from a wrong plan.
+    return {
+      moves: [],
+      error: describeEmptyResult(result, 'any moves', 'No valid moves found in response'),
+      parseFailed: true,
+      usage: result.usage,
+      raw: result.text,
+    };
   }
 
-  if (!res.ok) {
-    return { moves: [], error: data.error ?? `Request failed (${res.status})`, usage: data.usage };
-  }
-
-  const moves = data.moves ?? [];
-  if (data.error) {
-    // The call succeeded but the response held no usable move list.
-    return { moves, error: data.error, parseFailed: true, usage: data.usage, raw: data.raw };
-  }
-
-  return { moves, usage: data.usage };
+  return { moves, usage: result.usage };
 }
